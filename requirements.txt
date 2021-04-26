@@ -1,1 +1,2 @@
-# no requirements
+# yapf is a python code formatter
+yapf >= 0.31.0
