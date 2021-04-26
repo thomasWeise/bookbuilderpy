@@ -1,0 +1,30 @@
+name: make build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+# first set up python
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+# then execute the actual build process
+    - name: Execute the make Build
+      run: make
+# the remove mopitpy
+    - name: Purge local bookbuilderpy installation
+      run: |
+        pip uninstall -y bookbuilderpy
+# and attempt to install it again from github
+    - name: Install bookbuilderpy from github
+      run: |
+        pip install git+https://github.com/thomasWeise/bookbuilderpy.git
+        python -c "import bookbuilderpy"
