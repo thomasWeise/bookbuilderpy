@@ -8,7 +8,6 @@ from bookbuilderpy.io import TempFile, TempDir, canonicalize_path, \
 
 # noinspection PyPackageRequirements
 
-
 def test_temp_file():
     with TempFile() as t:
         path = str(t)
