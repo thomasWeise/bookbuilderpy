@@ -1,10 +1,11 @@
 """A set of utilities interactions with the file system."""
+import io
 import os
 from os.path import realpath, isfile, isdir, abspath, expanduser, \
     expandvars, normcase
 from shutil import rmtree
 from tempfile import mkstemp, mkdtemp
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, Iterable, List
 
 
 def canonicalize_path(path: str) -> str:
@@ -239,3 +240,31 @@ def dir_ensure_exists(dir_name: str) -> str:
     dir_name = canonicalize_path(dir_name)
     os.makedirs(name=dir_name, exist_ok=True)
     return enforce_dir(dir_name)
+
+
+def read_all(file: str) -> List[str]:
+    """
+    Read all the lines in a file.
+
+    :param str file: the file
+    :return: the list of strings of text
+    :rtype: List[str]
+    """
+    with io.open(enforce_file(file), "rt") as reader:
+        return reader.readlines()
+
+
+def write_all(file: str, contents: Iterable[str]) -> None:
+    """
+    Read all the lines in a file.
+
+    :param str file: the file
+    :param Iterable[str] contents: the contents to write
+    """
+    with io.open(file_ensure_exists(file)[0], "wt") as writer:
+        all_text = "\n".join(contents)
+        if len(all_text) <= 0:
+            raise ValueError("Writing empty text is not permitted.")
+        writer.write(all_text)
+        if all_text[-1] != "\n":
+            writer.write("\n")
