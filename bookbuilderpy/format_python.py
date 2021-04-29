@@ -226,6 +226,18 @@ def format_python(code: Iterable[str],
     :return: the formatted code
     :rtype: Tuple[str, ...]
     """
+    if not isinstance(code, Iterable):
+        raise TypeError(f"code must be Iterable, but is {type(code)}.")
+    if not isinstance(strip_docstrings, bool):
+        raise TypeError("strip_docstrings must be bool, "
+                        f"but is {type(strip_docstrings)}.")
+    if not isinstance(strip_comments, bool):
+        raise TypeError(
+            f"strip_comments must be bool, but is {type(strip_comments)}.")
+    if not isinstance(strip_hints, bool):
+        raise TypeError(
+            f"strip_hints must be bool, but is {type(strip_hints)}.")
+
     old_len = sys.maxsize
     shortest = tuple(code)
     while True:
@@ -243,5 +255,8 @@ def format_python(code: Iterable[str],
         if strip_hints:
             text = __strip_hints(text)
         code = str_to_lines(text)
+
+    if (len(shortest) <= 0) or (old_len <= 0):
+        raise ValueError(f"Text cannot become {shortest}.")
 
     return shortest
