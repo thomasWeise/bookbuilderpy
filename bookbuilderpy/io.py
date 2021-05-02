@@ -268,3 +268,95 @@ def write_all(file: str, contents: Iterable[str]) -> None:
         writer.write(all_text)
         if all_text[-1] != "\n":
             writer.write("\n")
+
+
+def contains_path(basedir: str, sub: str) -> bool:
+    """
+    Check whether one directory contains a possible sub-directory of file.
+
+    It is expected that both `basedir` and `sub` are the results of
+    :meth:`canonicalize_path`.
+
+    :param str basedir: the directory
+    :param str sub: the path to the file or directory that may be contained
+        in `basedir`
+    :return: `TRUE` if `basedir` contains `sub`, `FALSE` otherwise
+    :rtype: bool
+    """
+    return os.path.commonpath([basedir]) == os.path.commonpath([basedir, sub])
+
+
+def file_path_split(path: str) -> Tuple[str, str, str]:
+    """
+    Split a file path into a directory, prefix, and a suffix component.
+
+    :param str path: the path to split
+    :return: a tuple of directory part, prefix, and suffix
+    :rtype: Tuple[str, str, str]
+    """
+    if not isinstance(path, str):
+        raise TypeError(f"File path must be str, but is {type(path)}.")
+    if (len(path) <= 0) or (path.strip() != path):
+        raise ValueError(f"File path '{path}' is invalid due to white space.")
+
+    filename = os.path.basename(path)
+    if not isinstance(filename, str):
+        raise TypeError(f"File name must be str, but for path '{path}', "
+                        f"it is {type(filename)}.")
+    if (len(filename) <= 0) or (filename.strip() != filename):
+        raise ValueError(f"File name '{filename}' for '{path}' is invalid "
+                         "due to white space.")
+
+    dirname = os.path.dirname(path)
+    if not isinstance(dirname, str):
+        raise TypeError(f"Directory name must be str, but for path '{path}', "
+                        f"it is {type(dirname)}.")
+    if (len(dirname) <= 0) or (dirname.strip() != dirname):
+        raise ValueError(f"Directory name '{dirname}' for '{path}' is "
+                         "invalid due to white space.")
+
+    dot_idx = filename.rfind(".")
+    if (dot_idx <= 0) or (dot_idx >= (len(filename) - 1)):
+        raise ValueError(f"File path '{path}' is invalid due to last dot "
+                         f"index {dot_idx} in file name '{filename}'.")
+    prefix = filename[:dot_idx]
+    if (len(prefix) <= 0) or (prefix.strip() != prefix):
+        raise ValueError(f"File path '{path}' is invalid due to "
+                         f"invalid prefix component '{prefix}' of"
+                         f"file name '{filename}'.")
+    suffix = filename[dot_idx + 1:]
+    if (len(suffix) <= 0) or (suffix.strip() != suffix):
+        raise ValueError(
+            f"File path '{path}' is invalid due to invalid suffix component "
+            f"'{suffix}' in file name '{filename}'.")
+    return dirname, prefix, suffix
+
+
+def file_path_merge(prefix: str, suffix: str,
+                    dirname: Optional[str] = None) -> str:
+    """
+    Merge a file name from a directory, prefix, and suffix component.
+
+    :param str prefix: the file name prefix
+    :param str suffix: the file name suffix
+    :param Optional[str] dirname: the directory name, or `None` if only
+        prefix and suffix should be checked and merged
+    :return: the merged prefix and suffix
+    :rtype: str
+    """
+    if dirname is not None:
+        if not isinstance(dirname, str):
+            raise TypeError(f"Dirname must be str but is {type(dirname)}.")
+        if (len(dirname) <= 0) or (dirname != dirname.strip()):
+            raise ValueError(f"Invalid dirname '{dirname}'.")
+    if not isinstance(prefix, str):
+        raise TypeError(f"Prefix must be str but is {type(prefix)}.")
+    if (len(prefix) <= 0) or (prefix != prefix.strip()):
+        raise ValueError(f"Invalid prefix '{prefix}'.")
+    if not isinstance(suffix, str):
+        raise TypeError(f"Suffix must be str but is {type(suffix)}.")
+    if (len(suffix) <= 0) or (suffix != suffix.strip()):
+        raise ValueError(f"Invalid suffix '{suffix}'.")
+
+    rv = f"{prefix}.{suffix}"
+    return rv if dirname is None else os.path.join(dirname, rv)

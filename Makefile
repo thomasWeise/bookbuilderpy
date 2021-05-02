@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := build
 
 
-# Get the package binaries
+# Get the location of the Python package binaries.
 PYTHON_PACKAGE_BINARIES := $(shell python3 -m site --user-base)/bin
 
 # Cleaning means that the package is uninstalled if it is installed.
