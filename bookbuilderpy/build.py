@@ -1,13 +1,48 @@
-"""The base class with the informations of a build."""
+"""The base class with the information of a build."""
 
 import datetime
 import gzip
 import os.path
 import shutil
+from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from typing import Optional
 
 import bookbuilderpy.io as bio
+from bookbuilderpy.strings import enforce_non_empty_str_without_ws
+
+
+@dataclass(frozen=True, init=False, order=True)
+class _StepCtx(AbstractContextManager):
+    #: the name of the build step
+    name: str
+    #: the start date and time
+    start: datetime.datetime
+
+    def __init__(self, name: str):
+        """
+        Create the context manager for a build step.
+
+        :param name: the name of the build step
+        """
+        object.__setattr__(self, "name",
+                           enforce_non_empty_str_without_ws(name))
+        object.__setattr__(self, "start", datetime.datetime.now())
+
+    def __enter__(self):
+        self.log("starting up")
+
+    def __exit__(self, *args):
+        self.log("finished after "
+                 f"{(datetime.datetime.now() - self.start).total_seconds()}.")
+
+    def log(self, message: str) -> None:
+        """
+        Write a message to the log.
+
+        :param str message: the message
+        """
+        print(f"{datetime.datetime.now()}/{self.name}: {message}.")
 
 
 def _copy_pure(path_in: str, path_out: str):
@@ -33,7 +68,7 @@ def _copy_un_gzip(path_in: str, path_out: str):
 
 
 @dataclass(frozen=True, init=False, order=True)
-class Build:
+class Build(_StepCtx):
     """The immutable setup of a build."""
 
     #: The language used for the build.
@@ -61,6 +96,7 @@ class Build:
         :param str out_dir: the output directory
         :param Optional[str] lang: the language
         """
+        super().__init__("build")
         object.__setattr__(self, "in_dir", bio.enforce_dir(in_dir))
         out_dir = bio.dir_ensure_exists(out_dir)
         if bio.contains_path(in_dir, out_dir):
@@ -78,10 +114,9 @@ class Build:
         if len(self.lang) <= 0:
             raise ValueError(f"invalid language '${lang}'.")
 
-        d = datetime.datetime.now()
-        object.__setattr__(self, "start_date", d.strftime("%Y-%m-%d"))
-        tz = d.strftime("%z")
-        dt = f"{self.start_date} {d.strftime('%H:%M')}"
+        object.__setattr__(self, "start_date", self.start.strftime("%Y-%m-%d"))
+        tz = self.start.strftime("%z")
+        dt = f"{self.start_date} {self.start.strftime('%H:%M')}"
         object.__setattr__(self, "start_datetime",
                            dt if (len(tz) <= 0) else f"{dt} UTC{tz}")
 
@@ -106,7 +141,8 @@ class Build:
         if current_file is None:
             base_dir = self.in_dir
         else:
-            current_file = bio.enforce_file(current_file)
+            current_file = bio.enforce_file(
+                enforce_non_empty_str_without_ws(current_file))
             if not bio.contains_path(self.in_dir, current_file):
                 raise ValueError(f"File '{current_file}' is not included"
                                  f" in {self.in_dir}.")
@@ -150,18 +186,19 @@ class Build:
         :return: the path to the output file, relative to the output folder
         :rtype: str
         """
+        orig_in_path = in_path
         in_path = bio.enforce_file(in_path)
         if not bio.contains_path(self.in_dir, in_path):
             raise ValueError(
-                f"'{in_path}' is not in director '{self.in_dir}'.")
+                f"'{orig_in_path}' is not in director '{self.in_dir}'.")
 
         dirname, prefix, suffix = bio.file_path_split(in_path)
         out_dir = bio.canonicalize_path(os.path.join(
             self.out_dir, os.path.relpath(dirname, self.in_dir)))
         if not bio.contains_path(self.out_dir, out_dir):
-            raise ValueError(
-                f"Output path '{out_dir}' resulting from path '{in_path}' is "
-                f"not in the output directory '{self.out_dir}'.")
+            raise ValueError(f"Output path '{out_dir}' resulting from path "
+                             f"'{orig_in_path}' is not in the output "
+                             f"directory '{self.out_dir}'.")
         out_dir = bio.dir_ensure_exists(out_dir)
         if suffix == "svgz":
             copier = _copy_un_gzip
@@ -173,8 +210,23 @@ class Build:
             out_dir, bio.file_path_merge(prefix, suffix)))
         if not bio.contains_path(self.out_dir, dest_path):
             raise ValueError(f"Destination path '{dest_path}' resulting from"
-                             f"path '{in_path}' is not in the output "
+                             f"path '{orig_in_path}' is not in the output "
                              f"directory '{self.out_dir}'.")
         copier(in_path, dest_path)
         dest_path = bio.enforce_file(dest_path)
-        return os.path.relpath(self.out_dir, dest_path)
+        ret = os.path.relpath(self.out_dir, dest_path)
+
+        self.log(f"copied resource '{orig_in_path}' from input "
+                 f"to output path '{ret}'.")
+        return ret
+
+    # noinspection PyMethodMayBeStatic
+    def step(self, name: str) -> AbstractContextManager:
+        """
+        Perform a step of the build.
+
+        :param str name: the name of the step
+        :return: the context manager of the step
+        :rtype: AbstractContextManager
+        """
+        return _StepCtx(name)

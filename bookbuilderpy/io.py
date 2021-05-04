@@ -7,6 +7,8 @@ from shutil import rmtree
 from tempfile import mkstemp, mkdtemp
 from typing import Optional, Union, Tuple, Iterable, List
 
+from bookbuilderpy.strings import enforce_non_empty_str_without_ws
+
 
 def canonicalize_path(path: str) -> str:
     """
@@ -299,36 +301,15 @@ def file_path_split(path: str) -> Tuple[str, str, str]:
     if (len(path) <= 0) or (path.strip() != path):
         raise ValueError(f"File path '{path}' is invalid due to white space.")
 
-    filename = os.path.basename(path)
-    if not isinstance(filename, str):
-        raise TypeError(f"File name must be str, but for path '{path}', "
-                        f"it is {type(filename)}.")
-    if (len(filename) <= 0) or (filename.strip() != filename):
-        raise ValueError(f"File name '{filename}' for '{path}' is invalid "
-                         "due to white space.")
-
-    dirname = os.path.dirname(path)
-    if not isinstance(dirname, str):
-        raise TypeError(f"Directory name must be str, but for path '{path}', "
-                        f"it is {type(dirname)}.")
-    if (len(dirname) <= 0) or (dirname.strip() != dirname):
-        raise ValueError(f"Directory name '{dirname}' for '{path}' is "
-                         "invalid due to white space.")
+    filename = enforce_non_empty_str_without_ws(os.path.basename(path))
+    dirname = enforce_non_empty_str_without_ws(os.path.dirname(path))
 
     dot_idx = filename.rfind(".")
     if (dot_idx <= 0) or (dot_idx >= (len(filename) - 1)):
         raise ValueError(f"File path '{path}' is invalid due to last dot "
                          f"index {dot_idx} in file name '{filename}'.")
-    prefix = filename[:dot_idx]
-    if (len(prefix) <= 0) or (prefix.strip() != prefix):
-        raise ValueError(f"File path '{path}' is invalid due to "
-                         f"invalid prefix component '{prefix}' of"
-                         f"file name '{filename}'.")
-    suffix = filename[dot_idx + 1:]
-    if (len(suffix) <= 0) or (suffix.strip() != suffix):
-        raise ValueError(
-            f"File path '{path}' is invalid due to invalid suffix component "
-            f"'{suffix}' in file name '{filename}'.")
+    prefix = enforce_non_empty_str_without_ws(filename[:dot_idx])
+    suffix = enforce_non_empty_str_without_ws(filename[dot_idx + 1:])
     return dirname, prefix, suffix
 
 
@@ -347,16 +328,8 @@ def file_path_merge(prefix: str, suffix: str,
     if dirname is not None:
         if not isinstance(dirname, str):
             raise TypeError(f"Dirname must be str but is {type(dirname)}.")
-        if (len(dirname) <= 0) or (dirname != dirname.strip()):
-            raise ValueError(f"Invalid dirname '{dirname}'.")
-    if not isinstance(prefix, str):
-        raise TypeError(f"Prefix must be str but is {type(prefix)}.")
-    if (len(prefix) <= 0) or (prefix != prefix.strip()):
-        raise ValueError(f"Invalid prefix '{prefix}'.")
-    if not isinstance(suffix, str):
-        raise TypeError(f"Suffix must be str but is {type(suffix)}.")
-    if (len(suffix) <= 0) or (suffix != suffix.strip()):
-        raise ValueError(f"Invalid suffix '{suffix}'.")
-
+        enforce_non_empty_str_without_ws(dirname)
+    enforce_non_empty_str_without_ws(prefix)
+    enforce_non_empty_str_without_ws(suffix)
     rv = f"{prefix}.{suffix}"
     return rv if dirname is None else os.path.join(dirname, rv)

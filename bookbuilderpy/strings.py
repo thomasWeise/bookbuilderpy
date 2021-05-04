@@ -1,4 +1,5 @@
 """Some utility methods for string processing."""
+import string
 from typing import Iterable
 
 
@@ -32,3 +33,38 @@ def lines_to_str(lines: Iterable[str]) -> str:
     if not isinstance(lines, Iterable):
         raise TypeError(f"lines must be str, but is {type(lines)}.")
     return "\n".join(lines)
+
+
+def enforce_non_empty_str(text: str) -> str:
+    """
+    Enforce that a text is a non-empty string.
+
+    :param str text: the text
+    :returns: the text
+    :rtype: str
+    :raises TypeError: if `text` is not a `str`
+    :raises ValueError: if `text` is empty
+    """
+    if not isinstance(text, str):
+        raise TypeError(f"str expected, but got {type(text)}.")
+    if len(text) <= 0:
+        raise ValueError(f"Non-empty str expected, but got '{text}'.")
+    return text
+
+
+def enforce_non_empty_str_without_ws(text: str) -> str:
+    """
+    Enforce that a text is a non-empty string without white space.
+
+    :param str text: the text
+    :returns: the text
+    :rtype: str
+    :raises TypeError: if `text` is not a `str`
+    :raises ValueError: if `text` is empty or contains any white space
+        characters
+    """
+    text = enforce_non_empty_str(text)
+    if any(c in text for c in string.whitespace):
+        raise ValueError(
+            f"No white space allowed in string, but got '{text}'.")
+    return text
