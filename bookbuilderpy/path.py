@@ -1,8 +1,10 @@
 """The base class with the information of a build."""
 
+import gzip
 import io
 import os.path
-from typing import cast, Optional, List, Iterable
+import shutil
+from typing import cast, Optional, List, Iterable, Final
 
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws
 
@@ -37,11 +39,35 @@ def _canonicalize_path(path: str) -> str:
     return path
 
 
+def _copy_pure(path_in: str, path_out: str):
+    """
+    The internal method to copy a file.
+
+    :param str path_in: the path to the input file
+    :param str path_out: the path to the output file
+    """
+    shutil.copyfile(path_in, path_out)
+
+
+def _copy_un_gzip(path_in: str, path_out: str):
+    """
+    The internal method for copying a gzip-compressed file.
+
+    :param str path_in: the path to the input file
+    :param str path_out: the path to the output file
+    """
+    with gzip.open(path_in, 'rb') as f_in:
+        with open(path_out, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+
 class Path(str):
     """An immutable representation of a path."""
 
     #: the common path version of this path, if any
     __common: Optional[str]
+    #: the internal state: 0=don't know, 1=file, 2=dir
+    __state: int
 
     def __new__(cls, value):
         """
@@ -51,6 +77,7 @@ class Path(str):
         """
         ret = super(Path, cls).__new__(cls, _canonicalize_path(value))
         ret.__common = None
+        ret.__state = 0
         return ret
 
     def enforce_file(self) -> None:
@@ -59,7 +86,10 @@ class Path(str):
 
         :raises ValueError:  if `path` does not reference an existing file
         """
-        if not os.path.isfile(self):
+        if self.__state == 0:
+            if os.path.isfile(self):
+                self.__state = 1
+        if self.__state != 1:
             raise ValueError(f"Path '{self}' does not identify a file.")
 
     def enforce_dir(self) -> None:
@@ -68,7 +98,10 @@ class Path(str):
 
         :raises ValueError:  if `path` does not reference an existing directory
         """
-        if not os.path.isdir(self):
+        if self.__state == 0:
+            if os.path.isdir(self):
+                self.__state = 2
+        if self.__state != 2:
             raise ValueError(f"Path '{self}' does not identify a directory.")
 
     def contains(self, other: str) -> bool:
@@ -103,8 +136,8 @@ class Path(str):
         """
         if self.__common is None:
             self.__common = os.path.commonpath([self])
-        opath = Path.path(other)
-        joint = os.path.commonpath([self, opath])
+        opath: Final[Path] = Path.path(other)
+        joint: Final[str] = os.path.commonpath([self, opath])
         if joint == self.__common:
             raise ValueError(f"Path '{self}' contains '{opath}'.")
         if opath.__common is None:
@@ -121,10 +154,10 @@ class Path(str):
         :rtype: str
         :raises ValueError: if this path is not inside `base_path`
         """
-        opath = Path.path(base_path)
+        opath: Final[Path] = Path.path(base_path)
         opath.enforce_contains(self)
         return enforce_non_empty_str_without_ws(
-            os.path.relpath(opath, self))
+            os.path.relpath(self, opath))
 
     def resolve_inside(self, relative_path: str) -> 'Path':
         """
@@ -136,8 +169,8 @@ class Path(str):
         :raises ValueError: If the path would resolve to something outside of
             this path and/or if it is empty.
         """
-        opath = Path.path(os.path.join(self, enforce_non_empty_str_without_ws(
-            relative_path)))
+        opath: Final[Path] = Path.path(os.path.join(
+            self, enforce_non_empty_str_without_ws(relative_path)))
         self.enforce_contains(opath)
         return opath
 
@@ -150,7 +183,7 @@ class Path(str):
         :rtype: bool
         :raises: ValueError if anything goes wrong during the file creation
         """
-        existed = False
+        existed: bool = False
         try:
             os.close(os.open(self, os.O_CREAT | os.O_EXCL))
         except FileExistsError:
@@ -161,7 +194,7 @@ class Path(str):
         self.enforce_file()
         return existed
 
-    def dir_ensure_exists(self) -> None:
+    def ensure_dir_exists(self) -> None:
         """Make sure that the directory exists, create it otherwise."""
         os.makedirs(name=self, exist_ok=True)
         self.enforce_dir()
@@ -192,6 +225,41 @@ class Path(str):
             if all_text[-1] != "\n":
                 writer.write("\n")
 
+    def resolve_input_file(self,
+                           relative_path: str,
+                           lang: str = "en") -> 'Path':
+        """
+        Resolve a path to an input file relative to this path.
+
+        :param str relative_path: the relative path to resolve
+        :param str lang: the language to use
+        :return: the resolved path
+        :raises ValueError: if the path cannot be resolved to a file
+        """
+        relative_path = enforce_non_empty_str_without_ws(relative_path)
+        lang = enforce_non_empty_str_without_ws(lang)
+
+        dot: Final[int] = relative_path.rfind(".")
+        if (dot < 0) or (dot >= (len(relative_path) - 1)):
+            raise ValueError(f"'{relative_path}' does not have suffix?")
+        prefix: Final[str] = enforce_non_empty_str_without_ws(
+            relative_path[:dot])
+        suffix: Final[str] = enforce_non_empty_str_without_ws(
+            relative_path[dot + 1:])
+
+        if os.path.isfile(self):
+            base_dir = Path.path(os.path.dirname(self))
+        else:
+            base_dir = self
+
+        candidate: Path = base_dir.resolve_inside(f"{prefix}_{lang}.{suffix}")
+        if os.path.isfile(candidate):
+            candidate.__state = 1
+            return candidate
+        candidate = base_dir.resolve_inside(relative_path)
+        candidate.enforce_file()
+        return candidate
+
     @staticmethod
     def path(path: str) -> 'Path':
         """
@@ -204,3 +272,46 @@ class Path(str):
         if isinstance(path, Path):
             return cast(Path, path)
         return Path(path)
+
+    @staticmethod
+    def copy_resource(source_dir: str,
+                      input_file: str,
+                      dest_dir: str) -> 'Path':
+        """
+        Copy an input file to an distination directory.
+
+        :param str source_dir: the source directory
+        :param str input_file: the input file
+        :param str dest_dir: the destination directory
+        :return: the path
+        """
+        in_dir = Path.path(source_dir)
+        in_dir.enforce_dir()
+        in_file = Path.path(input_file)
+        in_file.enforce_file()
+        out_dir = Path.path(dest_dir)
+        out_dir.enforce_dir()
+        in_dir.enforce_neither_contains(out_dir)
+
+        rel_path = in_file.relative_to(in_dir)
+        dot: Final[int] = rel_path.rfind(".")
+        if (dot < 0) or (dot >= (len(rel_path) - 1)):
+            raise ValueError(f"'{rel_path}' does not have suffix?")
+        prefix: Final[str] = enforce_non_empty_str_without_ws(
+            rel_path[:dot])
+        suffix: Final[str] = enforce_non_empty_str_without_ws(
+            rel_path[dot + 1:])
+        if suffix == ".svgz":
+            rel_path = f"{prefix}.svg"
+            copy = _copy_un_gzip
+        else:
+            copy = _copy_pure
+
+        out_path = out_dir.resolve_inside(rel_path)
+        inner_dir = Path.path(os.path.dirname(out_path))
+        out_dir.enforce_contains(inner_dir)
+        inner_dir.ensure_dir_exists()
+
+        copy(in_file, out_path)
+        out_path.enforce_file()
+        return out_path
