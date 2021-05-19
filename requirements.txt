@@ -6,3 +6,6 @@ strip-hints >= 0.1.9
 
 # regex is needed for processing commands as regular expressions
 regex >= 2021.4.4
+
+# we need pyyaml to process the metadata formatted in yaml
+pyyaml >= 5.4.1

@@ -21,13 +21,13 @@ def test_in_out_path():
             src.enforce_contains(input_file_en)
             input_file_en.write_all(["abc", "def", "ghi"])
 
-            res = input_dir.resolve_input_file("test.txt")
+            res = input_dir.resolve_input_file("test.txt", lang="en")
             out_en = Path.copy_resource(src, res, dst)
             assert os.path.basename(out_en) == "test_en.txt"
-            assert out_en.read_all() == ["abc\n", "def\n", "ghi\n"]
+            assert out_en.read_all_list() == ["abc\n", "def\n", "ghi\n"]
 
             out_en = Path.copy_resource(
                 src, input_dir.resolve_input_file("test.txt", lang="cn"),
                 dst)
             assert os.path.basename(out_en) == "test.txt"
-            assert out_en.read_all() == ["123\n", "456\n", "789\n"]
+            assert out_en.read_all_str() == "123\n456\n789\n"

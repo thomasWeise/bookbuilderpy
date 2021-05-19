@@ -199,7 +199,7 @@ class Path(str):
         os.makedirs(name=self, exist_ok=True)
         self.enforce_dir()
 
-    def read_all(self) -> List[str]:
+    def read_all_list(self) -> List[str]:
         """
         Read all the lines in a file.
 
@@ -209,6 +209,17 @@ class Path(str):
         self.enforce_file()
         with io.open(self, "rt") as reader:
             return reader.readlines()
+
+    def read_all_str(self) -> str:
+        """
+        Read a file as a single string.
+
+        :return: the single string of text
+        :rtype: str
+        """
+        self.enforce_file()
+        with io.open(self, "rt") as reader:
+            return reader.read()
 
     def write_all(self, contents: Iterable[str]) -> None:
         """
@@ -225,37 +236,53 @@ class Path(str):
             if all_text[-1] != "\n":
                 writer.write("\n")
 
-    def resolve_input_file(self,
-                           relative_path: str,
-                           lang: str = "en") -> 'Path':
+    def as_directory(self) -> 'Path':
         """
-        Resolve a path to an input file relative to this path.
+        Return the closest directory along this path.
 
-        :param str relative_path: the relative path to resolve
-        :param str lang: the language to use
-        :return: the resolved path
-        :raises ValueError: if the path cannot be resolved to a file
+        :return: the directory: either this path if it already identifies a
+            directory, or the parent directory if this path identifies a file.
+        :rtype: Path
+        :raises ValueError: if no containing directory exists
         """
-        relative_path = enforce_non_empty_str_without_ws(relative_path)
-        lang = enforce_non_empty_str_without_ws(lang)
-
-        dot: Final[int] = relative_path.rfind(".")
-        if (dot < 0) or (dot >= (len(relative_path) - 1)):
-            raise ValueError(f"'{relative_path}' does not have suffix?")
-        prefix: Final[str] = enforce_non_empty_str_without_ws(
-            relative_path[:dot])
-        suffix: Final[str] = enforce_non_empty_str_without_ws(
-            relative_path[dot + 1:])
-
         if os.path.isfile(self):
             base_dir = Path.path(os.path.dirname(self))
         else:
             base_dir = self
+        base_dir.enforce_dir()
+        return base_dir
 
-        candidate: Path = base_dir.resolve_inside(f"{prefix}_{lang}.{suffix}")
-        if os.path.isfile(candidate):
-            candidate.__state = 1
-            return candidate
+    def resolve_input_file(self,
+                           relative_path: str,
+                           lang: Optional[str] = None) -> 'Path':
+        """
+        Resolve a path to an input file relative to this path.
+
+        :param str relative_path: the relative path to resolve
+        :param Optional[str] lang: the language to use
+        :return: the resolved path
+        :raises ValueError: if the path cannot be resolved to a file
+        """
+        relative_path = enforce_non_empty_str_without_ws(relative_path)
+        lang = None if lang is None \
+            else enforce_non_empty_str_without_ws(lang)
+
+        base_dir: Final[Path] = self.as_directory()
+        candidate: Path
+
+        if lang is not None:
+            dot: Final[int] = relative_path.rfind(".")
+            if (dot < 0) or (dot >= (len(relative_path) - 1)):
+                raise ValueError(f"'{relative_path}' does not have suffix?")
+            prefix: Final[str] = enforce_non_empty_str_without_ws(
+                relative_path[:dot])
+            suffix: Final[str] = enforce_non_empty_str_without_ws(
+                relative_path[dot + 1:])
+
+            candidate = base_dir.resolve_inside(f"{prefix}_{lang}.{suffix}")
+            if os.path.isfile(candidate):
+                candidate.__state = 1
+                return candidate
         candidate = base_dir.resolve_inside(relative_path)
         candidate.enforce_file()
         return candidate
@@ -272,6 +299,32 @@ class Path(str):
         if isinstance(path, Path):
             return cast(Path, path)
         return Path(path)
+
+    @staticmethod
+    def file(path: str) -> 'Path':
+        """
+        Get a path identifying a file.
+
+        :param str path: the path
+        :return: the file
+        :rtype: Path
+        """
+        fi: Final[Path] = Path.path(path)
+        fi.enforce_file()
+        return fi
+
+    @staticmethod
+    def directory(path: str) -> 'Path':
+        """
+        Get a path identifying a directory.
+
+        :param str path: the path
+        :return: the file
+        :rtype: Path
+        """
+        fi: Final[Path] = Path.path(path)
+        fi.enforce_dir()
+        return fi
 
     @staticmethod
     def copy_resource(source_dir: str,

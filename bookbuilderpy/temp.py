@@ -48,6 +48,8 @@ class TempDir(Path, AbstractContextManager):
 
     def __enter__(self) -> 'TempDir':
         """Nothing, just exists for `with`."""
+        if not self.__is_open:
+            raise ValueError(f"Temporary directory '{self}' already closed.")
         return self
 
     def close(self) -> None:
@@ -121,6 +123,8 @@ class TempFile(Path, AbstractContextManager):
 
     def __enter__(self) -> 'TempFile':
         """Nothing, just exists for `with`."""
+        if not self.__is_open:
+            raise ValueError(f"Temporary file '{self}' already deleted.")
         return self
 
     def close(self) -> None:

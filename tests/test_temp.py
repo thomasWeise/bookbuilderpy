@@ -1,4 +1,4 @@
-"""Test the interaction with the file system."""
+"""Test the temporary directories."""
 from io import open
 from os.path import isfile, isdir, exists, dirname, sep, basename
 
