@@ -84,7 +84,7 @@ def __create_command_re(name: str, n: int = 1,
     if strip_white_space:
         regexpr = "\\s*" + regexpr + "\\s*"
 
-    return reg.compile(regexpr, flags=reg.V1)
+    return reg.compile(regexpr, flags=reg.V1 | reg.MULTILINE)
 
 
 def __strip_group(s: str) -> str:

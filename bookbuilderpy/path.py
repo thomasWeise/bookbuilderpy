@@ -208,7 +208,13 @@ class Path(str):
         """
         self.enforce_file()
         with io.open(self, "rt") as reader:
-            return reader.readlines()
+            ret = reader.readlines()
+        if not isinstance(ret, List):
+            raise TypeError("List of strings expected, but "
+                            f"found {type(ret)} in '{self}'.")
+        if len(ret) <= 0:
+            raise ValueError(f"File '{self}' contains no text.")
+        return ret
 
     def read_all_str(self) -> str:
         """
@@ -219,7 +225,13 @@ class Path(str):
         """
         self.enforce_file()
         with io.open(self, "rt") as reader:
-            return reader.read()
+            ret = reader.read()
+        if not isinstance(ret, str):
+            raise TypeError("String expected, but "
+                            f"found {type(ret)} in '{self}'.")
+        if len(ret) <= 0:
+            raise ValueError(f"File '{self}' contains no text.")
+        return ret
 
     def write_all(self, contents: Iterable[str]) -> None:
         """

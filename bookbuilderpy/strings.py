@@ -1,4 +1,5 @@
 """Some utility methods for string processing."""
+import datetime
 import string
 from typing import Iterable
 
@@ -68,3 +69,29 @@ def enforce_non_empty_str_without_ws(text: str) -> str:
         raise ValueError(
             f"No white space allowed in string, but got '{text}'.")
     return text
+
+
+def datetime_to_date_str(date: datetime.datetime) -> str:
+    """
+    Convert a datetime object to a date string.
+
+    :param datatime.datetime date: the date
+    :return: the date string
+    :rtype: str
+    """
+    if not isinstance(date, datetime.datetime):
+        raise TypeError(f"Excepted datetime.datetime, but {type(date)}.")
+    return date.strftime("%Y\u2011%m\u2011%d")
+
+
+def datetime_to_datetime_str(date: datetime.datetime) -> str:
+    """
+    Convert a datetime object to a date-time string.
+
+    :param datatime.datetime date: the date
+    :return: the date-time string
+    :rtype: str
+    """
+    if not isinstance(date, datetime.datetime):
+        raise TypeError(f"Excepted datetime.datetime, but {type(date)}.")
+    return date.strftime("%Y\u2011%m\u2011%d\u00a0%H:%M\u00a0%Z")

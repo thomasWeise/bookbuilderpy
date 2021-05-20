@@ -1,5 +1,4 @@
 """Test the interaction with the file system."""
-import datetime
 import os.path
 
 from bookbuilderpy.build import Build
@@ -15,5 +14,4 @@ def test_in_out_path():
             f.write_all(["bla"])
 
             with Build(f, dst) as build:
-                assert build.start <= datetime.datetime.now(
-                    datetime.timezone.utc)
+                assert build.input_file is not None
