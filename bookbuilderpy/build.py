@@ -137,7 +137,7 @@ class Build(AbstractContextManager):
 
     def __load_repos_from_meta(self, meta: Dict[str, Any]) -> None:
         """
-        Load the repositories listed in the metadata-
+        Load the repositories listed in the metadata.
 
         :param Dict[str, Any] meta: the metadata
         """
