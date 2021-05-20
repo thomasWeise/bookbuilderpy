@@ -3,11 +3,12 @@ import os.path
 
 from bookbuilderpy.build import Build
 from bookbuilderpy.temp import TempDir, Path
-
+from os import environ
 
 # noinspection PyPackageRequirements
 
 def test_in_out_path():
+    lt = "GITHUB_JOB" in environ
     with TempDir.create() as src:
         with TempDir.create() as dst:
             f = Path.path(os.path.join(src, "test.md"))
@@ -18,8 +19,9 @@ def test_in_out_path():
                 "repos:",
                 "  - id: bp",
                 "    url: https://github.com/thomasWeise/bookbuilderpy.git",
-                "  - id: mp",
-                "    url: https://github.com/thomasWeise/moptipy.git",
+                "  - id: mp" if lt else "",
+                "    url: https://github.com/thomasWeise/moptipy.git"
+                if lt else "",
                 "..."])
 
             with Build(f, dst) as build:
@@ -28,5 +30,6 @@ def test_in_out_path():
                 build.build()
                 assert build.get_repo("bp").url == \
                        "https://github.com/thomasWeise/bookbuilderpy.git"
-                assert build.get_repo("mp").url == \
-                       "https://github.com/thomasWeise/moptipy.git"
+                if lt:
+                    assert build.get_repo("mp").url == \
+                           "https://github.com/thomasWeise/moptipy.git"
