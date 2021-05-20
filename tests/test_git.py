@@ -1,6 +1,6 @@
 """Test the interaction with the file system."""
 
-from bookbuilderpy.git import load_repo
+from bookbuilderpy.git import Repo
 from bookbuilderpy.temp import TempDir
 
 
@@ -9,10 +9,9 @@ from bookbuilderpy.temp import TempDir
 def test_load_git_repo():
     with TempDir.create() as dst:
         repo = "https://github.com/thomasWeise/bookbuilderpy.git"
-        ret = load_repo(repo, dst)
-        assert isinstance(ret, tuple)
-        assert len(ret) == 4
-        assert ret[0] == dst
-        assert ret[1] == repo
-        assert len(ret[2]) == 40
-        assert len(ret[3]) > 0
+        ret = Repo.load(repo, dst)
+        assert isinstance(ret, Repo)
+        assert len(ret.commit) == 40
+        assert len(ret.date_time) > 0
+        assert ret.path == dst
+        assert ret.url == repo

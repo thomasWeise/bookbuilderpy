@@ -1,7 +1,7 @@
 """The state of a build."""
 
 import datetime
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, ExitStack
 from typing import Final, Optional, Dict, Any
 
 from bookbuilderpy.logger import log
@@ -28,6 +28,8 @@ class Build(AbstractContextManager):
         #: the start time
         tz: Final[datetime.timezone] = datetime.timezone.utc
         self.__start: Final[datetime.datetime] = datetime.datetime.now(tz)
+        #: the internal exit stack
+        self.__exit: Final[ExitStack] = ExitStack()
         #: the input file path
         self.__input_file: Final[Path] = Path.file(input_file)
         #: the input directory
@@ -117,20 +119,18 @@ class Build(AbstractContextManager):
             f"to '{self.__output_dir}'.")
         return self
 
-    def close(self) -> None:
-        """Delete the temporary directory and everything in it."""
-        opn = self.__is_open
-        self.__is_open = False
-        if opn:
-            log(f"finished the build of '{self.__input_file}' "
-                f"to '{self.__output_dir}'.")
-
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """
-        Call :meth:`close`.
+        Delete the temporary directory and everything in it.
 
         :param exception_type: ignored
         :param exception_value: ignored
         :param traceback: ignored
         """
-        self.close()
+        opn = self.__is_open
+        self.__is_open = False
+        if opn:
+            log("cleaning up temporary files.")
+            self.__exit.close()
+            log(f"finished the build of '{self.__input_file}' "
+                f"to '{self.__output_dir}'.")
