@@ -4,7 +4,7 @@ import gzip
 import io
 import os.path
 import shutil
-from typing import cast, Optional, List, Iterable, Final
+from typing import cast, Optional, List, Iterable, Final, Union
 
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws
 
@@ -233,15 +233,19 @@ class Path(str):
             raise ValueError(f"File '{self}' contains no text.")
         return ret
 
-    def write_all(self, contents: Iterable[str]) -> None:
+    def write_all(self, contents: Union[str, Iterable[str]]) -> None:
         """
         Read all the lines in a file.
 
         :param Iterable[str] contents: the contents to write
         """
         self.ensure_file_exist()
+        if not isinstance(contents, (str, Iterable)):
+            raise TypeError(
+                f"Excepted str or Iterable, got {type(contents)}.")
         with io.open(self, "wt") as writer:
-            all_text = "\n".join(contents)
+            all_text = contents if isinstance(contents, str) \
+                else "\n".join(contents)
             if len(all_text) <= 0:
                 raise ValueError("Writing empty text is not permitted.")
             writer.write(all_text)

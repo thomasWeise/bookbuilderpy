@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 import yaml
 
-from bookbuilderpy._build_commands import _CMD_INPUT
+from bookbuilderpy.constants import CMD_INPUT
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
 from bookbuilderpy.strings import enforce_non_empty_str
@@ -57,7 +57,7 @@ def parse_metadata(text: str,
 def __raw_load(in_file: Path,
                in_dir: Path,
                resolve_cmd_only_once: bool = True,
-               cmd_cooked: str = f"\\{_CMD_INPUT}") -> str:
+               cmd_cooked: str = f"\\{CMD_INPUT}") -> str:
     """
     A raw version of the recursive path resolution.
 
@@ -86,7 +86,7 @@ def __raw_load(in_file: Path,
         _in_dir.enforce_contains(_in_file)
         return __raw_load(src, _in_dir, False)
 
-    cmd = create_preprocessor(name=_CMD_INPUT,
+    cmd = create_preprocessor(name=CMD_INPUT,
                               func=__side_load,
                               n=1,
                               strip_white_space=True)

@@ -2,13 +2,16 @@
 
 import datetime
 from contextlib import AbstractContextManager, ExitStack
-from typing import Final, Optional, Dict, Any
+from typing import Final, Optional, Dict, Any, Iterable
 
+import bookbuilderpy.constants as bc
+from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
 from bookbuilderpy.parse_metadata import load_initial_metadata
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import datetime_to_date_str, \
-    datetime_to_datetime_str
+    datetime_to_datetime_str, enforce_non_empty_str
+from bookbuilderpy.temp import TempDir
 
 
 class Build(AbstractContextManager):
@@ -48,6 +51,10 @@ class Build(AbstractContextManager):
         self.__metadata_raw: Optional[Dict[str, Any]] = None
         #: the language-specific metadata
         self.__metadata_lang: Optional[Dict[str, Any]] = None
+        #: the mapping of urls to repositories
+        self.__repo_urls: Dict[str, Repo] = dict()
+        #: the mapping of repo IDs to repositories
+        self.__repo_ids: Dict[str, Repo] = dict()
 
     @property
     def input_dir(self) -> Path:
@@ -91,9 +98,9 @@ class Build(AbstractContextManager):
             raise TypeError(f"key must be str, but is {type(key)}.")
         key = key.strip()
 
-        if key == "date":
+        if key == bc.META_DATE:
             return self.__start_date
-        if key == "time":
+        if key == bc.META_DATE_TIME:
             return self.__start_time
 
         if self.__metadata_lang is not None:
@@ -106,10 +113,72 @@ class Build(AbstractContextManager):
 
         raise ValueError(f"Metadata key '{key}' not found.")
 
+    def __load_repo(self, name: str, url: str) -> None:
+        """
+        Make the repository at the specified url available under the given id.
+
+        :param str name: the repository name
+        :param str url: the repository url
+        """
+        name = enforce_non_empty_str(name).strip()
+        url = enforce_non_empty_str(url).strip()
+        if name in self.__repo_ids:
+            r = self.__repo_ids[name]
+            if r.url == url:
+                return
+            del self.__repo_ids[name]
+        if url in self.__repo_urls:
+            self.__repo_ids[name] = self.__repo_urls[url]
+        dest = TempDir.create()
+        self.__exit.push(dest)
+        r = Repo.load(url, dest)
+        self.__repo_ids[name] = r
+        self.__repo_urls[r.url] = r
+
+    def __load_repos_from_meta(self, meta: Dict[str, Any]) -> None:
+        """
+        Load the repositories listed in the metadata-
+
+        :param Dict[str, Any] meta: the metadata
+        """
+        if not isinstance(meta, dict):
+            raise TypeError(f"Expected dict, got {type(meta)}.")
+        if bc.META_REPOS in meta:
+            repo_list = meta[bc.META_REPOS]
+            if not isinstance(repo_list, Iterable):
+                raise TypeError(f"{bc.META_REPOS} must be iterable, "
+                                f"but is {type(repo_list)}.")
+            for repo in repo_list:
+                if bc.META_REPO_ID not in repo:
+                    raise ValueError(
+                        f"repo {repo} must include '{bc.META_REPO_ID}'.")
+                if bc.META_REPO_URL not in repo:
+                    raise ValueError(
+                        f"repo {repo} must include '{bc.META_REPO_URL}'.")
+                self.__load_repo(repo[bc.META_REPO_ID],
+                                 repo[bc.META_REPO_URL])
+
+    def get_repo(self, name: str) -> Repo:
+        """
+        Get a repository of the given name.
+
+        :param str name: the repository name
+        :return: the repository structure
+        :rtype: Repo
+        """
+        name = enforce_non_empty_str(name).strip()
+        if not (name in self.__repo_ids):
+            raise ValueError(f"unknown repository '{name}'.")
+        r = self.__repo_ids[name]
+        if not isinstance(r, Repo):
+            raise ValueError(f"invalid repository '{name}'?")
+        return r
+
     def build(self) -> None:
         """Perform the build."""
         self.__metadata_raw = load_initial_metadata(self.__input_file,
                                                     self.__input_dir)
+        self.__load_repos_from_meta(self.__metadata_raw)
 
     def __enter__(self) -> 'Build':
         """Nothing, just exists for `with`."""
