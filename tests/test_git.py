@@ -1,8 +1,9 @@
 """Test the interaction with the file system."""
 
+from os import environ
+
 from bookbuilderpy.git import Repo
 from bookbuilderpy.temp import TempDir
-from os import  environ
 
 
 # noinspection PyPackageRequirements
