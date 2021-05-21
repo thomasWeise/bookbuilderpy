@@ -8,7 +8,7 @@ from typing import Final
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
-    enforce_non_empty_str, datetime_to_datetime_str
+    enforce_non_empty_str, datetime_to_datetime_str, enforce_url
 
 
 @dataclass(frozen=True, init=False, order=True)
@@ -41,7 +41,7 @@ class Repo:
             raise TypeError(f"Expected Path, got '{type(path)}'.")
         path.enforce_dir()
         object.__setattr__(self, "path", path)
-        object.__setattr__(self, "url", enforce_non_empty_str_without_ws(url))
+        object.__setattr__(self, "url", enforce_url(url))
         object.__setattr__(self, "commit",
                            enforce_non_empty_str_without_ws(commit))
         if len(self.commit) != 40:
@@ -67,7 +67,7 @@ class Repo:
         """
         dest: Final[Path] = Path.path(dest_dir)
         dest.ensure_dir_exists()
-        url = enforce_non_empty_str_without_ws(url)
+        url = enforce_url(url)
         s = f" repository '{url}' to directory '{dest}'"
         log(f"starting to load{s}.")
         ret = subprocess.run(["git", "-C", dest, "clone", "--depth",  # nosec
@@ -108,3 +108,21 @@ class Repo:
         date_time: Final[str] = datetime_to_datetime_str(date_raw)
 
         return Repo(dest, url, commit, date_time)
+
+    def make_url(self, relative_path: str) -> str:
+        """
+        Make a url relative to this repository.
+
+        :param str relative_path: the relative path
+        :return: the url
+        :rtype: str
+        """
+        pt: Final[Path] = self.path.resolve_inside(relative_path)
+        pt.ensure_file_exist()
+        path: Final[str] = pt.relative_to(self.path)
+
+        base_url = self.url
+        if base_url.lower().endswith(".git"):
+            base_url = enforce_non_empty_str_without_ws(base_url[:-4])
+
+        return enforce_url(f"{base_url}/blob/{self.commit}/{path}")

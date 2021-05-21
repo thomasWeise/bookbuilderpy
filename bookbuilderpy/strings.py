@@ -2,6 +2,7 @@
 import datetime
 import string
 from typing import Iterable
+from urllib.parse import urlparse
 
 
 def str_to_lines(text: str) -> Iterable[str]:
@@ -95,3 +96,23 @@ def datetime_to_datetime_str(date: datetime.datetime) -> str:
     if not isinstance(date, datetime.datetime):
         raise TypeError(f"Excepted datetime.datetime, but {type(date)}.")
     return date.strftime("%Y\u2011%m\u2011%d\u00a0%H:%M\u00a0%Z")
+
+
+def enforce_url(url: str) -> str:
+    """
+    Enforce that a string is a valid url.
+
+    :param str url: the url
+    :return: the url
+    :rtype: str
+    """
+    enforce_non_empty_str_without_ws(url)
+    for s in ["@", ".."]:
+        if s in url:
+            raise ValueError(f"Invalid url '{url}', contains '{s}'.")
+    res = urlparse(url)
+    if res.scheme not in ("ssh", "http", "https"):
+        raise ValueError(f"Invalid scheme '{res.scheme}' in url '{url}'.")
+    enforce_non_empty_str_without_ws(res.netloc)
+    enforce_non_empty_str_without_ws(res.path)
+    return res.geturl()
