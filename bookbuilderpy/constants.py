@@ -16,3 +16,9 @@ META_REPOS: Final[str] = "repos"
 META_REPO_ID: Final[str] = "id"
 #: The key for the repository url
 META_REPO_URL: Final[str] = "url"
+#: the languages
+META_LANGS: Final[str] = "langs"
+#: the language id
+META_LANG_ID: Final[str] = META_REPO_ID
+#: the language name
+META_LANG_NAME: Final[str] = "name"

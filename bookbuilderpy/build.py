@@ -2,15 +2,17 @@
 
 import datetime
 from contextlib import AbstractContextManager, ExitStack
-from typing import Final, Optional, Dict, Any, Iterable
+from typing import Final, Optional, Dict, Any, Iterable, List
 
 import bookbuilderpy.constants as bc
+from bookbuilderpy.build_result import LangResult
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
 from bookbuilderpy.parse_metadata import load_initial_metadata
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import datetime_to_date_str, \
-    datetime_to_datetime_str, enforce_non_empty_str
+    datetime_to_datetime_str, enforce_non_empty_str, \
+    enforce_non_empty_str_without_ws
 from bookbuilderpy.temp import TempDir
 
 
@@ -55,6 +57,8 @@ class Build(AbstractContextManager):
         self.__repo_urls: Dict[str, Repo] = dict()
         #: the mapping of repo IDs to repositories
         self.__repo_ids: Dict[str, Repo] = dict()
+        #: the internal collection of build results
+        self.__results: List[LangResult] = list()
 
     @property
     def input_dir(self) -> Path:
@@ -174,11 +178,67 @@ class Build(AbstractContextManager):
             raise ValueError(f"invalid repository '{name}'?")
         return r
 
+    def __build_one_lang(self,
+                         lang_id: Optional[str],
+                         lang_name: Optional[str]) -> None:
+        """
+        Perform the book build for one language.
+
+        :param Optional[str] lang_id: the language ID
+        :param Optional[str] lang_name: the language name
+        """
+        self.__metadata_lang = None
+
+        if lang_id is None:
+            log("Beginning build with no language set.")
+            base_dir = self.output_dir
+        else:
+            lang_id = enforce_non_empty_str_without_ws(lang_id)
+            log(f"Beginning build in language {lang_id}.")
+            base_dir = self.output_dir.resolve_inside(lang_id)
+            enforce_non_empty_str(lang_name)
+        base_dir.ensure_dir_exists()
+
+        if lang_id is None:
+            log("Finished build with no language set.")
+        else:
+            log(f"Finished build in language {lang_id}.")
+
+    def __build_all_langs(self) -> None:
+        """Perform all the book build steps."""
+        no_lang = True
+        if bc.META_LANGS in self.__metadata_raw:
+            langs = self.__metadata_raw[bc.META_LANGS]
+            done = set()
+            if not isinstance(langs, Iterable):
+                raise TypeError(
+                    f"{bc.META_LANGS} must be Iterable but is {type(langs)}.")
+            for lang in langs:
+                if not isinstance(lang, dict):
+                    raise TypeError(
+                        f"language item must be dict, but is {type(lang)}.")
+                lang_id = enforce_non_empty_str_without_ws(
+                    lang[bc.META_LANG_ID])
+                if lang_id in done:
+                    raise ValueError(f"Duplicate language id '{lang_id}'.")
+                done.add(lang_id)
+                lang_name = enforce_non_empty_str(enforce_non_empty_str(
+                    lang[bc.META_LANG_NAME]).strip())
+                self.__build_one_lang(lang_id, lang_name)
+                no_lang = False
+
+        if no_lang:
+            self.__build_one_lang(None, None)
+
+        # if len(self.__results) <= 0:
+        #    raise ValueError("No builds discovered!")
+
     def build(self) -> None:
         """Perform the build."""
         self.__metadata_raw = load_initial_metadata(self.__input_file,
                                                     self.__input_dir)
         self.__load_repos_from_meta(self.__metadata_raw)
+        self.__build_all_langs()
 
     def __enter__(self) -> 'Build':
         """Nothing, just exists for `with`."""
