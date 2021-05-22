@@ -107,12 +107,15 @@ def enforce_url(url: str) -> str:
     :rtype: str
     """
     enforce_non_empty_str_without_ws(url)
-    for s in ["@", ".."]:
-        if s in url:
-            raise ValueError(f"Invalid url '{url}', contains '{s}'.")
+    if ".." in url:
+        raise ValueError(f"Invalid url '{url}', contains '..'.")
     res = urlparse(url)
-    if res.scheme not in ("ssh", "http", "https"):
-        raise ValueError(f"Invalid scheme '{res.scheme}' in url '{url}'.")
+    if res.scheme != "ssh":
+        if res.scheme not in ("http", "https"):
+            raise ValueError(f"Invalid scheme '{res.scheme}' in url '{url}'.")
+        if "@" in url:
+            raise ValueError(
+                f"Non-ssh URL must not contain '@', but '{url}' does")
     enforce_non_empty_str_without_ws(res.netloc)
     enforce_non_empty_str_without_ws(res.path)
     return res.geturl()

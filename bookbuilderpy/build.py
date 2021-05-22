@@ -1,6 +1,7 @@
 """The state of a build."""
 
 import datetime
+import os
 from contextlib import AbstractContextManager, ExitStack
 from typing import Final, Optional, Dict, Any, Iterable, List
 
@@ -59,6 +60,8 @@ class Build(AbstractContextManager):
         self.__repo_ids: Dict[str, Repo] = dict()
         #: the internal collection of build results
         self.__results: List[LangResult] = list()
+        #: the own repository information
+        self.__repo: Optional[Repo] = None
 
     @property
     def input_dir(self) -> Path:
@@ -106,6 +109,17 @@ class Build(AbstractContextManager):
             return self.__start_date
         if key == bc.META_DATE_TIME:
             return self.__start_time
+        if key in (bc.META_GIT_URL, bc.META_GIT_DATE, bc.META_GIT_COMMIT):
+            if self.__repo is None:
+                raise ValueError(
+                    f"Cannot access {key} if build is not based on repo.")
+            if key == bc.META_GIT_URL:
+                return self.__repo.url
+            if key == bc.META_GIT_COMMIT:
+                return self.__repo.commit
+            if key == bc.META_GIT_DATE:
+                return self.__repo.date_time
+            raise ValueError("Huh?")
 
         if self.__metadata_lang is not None:
             if key in self.__metadata_lang:
@@ -135,7 +149,7 @@ class Build(AbstractContextManager):
             self.__repo_ids[name] = self.__repo_urls[url]
         dest = TempDir.create()
         self.__exit.push(dest)
-        r = Repo.load(url, dest)
+        r = Repo.download(url, dest)
         self.__repo_ids[name] = r
         self.__repo_urls[r.url] = r
 
@@ -204,6 +218,20 @@ class Build(AbstractContextManager):
         else:
             log(f"Finished build in language {lang_id}.")
 
+    def __load_self_repo(self) -> None:
+        """Attempt to load the self repository information."""
+        check = self.__input_dir
+        while True:
+            if check == "/":
+                return
+            if not os.access(check, os.R_OK):
+                return
+            test = Path.path(os.path.join(check, ".git"))
+            if os.path.isdir(test):
+                self.__repo = Repo.from_local(test)
+                return
+            check = Path.path(os.path.join(check, ".."))
+
     def __build_all_langs(self) -> None:
         """Perform all the book build steps."""
         no_lang = True
@@ -235,6 +263,7 @@ class Build(AbstractContextManager):
 
     def build(self) -> None:
         """Perform the build."""
+        self.__load_self_repo()
         self.__metadata_raw = load_initial_metadata(self.__input_file,
                                                     self.__input_dir)
         self.__load_repos_from_meta(self.__metadata_raw)

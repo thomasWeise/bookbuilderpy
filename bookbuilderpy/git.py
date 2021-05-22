@@ -4,6 +4,7 @@ import re
 import subprocess  # nosec
 from dataclasses import dataclass
 from typing import Final
+from typing import Optional
 
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
@@ -55,10 +56,10 @@ class Repo:
                            enforce_non_empty_str(date_time))
 
     @staticmethod
-    def load(url: str,
-             dest_dir: str) -> 'Repo':
+    def download(url: str,
+                 dest_dir: str) -> 'Repo':
         """
-        Load a git repository.
+        Download a git repository.
 
         :param url: the repository url
         :param dest_dir: the destination directory
@@ -76,8 +77,25 @@ class Repo:
         if ret.returncode != 0:
             raise ValueError(f"Error when loading{s}.")
 
-        log(f"successfully finished loading{s},"
-            f"now checking its commit information.")
+        log(f"successfully finished loading{s}.")
+
+        return Repo.from_local(path=dest, url=url)
+
+    @staticmethod
+    def from_local(path: str,
+                   url: Optional[str] = None) -> 'Repo':
+        """
+        Load all the information from an local repository.
+
+        :param path: the path to the repository
+        :param Optional[str] url: the url
+        :return: the repository information
+        :rtype: Repo
+        """
+        dest: Final[Path] = Path.path(path)
+        dest.enforce_dir()
+
+        log(f"checking commit information of repo '{dest}'.")
 
         ret = subprocess.run(["git", "-C", dest, "log",  # nosec
                               "--no-abbrev-commit"], check=True,  # nosec
@@ -85,27 +103,43 @@ class Repo:
                              timeout=120)  # nosec
         if ret.returncode != 0:
             raise ValueError(
-                f"Error when loading commit information for '{url}'.")
+                f"Error when loading commit information for '{dest}'.")
         stdout: str = enforce_non_empty_str(ret.stdout)
 
         match = re.search("^\\s*commit\\s+(.+?)\\s+", stdout,
                           flags=re.MULTILINE)
         if match is None:
             raise ValueError(
-                f"Did not find commit information in repo '{url}'.")
+                f"Did not find commit information in repo '{dest}'.")
         commit: Final[str] = enforce_non_empty_str_without_ws(match.group(1))
         match = re.search("^\\s*Date:\\s+(.+?)$", stdout, flags=re.MULTILINE)
         if match is None:
             raise ValueError(
-                f"Did not find date information in repo '{url}'.")
+                f"Did not find date information in repo '{dest}'.")
         date_str: Final[str] = enforce_non_empty_str(match.group(1))
         date_raw: Final[datetime.datetime] = datetime.datetime.strptime(
             date_str, "%a %b %d %H:%M:%S %Y %z")
         if not isinstance(date_raw, datetime.datetime):
             raise TypeError(
                 f"Expected datetime.datetime, but got {type(date_raw)} when "
-                f"parsing date string '{date_str}' of repo '{url}'.")
+                f"parsing date string '{date_str}' of repo '{dest}'.")
         date_time: Final[str] = datetime_to_datetime_str(date_raw)
+        log(f"Found commit '{commit}' and date/tim '{date_time}' "
+            f"for repo '{dest}'.")
+
+        if url is None:
+            ret = subprocess.run(["git", "-C", dest, "config",  # nosec
+                                  "--get", "remote.origin.url"],  # nosec
+                                 check=True, text=True,  # nosec
+                                 stdout=subprocess.PIPE, timeout=120)  # nosec
+            if ret.returncode != 0:
+                raise ValueError(
+                    f"Error when loading origin url information of '{dest}'.")
+            url = enforce_non_empty_str(ret.stdout)
+            url = url.strip().split("\n")[0].strip()
+            log(f"Found url '{url}' for repo '{dest}'.")
+            if url.startswith("ssh://git@github.com"):
+                url = f"https://{url[10:]}"
 
         return Repo(dest, url, commit, date_time)
 

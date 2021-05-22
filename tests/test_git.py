@@ -12,7 +12,7 @@ def test_load_git_repo():
     if "GITHUB_JOB" in environ:
         with TempDir.create() as dst:
             repo = "https://github.com/thomasWeise/bookbuilderpy.git"
-            ret = Repo.load(repo, dst)
+            ret = Repo.download(repo, dst)
             assert isinstance(ret, Repo)
             assert len(ret.commit) == 40
             assert len(ret.date_time) > 0
