@@ -1,7 +1,7 @@
 """Some utility methods for string processing."""
 import datetime
 import string
-from typing import Iterable, List
+from typing import Iterable, List, Union, Tuple
 from urllib.parse import urlparse
 
 
@@ -124,3 +124,37 @@ def enforce_url(url: str) -> str:
     enforce_non_empty_str_without_ws(res.netloc)
     enforce_non_empty_str_without_ws(res.path)
     return res.geturl()
+
+
+def get_prefix_str(str_list: Union[Tuple[str, ...], List[str]]) -> str:
+    r"""
+    Compute the common prefix string.
+
+    :param Union[Tuple[str, ...], List[str]] str_list: the list of strings
+    :return: the common prefix
+    :rtype: str
+
+    >>> get_prefix_str(["abc", "acd"])
+    'a'
+    >>> get_prefix_str(["xyz", "gsdf"])
+    ''
+    >>> get_prefix_str([])
+    ''
+    >>> get_prefix_str(["abx"])
+    'abx'
+    >>> get_prefix_str(("\\relative.path", "\\relative.figure",
+    ...     "\\relative.code"))
+    '\\relative.'
+    """
+    if len(str_list) <= 0:
+        return ''
+    prefix_str = ''
+    len_smallest_str = min([len(str_mem) for str_mem in str_list])
+    str_list_0 = str_list[0]
+    for i in range(len_smallest_str):
+        f = str_list_0[i]
+        if len([0 for ind in range(1, len(str_list))
+                if f != str_list[ind][i]]) > 0:
+            break
+        prefix_str += f
+    return prefix_str

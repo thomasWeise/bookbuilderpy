@@ -3,7 +3,36 @@
 from typing import Final
 
 #: the command for loading the input data
+#: \relative.input{path}
 CMD_INPUT: Final[str] = "relative.input"
+
+#: a relative code input to be included as a listing:
+#: \relative.code{label}{caption}{path}{lines}{labels}{args}
+#: label: the label of the listing
+#: caption: the caption of the listing
+#: path: the relative path fragment to resolve
+#: lines: the lines of the code to keep, or empty to keep all
+#: labels: the labels for selecting code pieces, or empty to keep all
+#: args: any additional arguments to pass to the code renderer
+CMD_RELATIVE_CODE: Final[str] = "relative.code"
+
+#: an absolute code input to be included as a listing:
+#: \absolute.code{label}{caption}{path}{lines}{labels}{args}
+#: label: the label of the listing
+#: caption: the caption of the listing
+#: path: the absolute path fragment to resolve
+#: lines: the lines of the code to keep, or empty to keep all
+#: labels: the labels for selecting code pieces, or empty to keep all
+#: args: any additional arguments to pass to the code renderer
+CMD_ABSOLUTE_CODE: Final[str] = "absolute.code"
+
+#: an relative figure reference
+#: \\relative.figure{label}{caption}{path}{args}
+CMD_RELATIVE_FIGURE: Final[str] = "relative.figure"
+
+#: an absolute figure reference
+#: \\absolute.figure{label}{caption}{path}{args}
+CMD_ABSOLUTE_FIGURE: Final[str] = "absolute.figure"
 
 #: the meta data id for the date
 META_DATE: Final[str] = "date"
