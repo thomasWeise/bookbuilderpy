@@ -124,7 +124,7 @@ class Repo:
                 f"Expected datetime.datetime, but got {type(date_raw)} when "
                 f"parsing date string '{date_str}' of repo '{dest}'.")
         date_time: Final[str] = datetime_to_datetime_str(date_raw)
-        log(f"Found commit '{commit}' and date/tim '{date_time}' "
+        log(f"Found commit '{commit}' and date/time '{date_time}' "
             f"for repo '{dest}'.")
 
         if url is None:
@@ -136,7 +136,8 @@ class Repo:
                 raise ValueError(
                     f"Error when loading origin url information of '{dest}'.")
             url = enforce_non_empty_str(ret.stdout)
-            url = url.strip().split("\n")[0].strip()
+            url = enforce_non_empty_str_without_ws(
+                url.strip().split("\n")[0].strip())
             log(f"Found url '{url}' for repo '{dest}'.")
             if url.startswith("ssh://git@github.com"):
                 url = f"https://{url[10:]}"

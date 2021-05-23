@@ -1,11 +1,11 @@
 """Some utility methods for string processing."""
 import datetime
 import string
-from typing import Iterable
+from typing import Iterable, List
 from urllib.parse import urlparse
 
 
-def str_to_lines(text: str) -> Iterable[str]:
+def str_to_lines(text: str) -> List[str]:
     r"""
     Convert a string to an iterable of lines.
 
@@ -31,10 +31,15 @@ def lines_to_str(lines: Iterable[str]) -> str:
 
     >>> lines_to_str(["a", "b", "", "c", ""])
     'a\nb\n\nc\n'
+    >>> lines_to_str(["a", "b", "", "c"])
+    'a\nb\n\nc\n'
     """
     if not isinstance(lines, Iterable):
         raise TypeError(f"lines must be str, but is {type(lines)}.")
-    return "\n".join(lines)
+    res = "\n".join(lines)
+    if res.endswith("\n"):
+        return res
+    return res + "\n"
 
 
 def enforce_non_empty_str(text: str) -> str:

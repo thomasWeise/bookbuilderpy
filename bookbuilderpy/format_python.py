@@ -3,12 +3,13 @@ import io
 import sys
 import token
 import tokenize
-from typing import Iterable, Tuple, Sequence, Generator
+from typing import Iterable, Tuple, Sequence, Generator, Set, Optional, \
+    List, Union
 
 import strip_hints as sh  # type: ignore
 import yapf  # type: ignore
 
-from bookbuilderpy.strings import str_to_lines
+from bookbuilderpy.strings import str_to_lines, lines_to_str
 
 
 def __no_empty_after(line: str) -> bool:
@@ -190,13 +191,13 @@ def __strip_common_whitespace_prefix(lines: Sequence[str]) -> str:
     :rtype: str
 
     >>> __strip_common_whitespace_prefix([" a", "  b"])
-    'a\n b'
+    'a\n b\n'
     >>> __strip_common_whitespace_prefix(["  a", "  b"])
-    'a\nb'
+    'a\nb\n'
     >>> __strip_common_whitespace_prefix([" a", "  b", "c"])
-    ' a\n  b\nc'
+    ' a\n  b\nc\n'
     >>> __strip_common_whitespace_prefix(["  a", "  b", "    c"])
-    'a\nb\n  c'
+    'a\nb\n  c\n'
     """
     prefix_len = sys.maxsize
     for line in lines:
@@ -209,7 +210,7 @@ def __strip_common_whitespace_prefix(lines: Sequence[str]) -> str:
                 break
     if prefix_len > 0:
         lines = [line[prefix_len:] for line in lines]
-    return "\n".join(lines)
+    return lines_to_str(lines)
 
 
 def format_python(code: Iterable[str],
@@ -238,15 +239,22 @@ def format_python(code: Iterable[str],
         raise TypeError(
             f"strip_hints must be bool, but is {type(strip_hints)}.")
 
-    old_len = sys.maxsize
-    shortest = tuple(code)
+    old_len: int = sys.maxsize
+    shortest: Tuple[str, ...] = tuple(code)
+    rcode: Union[List[str], Tuple[str, ...]] = shortest
     while True:
-        code = tuple(__strip_double_empty(lines=code))
-        text = __strip_common_whitespace_prefix(code)
-        new_len = len(text)
+        rcode = tuple(__strip_double_empty(lines=rcode))
+        if len(rcode) <= 0:
+            raise ValueError("Code becomes empty.")
+        while rcode[-1].strip() in ("", "\n"):
+            rcode = rcode[:-1]
+            if len(rcode) <= 0:
+                raise ValueError("Code becomes empty.")
+        text: str = __strip_common_whitespace_prefix(rcode)
+        new_len: int = len(text)
         if old_len <= new_len:
             break
-        shortest = code
+        shortest = rcode
         old_len = new_len
         text = __format_lines(text)
         text = __strip_docstrings_and_comments(
@@ -254,9 +262,59 @@ def format_python(code: Iterable[str],
             strip_comments=strip_comments)
         if strip_hints:
             text = __strip_hints(text)
-        code = str_to_lines(text)
+        rcode = str_to_lines(text)
 
     if (len(shortest) <= 0) or (old_len <= 0):
         raise ValueError(f"Text cannot become {shortest}.")
 
     return shortest
+
+
+def preprocess_python(code: List[str],
+                      lines: Optional[List[int]],
+                      labels: Optional[List[str]],
+                      args: Set[str]) -> str:
+    """
+    Preprocess Python code.
+
+    :param List[str] code: the code loaded from a file
+    :param Optional[List[int]] lines: the lines to keep, or None if we
+        keep all
+    :param Optional[List[str]] labels: a list of labels marking start and end
+        of code snippets to include
+    :param Set[str] args: the arguments for the code formatter
+    """
+    keep_lines: List[str]
+    if labels is None:
+        keep_lines = code
+    else:
+        keep_lines = list()
+        for label in labels:
+            label = label.strip()
+            start_label = f"# start {label}"
+            end_label = f"# end {label}"
+            inside: bool = False
+            found: bool = True
+            for cl in code:
+                cls = cl.strip()
+                if inside:
+                    if cls == end_label:
+                        inside = False
+                    else:
+                        keep_lines.append(cl)
+                        found = True
+                else:
+                    inside = (cls == start_label)
+            if not found:
+                raise ValueError(f"Did not find label {label}.")
+    if lines is not None:
+        keep_lines = [keep_lines[i] for i in lines]
+    if len(keep_lines) <= 0:
+        raise ValueError("Empty code?")
+    strip_docstrings: bool = "doc" not in args
+    strip_comments: bool = "comments" not in args
+    strip_hints: bool = "hints" not in args
+    return lines_to_str(format_python(keep_lines,
+                                      strip_docstrings=strip_docstrings,
+                                      strip_comments=strip_comments,
+                                      strip_hints=strip_hints))

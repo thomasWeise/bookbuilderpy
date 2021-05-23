@@ -71,6 +71,5 @@ def test_format_python_1():
          "@staticmethod",
          "def get_name(self):",
          "    name = super().get_name()",
-         "    return f\"hc_{name}\" if (len(name) > 0) else \"hc\"",
-         "")
+         "    return f\"hc_{name}\" if (len(name) > 0) else \"hc\"")
     assert ret == t

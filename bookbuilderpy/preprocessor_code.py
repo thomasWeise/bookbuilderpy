@@ -1,9 +1,12 @@
 """A preprocessor for loading code."""
 
-from typing import List, Optional
+from typing import List, Optional, Set, Final
 
 from bookbuilderpy.path import Path
-from bookbuilderpy.strings import enforce_non_empty_str_without_ws
+from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
+    lines_to_str
+from bookbuilderpy.format_python import preprocess_python
+from bookbuilderpy.logger import log
 
 
 def load_code(path: str,
@@ -22,6 +25,13 @@ def load_code(path: str,
     """
     src = Path.path(path)
     src.enforce_file()
+    log(f"Now loading code from '{src}'.")
+
+    suffix_idx: Final[int] = path.rfind(".")
+    if (suffix_idx <= 0) or (suffix_idx >= (len(path) - 1)):
+        raise ValueError(f"path '{path}' has no suffix?")
+    suffix: Final[str] = enforce_non_empty_str_without_ws(
+        path[suffix_idx + 1:])
 
     keep_lines: Optional[List[int]] = None
     if lines is not None:
@@ -47,23 +57,28 @@ def load_code(path: str,
             raise TypeError(
                 f"labels info needs to be str, but is {type(labels)}.")
         if len(labels) > 0:
+            keep_labels = list()
             for label in labels.split(","):
                 keep_labels.append(
                     enforce_non_empty_str_without_ws(label.strip()))
 
-    arg_list: List[str] = list()
+    arg_set: Final[Set[str]] = set()
     if args is not None:
         if not isinstance(args, str):
             raise TypeError(f"args needs to be str, but is {type(args)}.")
         if len(args) > 0:
             for arg in args.split(","):
-                arg_list.append(
+                arg_set.add(
                     enforce_non_empty_str_without_ws(arg.strip()))
 
-    # do something for now - this must be removed later
-    if (len(keep_lines) < 0) or (len(arg_list) < 0) or \
-            (len(keep_labels) < 0):
-        raise ValueError
+    text: Final[List[str]] = src.read_all_list()
+    if len(text) <= 0:
+        raise ValueError(f"File '{path}' is empty.")
 
-    text = src.read_all_list()
-    return "\n".join(text)
+    if suffix == "py":
+        return preprocess_python(text, keep_lines, keep_labels, arg_set)
+
+    if keep_lines is None:
+        return lines_to_str([t.rstrip() for t in text])
+
+    return lines_to_str([text[i].rstrip() for i in keep_lines])
