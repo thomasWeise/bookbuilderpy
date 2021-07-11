@@ -4,7 +4,7 @@ import gzip
 import io
 import os.path
 import shutil
-from typing import cast, Optional, List, Iterable, Final, Union
+from typing import cast, Optional, List, Iterable, Final, Union, Tuple
 
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws
 
@@ -287,14 +287,7 @@ class Path(str):
         candidate: Path
 
         if lang is not None:
-            dot: Final[int] = relative_path.rfind(".")
-            if (dot < 0) or (dot >= (len(relative_path) - 1)):
-                raise ValueError(f"'{relative_path}' does not have suffix?")
-            prefix: Final[str] = enforce_non_empty_str_without_ws(
-                relative_path[:dot])
-            suffix: Final[str] = enforce_non_empty_str_without_ws(
-                relative_path[dot + 1:])
-
+            prefix, suffix = Path.split_prefix_suffix(relative_path)
             candidate = base_dir.resolve_inside(f"{prefix}_{lang}.{suffix}")
             if os.path.isfile(candidate):
                 candidate.__state = 1
@@ -302,6 +295,28 @@ class Path(str):
         candidate = base_dir.resolve_inside(relative_path)
         candidate.enforce_file()
         return candidate
+
+    @staticmethod
+    def split_prefix_suffix(name: str) -> Tuple[str, str]:
+        """
+        Split the file name 'name' into a prefix and a suffix.
+
+        :param str name: the file name
+        :return: a tuple of [prefix, suffix]
+        :rtype: Tuple[str, str]
+        """
+        dot: Final[int] = name.rfind(".")
+        if (dot < 0) or (dot >= (len(name) - 1)):
+            raise ValueError(f"'{name}' does not have suffix?")
+        prefix: Final[str] = enforce_non_empty_str_without_ws(
+            name[:dot])
+        if prefix.strip() != prefix:
+            raise ValueError(f"Prefix '{prefix}' contains white space?")
+        suffix: Final[str] = enforce_non_empty_str_without_ws(
+            name[dot + 1:])
+        if suffix.strip() != suffix:
+            raise ValueError(f"Suffix '{suffix}' contains white space?")
+        return prefix, suffix
 
     @staticmethod
     def path(path: str) -> 'Path':

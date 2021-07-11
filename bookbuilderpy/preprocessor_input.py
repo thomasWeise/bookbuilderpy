@@ -15,20 +15,19 @@ __REL_PREFIX: Final[str] = "\\" + get_prefix_str([bc.CMD_RELATIVE_CODE,
 
 def load_input(input_file: str,
                input_dir: str,
-               lang: Optional[str]) -> str:
+               lang_id: Optional[str]) -> str:
     """
     Recursively load an input file.
 
     :param str input_file: the input file
     :param str input_dir: the base directory
-    :param Optional[str] lang: the language to use
+    :param Optional[str] lang_id: the language to use
     :return: the fully-resolved input
     :rtype: str
     """
-    in_file = Path.path(input_file)
-    in_dir = Path.path(input_dir)
+    in_file = Path.file(input_file)
+    in_dir = Path.directory(input_dir)
     in_dir.enforce_contains(in_file)
-    in_file.enforce_file()
 
     text = in_file.read_all_str()
 
@@ -37,7 +36,7 @@ def load_input(input_file: str,
 
     def __relative_input(_in_file: str,
                          _in_dir: Path = in_dir,
-                         _lang: Optional[str] = lang) -> str:
+                         _lang: Optional[str] = lang_id) -> str:
         return load_input(_in_dir.resolve_input_file(
             _in_file, _lang), _in_dir, _lang)
 
@@ -53,7 +52,7 @@ def load_input(input_file: str,
                         _labels: str,
                         _args: str,
                         _in_dir: Path = in_dir,
-                        _lang: Optional[str] = lang) -> str:
+                        _lang: Optional[str] = lang_id) -> str:
         f = _in_dir.resolve_input_file(_in_file, _lang)
         return f"\\{bc.CMD_ABSOLUTE_CODE}{{{_label}}}{{{_caption}}}" \
                f"{{{f}}}{{{_lines}}}{{{_labels}}}{{{_args}}}"
@@ -68,7 +67,7 @@ def load_input(input_file: str,
                           _in_file: str,
                           _args: str,
                           _in_dir: Path = in_dir,
-                          _lang: Optional[str] = lang) -> str:
+                          _lang: Optional[str] = lang_id) -> str:
         f = _in_dir.resolve_input_file(_in_file, _lang)
         return f"\\{bc.CMD_ABSOLUTE_FIGURE}{{{_label}}}{{{_caption}}}" \
                f"{{{f}}}{{{_args}}}"
