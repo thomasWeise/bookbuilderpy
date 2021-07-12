@@ -3,7 +3,7 @@ import io
 import re
 from typing import Dict, Any
 
-import yaml
+import yaml  # type: ignore
 
 from bookbuilderpy.constants import CMD_INPUT
 from bookbuilderpy.path import Path

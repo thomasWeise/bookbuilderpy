@@ -59,7 +59,7 @@ class Build(AbstractContextManager):
         #: the mapping of repo IDs to repositories
         self.__repo_ids: Dict[str, Repo] = dict()
         #: the internal collection of build results
-        self.__results: List[LangResult] = list()
+        self.__results: List[LangResult] = list()  # pylint: disable=W0238
         #: the own repository information
         self.__repo: Optional[Repo] = None
 
