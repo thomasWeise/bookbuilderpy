@@ -308,15 +308,8 @@ class Path(str):
         dot: Final[int] = name.rfind(".")
         if (dot < 0) or (dot >= (len(name) - 1)):
             raise ValueError(f"'{name}' does not have suffix?")
-        prefix: Final[str] = enforce_non_empty_str_without_ws(
-            name[:dot])
-        if prefix.strip() != prefix:
-            raise ValueError(f"Prefix '{prefix}' contains white space?")
-        suffix: Final[str] = enforce_non_empty_str_without_ws(
-            name[dot + 1:])
-        if suffix.strip() != suffix:
-            raise ValueError(f"Suffix '{suffix}' contains white space?")
-        return prefix, suffix
+        return enforce_non_empty_str_without_ws(name[:dot]), \
+            enforce_non_empty_str_without_ws(name[dot + 1:])
 
     @staticmethod
     def path(path: str) -> 'Path':

@@ -3,14 +3,17 @@
 import datetime
 import os
 from contextlib import AbstractContextManager, ExitStack
+from os.path import basename
 from typing import Final, Optional, Dict, Any, Iterable, List
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import LangResult
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
-from bookbuilderpy.parse_metadata import load_initial_metadata
+from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
 from bookbuilderpy.path import Path
+from bookbuilderpy.preprocessor import preprocess
+from bookbuilderpy.preprocessor_input import load_input
 from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
     enforce_non_empty_str_without_ws
@@ -50,6 +53,8 @@ class Build(AbstractContextManager):
         self.__start_date: Final[str] = datetime_to_date_str(self.__start)
         #: the start date and time
         self.__start_time: Final[str] = datetime_to_datetime_str(self.__start)
+        #: the start year
+        self.__start_year: Final[str] = self.__start.strftime("%Y")
         #: the raw metadata
         self.__metadata_raw: Optional[Dict[str, Any]] = None
         #: the language-specific metadata
@@ -109,6 +114,8 @@ class Build(AbstractContextManager):
             return self.__start_date
         if key == bc.META_DATE_TIME:
             return self.__start_time
+        if key == bc.META_YEAR:
+            return self.__start_year
         if key in (bc.META_GIT_URL, bc.META_GIT_DATE, bc.META_GIT_COMMIT):
             if self.__repo is None:
                 raise ValueError(
@@ -203,6 +210,7 @@ class Build(AbstractContextManager):
         """
         self.__metadata_lang = None
 
+        # Start up and define the output directory.
         if lang_id is None:
             log("Beginning build with no language set.")
             base_dir = self.output_dir
@@ -213,6 +221,38 @@ class Build(AbstractContextManager):
             enforce_non_empty_str(lang_name)
         base_dir.ensure_dir_exists()
 
+        # First obtain the full language-specific input text.
+        text = enforce_non_empty_str(
+            load_input(self.__input_file, self.__input_dir, lang_id).strip())
+        # Then we extract the meta-data.
+        self.__metadata_lang = parse_metadata(text)
+
+        # Then load the repositories from the meta data.
+        self.__load_repos_from_meta(self.__metadata_lang)
+
+        with TempDir.create() as temp:
+            log(f"Building in temp directory '{temp}': "
+                "First applying preprocessor.")
+
+            text = enforce_non_empty_str(preprocess(
+                text=text, input_dir=self.input_dir,
+                get_meta=self.get_meta, get_repo=self.get_repo,
+                repo=self.__repo, output_dir=temp))
+
+            prefix, suffix = Path.split_prefix_suffix(
+                basename(self.__input_file))
+            if lang_id is not None:
+                end = "_" + lang_id
+                if not prefix.endswith(end):
+                    prefix = prefix + end
+            file = temp.resolve_inside(f"{prefix}.{suffix}")
+            log("Finished applying preprocessor, "
+                f"now storing to file '{file}'.")
+            file.write_all(text)
+            del prefix, suffix, text
+
+        # Finalize the build.
+        self.__metadata_lang = None
         if lang_id is None:
             log("Finished build with no language set.")
         else:

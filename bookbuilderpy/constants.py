@@ -1,6 +1,6 @@
 """The basic preprocessor command strings."""
 
-from typing import Final
+from typing import Final, Optional
 
 #: the command for loading the input data
 #: \relative.input{path}
@@ -26,7 +26,18 @@ CMD_RELATIVE_CODE: Final[str] = "relative.code"
 #: args: any additional arguments to pass to the code renderer
 CMD_ABSOLUTE_CODE: Final[str] = "absolute.code"
 
-#: an relative figure reference
+#: a git code include:
+#: \git.code{repo}{label}{caption}{path}{lines}{labels}{args}
+#: repo: the repository ID to use
+#: label: the label of the listing
+#: caption: the caption of the listing
+#: path: the relative path fragment to resolve
+#: lines: the lines of the code to keep, or empty to keep all
+#: labels: the labels for selecting code pieces, or empty to keep all
+#: args: any additional arguments to pass to the code renderer
+CMD_GIT_CODE: Final[str] = "git.code"
+
+#: a relative figure reference
 #: \\relative.figure{label}{caption}{path}{args}
 CMD_RELATIVE_FIGURE: Final[str] = "relative.figure"
 
@@ -34,16 +45,22 @@ CMD_RELATIVE_FIGURE: Final[str] = "relative.figure"
 #: \\absolute.figure{label}{caption}{path}{args}
 CMD_ABSOLUTE_FIGURE: Final[str] = "absolute.figure"
 
-#: the meta data id for the date
+#: the meta data id for the current date
 META_DATE: Final[str] = "date"
-#: the meta data id for the date and time
+#: the meta data id for the current date and time
 META_DATE_TIME: Final[str] = "time"
+#: the meta data id for the current year
+META_YEAR: Final[str] = "year"
 #: the meta-information about the commit
 META_GIT_COMMIT: Final[str] = "gitcommit"
 #: the url to the git repository
 META_GIT_URL: Final[str] = "giturl"
 #: the git commit date and time
 META_GIT_DATE: Final[str] = "gitdate"
+
+#: obtain a meta data element
+#: \\meta{id}
+CMD_GET_META: Final[str] = "meta"
 
 #: The key for the repository list
 META_REPOS: Final[str] = "repos"
@@ -57,3 +74,9 @@ META_LANGS: Final[str] = "langs"
 META_LANG_ID: Final[str] = META_REPO_ID
 #: the language name
 META_LANG_NAME: Final[str] = "name"
+
+#: the Python programming language
+LANG_PYTHON: Final[str] = "python"
+
+#: the undefined programming language
+LANG_UNDEFINED: Optional[str] = None

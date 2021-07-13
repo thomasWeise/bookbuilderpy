@@ -1,12 +1,30 @@
 """A preprocessor for loading code."""
 
+from os.path import basename
 from typing import List, Optional, Set, Final
 
+import bookbuilderpy.constants as bc
+from bookbuilderpy.format_python import preprocess_python
+from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
     lines_to_str
-from bookbuilderpy.format_python import preprocess_python
-from bookbuilderpy.logger import log
+
+
+def get_programming_language(path: str) -> Optional[str]:
+    """
+    Get the programming language corresponding to a path.
+
+    :param str path: the path to the source file
+    :return: a string identifying the programming language, or None if none
+        detected.
+    :rtype: Optional[str]
+    """
+    _, suffix = Path.split_prefix_suffix(basename(Path.path(path)))
+    suffix = suffix.lower()
+    if suffix == "py":
+        return bc.LANG_PYTHON
+    return bc.LANG_UNDEFINED
 
 
 def load_code(path: str,
@@ -23,15 +41,8 @@ def load_code(path: str,
     :return: the code
     :rtype: str
     """
-    src = Path.path(path)
-    src.enforce_file()
+    src = Path.file(path)
     log(f"Now loading code from '{src}'.")
-
-    suffix_idx: Final[int] = path.rfind(".")
-    if (suffix_idx <= 0) or (suffix_idx >= (len(path) - 1)):
-        raise ValueError(f"path '{path}' has no suffix?")
-    suffix: Final[str] = enforce_non_empty_str_without_ws(
-        path[suffix_idx + 1:])
 
     keep_lines: Optional[List[int]] = None
     if lines is not None:
@@ -75,7 +86,7 @@ def load_code(path: str,
     if len(text) <= 0:
         raise ValueError(f"File '{path}' is empty.")
 
-    if suffix == "py":
+    if get_programming_language(path) == bc.LANG_PYTHON:
         return preprocess_python(text, keep_lines, keep_labels, arg_set)
 
     if keep_lines is None:
