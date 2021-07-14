@@ -1,4 +1,4 @@
-"""Test the interaction with the file system."""
+"""Test the interaction with the build system."""
 import os.path
 from os import environ
 
