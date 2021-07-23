@@ -1,12 +1,32 @@
 """Test the interaction with the build system with random data."""
 import os
 import os.path
-from typing import Final, Tuple, List, Optional
+import pathlib
+import random
+import shutil
+import struct
+import zlib
+from tempfile import mkstemp
+from typing import Final, Tuple, List, Optional, cast, Set
 
+import bookbuilderpy.constants as bc
+from bookbuilderpy.git import Repo
 from bookbuilderpy.temp import Path
+from bookbuilderpy.temp import TempDir
 
-#: The moptipy repository
-MOPTIPY_REPO: Final[str] = "mp"
+# the list of repositories to use for testing
+REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
+    ("bb", "https://github.com/thomasWeise/bookbuilderpy.git"),
+    ("mp", "https://github.com/thomasWeise/moptipy.git"))
+
+# the list of languages
+LANG_LIST: Final[Tuple[Tuple[str, str], ...]] = (
+    ("en", "English"),
+    ("de", "Deutsch"),
+    ("zh", "Chinese"))
+
+# the meta data file name
+META_NAME: Final[str] = "metadata.yaml"
 
 
 def create_metadata(dest: Path) -> Path:
@@ -17,31 +37,30 @@ def create_metadata(dest: Path) -> Path:
     :return: the path to the metadata file
     :rtype: Path
     """
-    f: Final[Path] = dest.resolve_inside("metadata.yaml")
-    txt = [
-        "---",
-        "repos:",
-        f"  - id: {MOPTIPY_REPO}",
-        "    url: https://github.com/thomasWeise/moptipy.git",
-        "langs:",
-        "  - id: en",
-        "    name: English",
-        "  - id: de",
-        "    name: Deutsch (German)",
-        "..."]
+    f: Final[Path] = dest.resolve_inside(META_NAME)
+    txt: List[str] = ["---", "repos:"]
+    for repo in REPO_LIST:
+        txt.append(f"  - id: {repo[0]}")
+        txt.append(f"    url: {repo[1]}")
+    txt.append("langs:")
+    for lang in LANG_LIST:
+        txt.append(f"  - id: {lang[0]}")
+        txt.append(f"    name: {lang[1]}")
+    txt.append("...")
     f.write_all(txt)
     f.enforce_file()
     dest.enforce_contains(f)
     return f
 
 
-def find_local_files() -> Tuple[Path, ...]:
+def find_local_files() -> Tuple[str, ...]:
     """
     Find proper files that can be used as external references.
     :return: the list of paths
     :rtype: Tuple[Path, ...]
     """
     tests = Path.file(__file__)
+
     package: Final[Path] = Path.directory(os.path.dirname(os.path.dirname(
         tests))).resolve_inside("bookbuilderpy")
     package.enforce_dir()
@@ -55,18 +74,296 @@ def find_local_files() -> Tuple[Path, ...]:
     return tuple(result)
 
 
+def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
+    """
+    Find files in a repo.
+    :return: the list of paths
+    :rtype: Tuple[Path, ...]
+    """
+    with TempDir.create() as td:
+        r: Final[Repo] = Repo.download(repo[1], td)
+        res = list(pathlib.Path(r.path).rglob("*.py"))
+        if len(res) <= 0:
+            raise ValueError(f"Repo {repo} is empty.")
+        return tuple([Path.file(str(f)).relative_to(r.path) for f in res])
+
+
 #: The possible code files to include
-POSSIBLE_FILES: Tuple[Tuple[Optional[str], Tuple[str, ...]], ...] = (
-    (None, find_local_files()),
-    (MOPTIPY_REPO, (
-        "moptipy/algorithms/ea1p1.py",
-        "moptipy/algorithms/hillclimber.py"
-        "moptipy/algorithms/random_sampling.py"
-        "moptipy/algorithms/random_walk.py"
-        "moptipy/algorithms/single_random_sample.py"
+def get_possible_files() -> Tuple[Tuple[Optional[str], Tuple[str, ...]], ...]:
+    res = cast(Tuple[Tuple[Optional[str], Tuple[str, ...]], ...], tuple(
+        f for g in
+        [[tuple([None, find_local_files()])],
+         [tuple([r[0], find_repo_files(r)]) for r in REPO_LIST]] for f in g
     ))
-)
+    assert isinstance(res, tuple)
+    assert len(res) == (len(REPO_LIST) + 1)
+
+    for i in range(len(res)):
+        f = res[i]
+        assert len(f) == 2
+        if i > 0:
+            assert isinstance(f[0], str)
+        else:
+            assert f[0] is None
+        assert isinstance(f[1], tuple)
+        assert len(f[1]) > 0
+        for k in f[1]:
+            assert isinstance(k, str)
+            assert len(k) > 0
+    return res
 
 
-def test_build():
-    assert len(POSSIBLE_FILES) > 0
+def make_gray_png(data) -> bytes:
+    """
+    Make a gray coded png file.
+
+    :param data: the pixel data
+    :return: the png data
+    :rtype: bytes
+    """
+
+    def i1(value):
+        return struct.pack("!B", value & (2 ** 8 - 1))
+
+    def i4(value):
+        return struct.pack("!I", value & (2 ** 32 - 1))
+
+    # compute width&height from data if not explicit
+    height = len(data)  # rows
+    width = len(data[0])
+    # generate these chunks depending on image type
+    makeIHDR = True
+    makeIDAT = True
+    makeIEND = True
+    png = b"\x89" + "PNG\r\n\x1A\n".encode('ascii')
+    if makeIHDR:
+        colortype = 0  # true gray image (no palette)
+        bitdepth = 8  # with one byte per pixel (0..255)
+        compression = 0  # zlib (no choice here)
+        filtertype = 0  # adaptive (each scanline seperately)
+        interlaced = 0  # no
+        IHDR = i4(width) + i4(height) + i1(bitdepth)
+        IHDR += i1(colortype) + i1(compression)
+        IHDR += i1(filtertype) + i1(interlaced)
+        block = "IHDR".encode('ascii') + IHDR
+        png += i4(len(IHDR)) + block + i4(zlib.crc32(block))
+    if makeIDAT:
+        raw = b""
+        for y in range(height):
+            raw += b"\0"  # no filter for this scanline
+            for x in range(width):
+                c = b"\0"  # default black pixel
+                if y < len(data) and x < len(data[y]):
+                    c = i1(data[y][x])
+                raw += c
+        compressor = zlib.compressobj()
+        compressed = compressor.compress(raw)
+        compressed += compressor.flush()  # !!
+        block = "IDAT".encode('ascii') + compressed
+        png += i4(len(compressed)) + block + i4(zlib.crc32(block))
+    if makeIEND:
+        block = "IEND".encode('ascii')
+        png += i4(0) + block + i4(zlib.crc32(block))
+    return png
+
+
+def create_random_png(destdir: Path,
+                      name: Optional[str],
+                      lang: Optional[str]) -> str:
+    """
+    Create a random png image
+    :param destdir: the destrination directory
+    :param name: the optional name
+    :param lang: the language
+    :return: the path to the image
+    :rtype: Path
+    """
+    destdir.enforce_dir()
+    suffix = ".png"
+    if (lang is not None) and (random.uniform(0, 1) >= 0.5):
+        suffix = f"_{lang}{suffix}"
+    if name is None:
+        (handle, spath) = mkstemp(suffix=suffix, prefix="t", dir=destdir)
+        os.close(handle)
+        path = Path.path(spath)
+    else:
+        path = destdir.resolve_inside(f"{name}{suffix}")
+    if not os.path.isfile(path):
+        h = int(random.uniform(0, 100)) + 1
+        w = int(random.uniform(0, 100)) + 1
+        d = list()
+        for i in range(h):
+            lll = list()
+            d.append(lll)
+            for j in range(w):
+                lll.append(int(random.uniform(0, 256)))
+        with open(path, "wb") as f:
+            f.write(make_gray_png(d))
+    path.enforce_file()
+    return path.relative_to(destdir)
+
+
+def make_name(names: Set[str]) -> str:
+    """
+    Make a random name.
+    :param names:  the set of names
+    :return: the name
+    :rtype: str
+    """
+    name = ""
+    choices = [[ord("0"), 10],
+               [ord("A"), 26],
+               [ord("a"), 26]]
+    while (len(name) <= 2) or (name in names) or \
+            (random.uniform(0, 1) <= 0.6):
+        choice = choices[int(random.uniform(0 if (len(name) > 0) else 1,
+                                            len(choices)))]
+        name += chr(choice[0] + int(random.uniform(0, choice[1])))
+    names.add(name)
+    return name
+
+
+def make_structure() -> Tuple[str, Tuple, Tuple[str]]:
+    """
+    Create a structure for a hierarchical document.
+
+    :return: A tuple of the document name, the list of sub-documents, and a
+        tuple of picture names
+    :rtype: the tuple
+    """
+
+    def __make_structure(names: Set,
+                         maxdepth: int) -> Tuple[str, Tuple, Tuple[str]]:
+        root = make_name(names)
+        sub = list()
+        pics = list()
+        while (maxdepth > 0) and (random.uniform(0, 1) > 0.4):
+            sub.append(__make_structure(names, maxdepth - 1))
+        while random.uniform(0, 1) > 0.5:
+            pics.append(make_name(names))
+        return root, tuple(sub), tuple(pics)
+
+    return __make_structure({META_NAME}, 10)
+
+
+def make_text(text, dotlinebreaks: bool = True,
+              max_sentences: int = 1000) -> None:
+    """
+    Make a random text.
+    :param text: the text destination
+    :param dotlinebreaks: add line break after dot?
+    :param max_sentences: the maximum number of sentences
+    """
+    sentences = 0
+    uc = ord("A")
+    lc = ord("a")
+    while (sentences < max_sentences) and \
+            ((sentences < 2) or (random.uniform(0, 1) > 0.2)):
+        words = 0
+        while (words < 3) or (random.uniform(0, 1) > 0.2):
+            letters = 0
+            if (words > 0) or ((sentences > 0) and (not dotlinebreaks)):
+                text.write(" ")
+            while (letters < 3) or (random.uniform(0, 1) > 0.3):
+                base = uc if ((words <= 0) and (letters <= 0)) else lc
+                letters += 1
+                text.write(chr(base + int(random.uniform(0, 26))))
+            words += 1
+        sentences = sentences + 1
+        text.write(".")
+        if dotlinebreaks:
+            text.write("\n")
+
+
+def generate_example_lang(struc: Tuple[str, Tuple, Tuple[str]],
+                          lang: str, dest: Path,
+                          repos: Tuple[Tuple[Optional[str], Tuple[str, ...]], ...],
+                          is_root: bool = False,
+                          meta: Optional[Path] = None) -> Path:
+    """
+    Generate an example for a given language
+    :param struc: the strucure
+    :param lang: the language
+    :param repos: the repos
+    :param dest: the destination directory
+    :param is_root: is this root?
+    :param meta: the metadata path
+    :return: the path to the root file
+    :rtype: Path
+    """
+    file = dest.resolve_inside(f"{struc[0]}_{lang}.md")
+    with open(file, mode="wt") as fd:
+        if is_root:
+            dest.enforce_contains(meta)
+            fd.write(f"\\{bc.CMD_INPUT}{{{meta.relative_to(dest)}}}\n\n")
+        make_text(fd, True)
+        done = list()
+        done.extend(struc[1])
+        done.extend(struc[2])
+        done.extend([True for _ in range(int(random.uniform(1, 1.5 * len(done))))])
+        random.shuffle(done)
+        for sub in done:
+            if isinstance(sub, tuple):
+                d = dest.resolve_inside(sub[0])
+                d.ensure_dir_exists()
+                generate_example_lang(sub, lang, d, repos, False, None)
+                make_text(fd, True)
+                fd.write(f"\n\n\\{bc.CMD_INPUT}{{{dest.resolve_inside(file)}}}\n\n")
+                make_text(fd, True)
+            elif isinstance(sub, bool):
+                repo = repos[int(random.uniform(0, len(repos)))]
+                repofile = repo[1][int(random.uniform(0, len(repo[1])))]
+                if repo[0] is None:
+                    (handle, spath) = mkstemp(suffix=".py", prefix="t", dir=dest)
+                    spath = Path.file(spath)
+                    os.close(handle)
+                    shutil.copyfile(Path.file(repofile), spath)
+                    spath = spath.relative_to(dest)
+                    fd.write(f"\n\n\\{bc.CMD_RELATIVE_CODE}{{{spath}}}{{")
+                    make_text(fd, False, 1)
+                    fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
+                else:
+                    spath = repo[1][int(random.uniform(0, len(repo[1])))]
+                    fd.write(f"\n\n\\{bc.CMD_GIT_CODE}{{{repo[0]}}}{{{spath}}}{{")
+                    make_text(fd, False, 1)
+                    fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
+            else:
+                assert isinstance(sub, str)
+                path = create_random_png(dest, sub, lang)
+                fd.write(f"\n\n\\{bc.CMD_RELATIVE_FIGURE}{sub}{{")
+                make_text(fd, False, 1)
+                fd.write(f"}}{{{path}}}{{width=50%}}\n\n")
+    return file
+
+
+def generate_example(dest: Path) -> Tuple[Tuple[str, Path], ...]:
+    """
+    Generate an example directory strucure
+    :param dest: the destination directory
+    :return: the tuple of all paths for the given languages
+    """
+    dest.enforce_dir()
+    meta = create_metadata(dest)
+    struc = make_structure()
+    repos = get_possible_files()
+    files = list()
+    for lang in LANG_LIST:
+        files.append((lang[0],
+                      generate_example_lang(struc,
+                                            lang[0],
+                                            dest,
+                                            repos,
+                                            True,
+                                            meta),))
+    return tuple(files)
+
+
+def test_generate_examples():
+    """
+    Test the generation of an example folder strucure.
+    """
+    dd = Path.path("/tmp/test")
+    dd.ensure_dir_exists()
+    # with TempDir.create() as dd:
+    rlist = generate_example(dd)
+    assert len(rlist) > 0

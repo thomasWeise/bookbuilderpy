@@ -305,11 +305,14 @@ class Path(str):
         :return: a tuple of [prefix, suffix]
         :rtype: Tuple[str, str]
         """
-        dot: Final[int] = name.rfind(".")
-        if (dot < 0) or (dot >= (len(name) - 1)):
-            raise ValueError(f"'{name}' does not have suffix?")
-        return enforce_non_empty_str_without_ws(name[:dot]), \
-            enforce_non_empty_str_without_ws(name[dot + 1:])
+        # dot: Final[int] = name.rfind(".")
+        # if (dot < 0) or (dot >= (len(name) - 1)):
+        #     raise ValueError(f"'{name}' does not have suffix?")
+        # return enforce_non_empty_str_without_ws(name[:dot]), \
+        #     enforce_non_empty_str_without_ws(name[dot + 1:])
+        root, ext = os.path.splitext(name)
+        return enforce_non_empty_str_without_ws(root), \
+               enforce_non_empty_str_without_ws(ext)
 
     @staticmethod
     def path(path: str) -> 'Path':
