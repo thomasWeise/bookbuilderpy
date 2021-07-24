@@ -301,7 +301,8 @@ def generate_example_lang(
         done = list()
         done.extend(struc[1])
         done.extend(struc[2])
-        done.extend([True for _ in range(int(random.uniform(1, 1.5 * len(done))))])
+        done.extend([True for _ in range(int(
+            random.uniform(1, 1.5 * len(done))))])
         random.shuffle(done)
         for sub in done:
             if isinstance(sub, tuple):
@@ -309,13 +310,15 @@ def generate_example_lang(
                 d.ensure_dir_exists()
                 generate_example_lang(sub, lang, d, repos, False, None)
                 make_text(fd, True)
-                fd.write(f"\n\n\\{bc.CMD_INPUT}{{{dest.resolve_inside(file)}}}\n\n")
+                fd.write(f"\n\n\\{bc.CMD_INPUT}"
+                         f"{{{dest.resolve_inside(file)}}}\n\n")
                 make_text(fd, True)
             elif isinstance(sub, bool):
                 repo = repos[int(random.uniform(0, len(repos)))]
                 repofile = repo[1][int(random.uniform(0, len(repo[1])))]
                 if repo[0] is None:
-                    (handle, spath) = mkstemp(suffix=".py", prefix="t", dir=dest)
+                    (handle, spath) = mkstemp(suffix=".py",
+                                              prefix="t", dir=dest)
                     spath = Path.file(spath)
                     os.close(handle)
                     shutil.copyfile(Path.file(repofile), spath)
@@ -325,7 +328,8 @@ def generate_example_lang(
                     fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
                 else:
                     spath = repo[1][int(random.uniform(0, len(repo[1])))]
-                    fd.write(f"\n\n\\{bc.CMD_GIT_CODE}{{{repo[0]}}}{{{spath}}}{{")
+                    fd.write(f"\n\n\\{bc.CMD_GIT_CODE}"
+                             f"{{{repo[0]}}}{{{spath}}}{{")
                     make_text(fd, False, 1)
                     fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
             else:
