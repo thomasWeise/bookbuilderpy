@@ -65,9 +65,9 @@ class Path(str):
     """An immutable representation of a path."""
 
     #: the common path version of this path, if any
-    __common: Optional[str]
+    __common: Optional[str]  # pylint: disable=W0238
     #: the internal state: 0=don't know, 1=file, 2=dir
-    __state: int
+    __state: int  # pylint: disable=W0238
 
     def __new__(cls, value):
         """
