@@ -305,14 +305,11 @@ class Path(str):
         :return: a tuple of [prefix, suffix]
         :rtype: Tuple[str, str]
         """
-        # dot: Final[int] = name.rfind(".")
-        # if (dot < 0) or (dot >= (len(name) - 1)):
-        #     raise ValueError(f"'{name}' does not have suffix?")
-        # return enforce_non_empty_str_without_ws(name[:dot]), \
-        #     enforce_non_empty_str_without_ws(name[dot + 1:])
-        root, ext = os.path.splitext(name)
-        return enforce_non_empty_str_without_ws(root), \
-               enforce_non_empty_str_without_ws(ext)
+        dot: Final[int] = name.rfind(".")
+        if (dot < 0) or (dot >= (len(name) - 1)):
+            raise ValueError(f"'{name}' does not have suffix?")
+        return enforce_non_empty_str_without_ws(name[:dot]),\
+            enforce_non_empty_str_without_ws(name[dot + 1:])
 
     @staticmethod
     def path(path: str) -> 'Path':
@@ -358,7 +355,7 @@ class Path(str):
                       input_file: str,
                       dest_dir: str) -> 'Path':
         """
-        Copy an input file to an distination directory.
+        Copy an input file to an destination directory.
 
         :param str source_dir: the source directory
         :param str input_file: the input file

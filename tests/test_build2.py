@@ -275,11 +275,12 @@ def make_text(text, dotlinebreaks: bool = True,
             text.write("\n")
 
 
-def generate_example_lang(struc: Tuple[str, Tuple, Tuple[str]],
-                          lang: str, dest: Path,
-                          repos: Tuple[Tuple[Optional[str], Tuple[str, ...]], ...],
-                          is_root: bool = False,
-                          meta: Optional[Path] = None) -> Path:
+def generate_example_lang(
+        struc: Tuple[str, Tuple, Tuple[str]],
+        lang: str, dest: Path,
+        repos: Tuple[Tuple[Optional[str], Tuple[str, ...]], ...],
+        is_root: bool = False,
+        meta: Optional[Path] = None) -> Path:
     """
     Generate an example for a given language
     :param struc: the strucure
