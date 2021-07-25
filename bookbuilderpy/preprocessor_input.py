@@ -1,6 +1,7 @@
 """A preprocessor that loads one root file and resolves are relative inputs."""
 
 from typing import Optional, Final
+from os.path import dirname
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.path import Path
@@ -37,8 +38,9 @@ def load_input(input_file: str,
     def __relative_input(_in_file: str,
                          _in_dir: Path = in_dir,
                          _lang: Optional[str] = lang_id) -> str:
-        return load_input(_in_dir.resolve_input_file(
-            _in_file, _lang), _in_dir, _lang)
+        the_file = _in_dir.resolve_input_file(_in_file, _lang)
+        the_dir = Path.directory(dirname(the_file))
+        return load_input(the_file, the_dir, _lang)
 
     rel_input = create_preprocessor(name=bc.CMD_INPUT,
                                     func=__relative_input,

@@ -28,7 +28,7 @@ class TempDir(Path, AbstractContextManager):
         """
         ret = super(TempDir, cls).__new__(cls, value)
         ret.enforce_dir()
-        ret.__is_open = True  # pylint: disable=W0238
+        ret.__is_open = True
         return ret
 
     @staticmethod
@@ -84,7 +84,7 @@ class TempFile(Path, AbstractContextManager):
         """
         ret = super(TempFile, cls).__new__(cls, value)
         ret.enforce_file()
-        ret.__is_open = True  # pylint: disable=W0238
+        ret.__is_open = True
         return ret
 
     @staticmethod

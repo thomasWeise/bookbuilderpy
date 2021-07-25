@@ -65,9 +65,9 @@ class Path(str):
     """An immutable representation of a path."""
 
     #: the common path version of this path, if any
-    __common: Optional[str]  # pylint: disable=W0238
+    __common: Optional[str]
     #: the internal state: 0=don't know, 1=file, 2=dir
-    __state: int  # pylint: disable=W0238
+    __state: int
 
     def __new__(cls, value):
         """
@@ -76,8 +76,8 @@ class Path(str):
         :param value: the string value
         """
         ret = super(Path, cls).__new__(cls, _canonicalize_path(value))
-        ret.__common = None  # pylint: disable=W0238
-        ret.__state = 0  # pylint: disable=W0238
+        ret.__common = None
+        ret.__state = 0
         return ret
 
     def enforce_file(self) -> None:
@@ -290,7 +290,7 @@ class Path(str):
             prefix, suffix = Path.split_prefix_suffix(relative_path)
             candidate = base_dir.resolve_inside(f"{prefix}_{lang}.{suffix}")
             if os.path.isfile(candidate):
-                candidate.__state = 1  # pylint: disable=W0238
+                candidate.__state = 1
                 return candidate
         candidate = base_dir.resolve_inside(relative_path)
         candidate.enforce_file()
