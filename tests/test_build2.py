@@ -13,20 +13,24 @@ import bookbuilderpy.constants as bc
 from bookbuilderpy.git import Repo
 from bookbuilderpy.temp import Path
 from bookbuilderpy.temp import TempDir
+from bookbuilderpy.build import Build
 
-# the list of repositories to use for testing
+#: the list of repositories to use for testing
 REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
     ("bb", "https://github.com/thomasWeise/bookbuilderpy.git"),
     ("mp", "https://github.com/thomasWeise/moptipy.git"))
 
-# the list of languages
+#: the list of languages
 LANG_LIST: Final[Tuple[Tuple[str, str], ...]] = (
     ("en", "English"),
     ("de", "Deutsch"),
     ("zh", "Chinese"))
 
-# the meta data file name
+#: the meta data file name
 META_NAME: Final[str] = "metadata.yaml"
+
+#: the root name
+ROOT_NAME: Final[str] = "book.md"
 
 
 def create_metadata(dest: Path) -> Path:
@@ -243,7 +247,7 @@ def make_structure() -> Tuple[str, Tuple, Tuple[str]]:
             pics.append(make_name(names))
         return root, tuple(sub), tuple(pics)
 
-    return __make_structure({META_NAME}, 10)
+    return __make_structure({META_NAME, ROOT_NAME}, 10)
 
 
 def make_text(text, dotlinebreaks: bool = True,
@@ -278,25 +282,18 @@ def make_text(text, dotlinebreaks: bool = True,
 def generate_example_lang(
         struc: Tuple[str, Tuple, Tuple[str]],
         lang: str, dest: Path,
-        repos: Tuple[Tuple[Optional[str], Tuple[str, ...]], ...],
-        is_root: bool = False,
-        meta: Optional[Path] = None) -> Path:
+        repos: Tuple[Tuple[Optional[str], Tuple[str, ...]], ...]) -> Path:
     """
     Generate an example for a given language
     :param struc: the strucure
     :param lang: the language
     :param repos: the repos
     :param dest: the destination directory
-    :param is_root: is this root?
-    :param meta: the metadata path
     :return: the path to the root file
     :rtype: Path
     """
     file = dest.resolve_inside(f"{struc[0]}_{lang}.md")
     with open(file, mode="wt") as fd:
-        if is_root:
-            dest.enforce_contains(meta)
-            fd.write(f"\\{bc.CMD_INPUT}{{{meta.relative_to(dest)}}}\n\n")
         make_text(fd, True)
         done = list()
         done.extend(struc[1])
@@ -308,7 +305,7 @@ def generate_example_lang(
             if isinstance(sub, tuple):
                 d = dest.resolve_inside(sub[0])
                 d.ensure_dir_exists()
-                generate_example_lang(sub, lang, d, repos, False, None)
+                generate_example_lang(sub, lang, d, repos)
                 make_text(fd, True)
                 fd.write(f"\n\n\\{bc.CMD_INPUT}"
                          f"{{{dest.resolve_inside(file)}}}\n\n")
@@ -341,34 +338,34 @@ def generate_example_lang(
     return file
 
 
-def generate_example(dest: Path) -> Tuple[Tuple[str, Path], ...]:
+def generate_example(dest: Path) -> Path:
     """
     Generate an example directory strucure
     :param dest: the destination directory
-    :return: the tuple of all paths for the given languages
+    :return: the path to the root file
     """
     dest.enforce_dir()
-    meta = create_metadata(dest)
+    meta: Final[Path] = create_metadata(dest)
+
     struc = make_structure()
+
+    root: Final[Path] = dest.resolve_inside(ROOT_NAME)
+    with open(root, mode="wt") as fd:
+        fd.write(f"\\{bc.CMD_INPUT}{{{META_NAME}}}\n")
+        fd.write(f"\\{bc.CMD_INPUT}{{{ROOT_NAME}}}\n")
+
     repos = get_possible_files()
-    files = list()
     for lang in LANG_LIST:
-        files.append((lang[0],
-                      generate_example_lang(struc,
-                                            lang[0],
-                                            dest,
-                                            repos,
-                                            True,
-                                            meta),))
-    return tuple(files)
+        generate_example_lang(struc, lang[0], dest, repos)
+    return root
 
 
 def test_generate_examples():
     """
     Test the generation of an example folder strucure.
     """
-    dd = Path.path("/tmp/test")
-    dd.ensure_dir_exists()
-    # with TempDir.create() as dd:
-    rlist = generate_example(dd)
-    assert len(rlist) > 0
+    with TempDir.create() as source:
+        root = generate_example(source)
+        with TempDir.create() as dest:
+            build: Final[Build] = Build(root, dest)
+            build.build()

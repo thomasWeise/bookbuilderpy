@@ -284,7 +284,7 @@ class Build(AbstractContextManager):
             for lang in langs:
                 if not isinstance(lang, dict):
                     raise TypeError(
-                        f"language item must be dict, but is {type(lang)}.")
+                        f"Language item must be dict, but is {type(lang)}.")
                 lang_id = enforce_non_empty_str_without_ws(
                     lang[bc.META_LANG_ID])
                 if lang_id in done:
