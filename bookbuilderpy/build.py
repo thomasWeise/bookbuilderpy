@@ -224,6 +224,7 @@ class Build(AbstractContextManager):
         # First obtain the full language-specific input text.
         text = enforce_non_empty_str(
             load_input(self.__input_file, self.__input_dir, lang_id).strip())
+
         # Then we extract the meta-data.
         self.__metadata_lang = parse_metadata(text)
 

@@ -42,7 +42,7 @@ def load_input(input_file: str,
 
     rel_input = create_preprocessor(name=bc.CMD_INPUT,
                                     func=__relative_input,
-                                    n=2,
+                                    n=1,
                                     strip_white_space=True)
 
     def __relative_code(_label: str,

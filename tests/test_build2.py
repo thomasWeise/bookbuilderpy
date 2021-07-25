@@ -305,12 +305,14 @@ def generate_example_lang(
             if isinstance(sub, tuple):
                 d = dest.resolve_inside(sub[0])
                 d.ensure_dir_exists()
-                generate_example_lang(sub, lang, d, repos)
+                ff = generate_example_lang(sub, lang, d, repos)
+                ff.enforce_file()
                 make_text(fd, True)
                 fd.write(f"\n\n\\{bc.CMD_INPUT}"
-                         f"{{{dest.resolve_inside(file)}}}\n\n")
+                         f"{{{sub[0]}/{sub[0]}}}\n\n")
                 make_text(fd, True)
             elif isinstance(sub, bool):
+                make_text(fd, True)
                 repo = repos[int(random.uniform(0, len(repos)))]
                 repofile = repo[1][int(random.uniform(0, len(repo[1])))]
                 if repo[0] is None:
@@ -329,12 +331,15 @@ def generate_example_lang(
                              f"{{{repo[0]}}}{{{spath}}}{{")
                     make_text(fd, False, 1)
                     fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
+                make_text(fd, True)
             else:
                 assert isinstance(sub, str)
+                make_text(fd, True)
                 path = create_random_png(dest, sub, lang)
-                fd.write(f"\n\n\\{bc.CMD_RELATIVE_FIGURE}{sub}{{")
+                fd.write(f"\n\n\\{bc.CMD_RELATIVE_FIGURE}{{{sub}}}{{")
                 make_text(fd, False, 1)
                 fd.write(f"}}{{{path}}}{{width=50%}}\n\n")
+                make_text(fd, True)
     return file
 
 
