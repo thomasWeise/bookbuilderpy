@@ -98,6 +98,6 @@ def preprocess(text: str,
 
     text = (create_preprocessor(name=bc.CMD_GIT_CODE,
                                 func=__make_git_code,
-                                n=6, strip_white_space=True))(text)
+                                n=7, strip_white_space=True))(text)
 
     return text

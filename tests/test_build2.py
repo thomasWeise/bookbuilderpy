@@ -331,16 +331,18 @@ def generate_example_lang(
                     (handle, spath) = mkstemp(suffix=".py",
                                               prefix="t", dir=dest)
                     spath = Path.file(spath)
+                    label = spath.replace("/", "_").replace(".", "_")
                     os.close(handle)
                     shutil.copyfile(Path.file(repofile), spath)
                     spath = spath.relative_to(dest)
-                    fd.write(f"\n\n\\{bc.CMD_RELATIVE_CODE}{{{spath}}}{{")
+                    fd.write(f"\n\n\\{bc.CMD_RELATIVE_CODE}{{{label}}}{{")
                     make_text(fd, False, 1)
                     fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
                 else:
                     spath = repo[1][int(random.uniform(0, len(repo[1])))]
+                    label = spath.replace("/", "_").replace(".", "_")
                     fd.write(f"\n\n\\{bc.CMD_GIT_CODE}"
-                             f"{{{repo[0]}}}{{{spath}}}{{")
+                             f"{{{repo[0]}}}{{{label}}}{{")
                     make_text(fd, False, 1)
                     fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
                 make_text(fd, True)
