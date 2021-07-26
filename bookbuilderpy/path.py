@@ -297,18 +297,22 @@ class Path(str):
         return candidate
 
     @staticmethod
-    def split_prefix_suffix(name: str) -> Tuple[str, str]:
+    def split_prefix_suffix(name: str,
+                            enforce_suffix: bool = True) -> Tuple[str, str]:
         """
         Split the file name 'name' into a prefix and a suffix.
 
         :param str name: the file name
+        :param bool enforce_suffix: crash if no suffix?
         :return: a tuple of [prefix, suffix]
         :rtype: Tuple[str, str]
         """
         dot: Final[int] = name.rfind(".")
         if (dot < 0) or (dot >= (len(name) - 1)):
-            raise ValueError(f"'{name}' does not have suffix?")
-        return enforce_non_empty_str_without_ws(name[:dot]),\
+            if enforce_suffix:
+                raise ValueError(f"'{name}' does not have suffix?")
+            return enforce_non_empty_str_without_ws(name), ""
+        return enforce_non_empty_str_without_ws(name[:dot]), \
             enforce_non_empty_str_without_ws(name[dot + 1:])
 
     @staticmethod
@@ -351,6 +355,39 @@ class Path(str):
         return fi
 
     @staticmethod
+    def copy_file(source: str,
+                  dest: str) -> 'Path':
+        """
+        Copy one file to another one, doing gz-unzipping if necessary.
+
+        This method copies a source file to a destination file.
+        If the source file has suffix "svgz" and the destination file has
+        suffix "svg" OR if the source file has suffix "gz" and the destination
+        file has not, then we will unzip the source file to the destination
+        file.
+        Otherwise, a normal copy is performed.
+
+        :param str source: the source file
+        :param str dest: the destination file
+        :return: the fully-qualified destination path
+        :rtype: Path
+        """
+        source_file = Path.file(source)
+        dest_file = Path.path(dest)
+        if source_file == dest_file:
+            raise ValueError(f"Cannot copy file '{dest_file}' into itself.")
+        _, ssuffix = Path.split_prefix_suffix(source_file, False)
+        _, dsuffix = Path.split_prefix_suffix(dest_file, False)
+        if ((ssuffix == "svgz") and (dsuffix == "svg")) or \
+                ((ssuffix == "gz") and (dsuffix != "gz")):
+            copy = _copy_un_gzip
+        else:
+            copy = _copy_pure
+        copy(source_file, dest_file)
+        dest_file.enforce_file()
+        return dest_file
+
+    @staticmethod
     def copy_resource(source_dir: str,
                       input_file: str,
                       dest_dir: str) -> 'Path':
@@ -371,24 +408,12 @@ class Path(str):
         in_dir.enforce_neither_contains(out_dir)
 
         rel_path = in_file.relative_to(in_dir)
-        dot: Final[int] = rel_path.rfind(".")
-        if (dot < 0) or (dot >= (len(rel_path) - 1)):
-            raise ValueError(f"'{rel_path}' does not have suffix?")
-        prefix: Final[str] = enforce_non_empty_str_without_ws(
-            rel_path[:dot])
-        suffix: Final[str] = enforce_non_empty_str_without_ws(
-            rel_path[dot + 1:])
-        if suffix == ".svgz":
+        prefix, suffix = Path.split_prefix_suffix(rel_path)
+        if suffix == "svgz":
             rel_path = f"{prefix}.svg"
-            copy = _copy_un_gzip
-        else:
-            copy = _copy_pure
 
         out_path = out_dir.resolve_inside(rel_path)
         inner_dir = Path.path(os.path.dirname(out_path))
         out_dir.enforce_contains(inner_dir)
         inner_dir.ensure_dir_exists()
-
-        copy(in_file, out_path)
-        out_path.enforce_file()
-        return out_path
+        return Path.copy_file(in_file, out_path)

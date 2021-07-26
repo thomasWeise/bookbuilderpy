@@ -9,3 +9,6 @@ regex >= 2021.4.4
 
 # we need pyyaml to process the metadata formatted in yaml
 pyyaml >= 5.4.1
+
+# urllib3 is needed to generate the resources
+urllib3 >= 1.26.2

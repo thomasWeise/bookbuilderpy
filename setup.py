@@ -14,6 +14,7 @@ setup(
     version=version["__version__"],
     license='GPL 3.0',
     packages=find_packages(include=['bookbuilderpy', 'bookbuilderpy.*']),
+    package_data={"bookbuilderpy.resources": ["*.*"]},
     long_description="\n".join([line.strip() for line in
                                 open("README.md", "rt").readlines()]),
     long_description_content_type="text/markdown",

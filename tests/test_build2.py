@@ -34,18 +34,18 @@ ROOT_NAME: Final[str] = "book.md"
 
 
 def create_metadata(dest: Path,
-                    withGit: bool) -> Path:
+                    with_git: bool) -> Path:
     """
     Create the metadata of the build.
 
     :param Path dest: the directory
-    :param bool withGit: should github repositories be used?
+    :param bool with_git: should github repositories be used?
     :return: the path to the metadata file
     :rtype: Path
     """
     f: Final[Path] = dest.resolve_inside(META_NAME)
     txt: List[str] = ["---"]
-    if withGit:
+    if with_git:
         txt.append("repos:")
         for repo in REPO_LIST:
             txt.append(f"  - id: {repo[0]}")
@@ -97,13 +97,13 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
 
 
 #: The possible code files to include
-def get_possible_code_files(withGit: bool) -> \
+def get_possible_code_files(with_git: bool) -> \
         Tuple[Tuple[Optional[str], Tuple[str, ...]], ...]:
     """
     Find the possible code files.
-    :param bool withGit: should github repositories be used?
+    :param bool with_git: should github repositories be used?
     """
-    if withGit:
+    if with_git:
         res = cast(Tuple[Tuple[Optional[str], Tuple[str, ...]], ...], tuple(
             f for g in
             [[tuple([None, find_local_files()])],
@@ -358,15 +358,15 @@ def generate_example_lang(
 
 
 def generate_example(dest: Path,
-                     withGit: bool) -> Path:
+                     with_git: bool) -> Path:
     """
     Generate an example directory strucure
     :param dest: the destination directory
-    :param bool withGit: should git repos be used?
+    :param bool with_git: should git repos be used?
     :return: the path to the root file
     """
     dest.enforce_dir()
-    meta: Final[Path] = create_metadata(dest, withGit=withGit)
+    meta: Final[Path] = create_metadata(dest, with_git=with_git)
     assert os.path.basename(meta) == META_NAME
 
     struc = make_structure()
@@ -376,7 +376,7 @@ def generate_example(dest: Path,
         fd.write(f"\\{bc.CMD_INPUT}{{{META_NAME}}}\n")
         fd.write(f"\\{bc.CMD_INPUT}{{{struc[0]}.md}}\n")
 
-    repos = get_possible_code_files(withGit=withGit)
+    repos = get_possible_code_files(with_git=with_git)
     for lang in LANG_LIST:
         generate_example_lang(struc, lang[0], dest, repos)
     return root
@@ -388,7 +388,7 @@ def test_generate_examples():
     """
     with TempDir.create() as source:
         root = generate_example(source,
-                                withGit=("GITHUB_JOB" in os.environ))
+                                with_git=("GITHUB_JOB" in os.environ))
         with TempDir.create() as dest:
             build: Final[Build] = Build(root, dest)
             build.build()
