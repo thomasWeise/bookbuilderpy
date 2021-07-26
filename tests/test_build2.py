@@ -74,7 +74,7 @@ def find_local_files() -> Tuple[str, ...]:
     package.enforce_dir()
     result: List[Path] = list()
     for file in os.listdir(package):
-        if file.endswith(".py") and ("_" not in file) and ("/" in file):
+        if file.endswith(".py") and ("_" not in file):
             full = os.path.join(package, file)
             if os.path.isfile(full):
                 result.append(Path.file(full))
