@@ -10,10 +10,10 @@ from tempfile import mkstemp
 from typing import Final, Tuple, List, Optional, cast, Set
 
 import bookbuilderpy.constants as bc
+from bookbuilderpy.build import Build
 from bookbuilderpy.git import Repo
 from bookbuilderpy.temp import Path
 from bookbuilderpy.temp import TempDir
-from bookbuilderpy.build import Build
 
 #: the list of repositories to use for testing
 REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
@@ -74,7 +74,7 @@ def find_local_files() -> Tuple[str, ...]:
     package.enforce_dir()
     result: List[Path] = list()
     for file in os.listdir(package):
-        if file.endswith(".py") and not file.startswith("_"):
+        if file.endswith(".py") and ("_" not in file):
             full = os.path.join(package, file)
             if os.path.isfile(full):
                 result.append(Path.file(full))
@@ -93,7 +93,11 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
         res = list(pathlib.Path(r.path).rglob("*.py"))
         if len(res) <= 0:
             raise ValueError(f"Repo {repo} is empty.")
-        return tuple([Path.file(str(f)).relative_to(r.path) for f in res])
+        res: List[str] = list()
+        for f in [Path.file(str(f)).relative_to(r.path) for f in res]:
+            if "_" not in f:
+                res.append(f)
+        return tuple(res)
 
 
 #: The possible code files to include
