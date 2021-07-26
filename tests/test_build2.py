@@ -74,7 +74,7 @@ def find_local_files() -> Tuple[str, ...]:
     package.enforce_dir()
     result: List[Path] = list()
     for file in os.listdir(package):
-        if file.endswith(".py") and ("_" not in file):
+        if file.endswith(".py") and ("_" not in file) and ("/" in file):
             full = os.path.join(package, file)
             if os.path.isfile(full):
                 result.append(Path.file(full))
@@ -95,7 +95,7 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
             raise ValueError(f"Repo {repo} is empty.")
         result: List[str] = list()
         for f in [Path.file(str(f)).relative_to(r.path) for f in res]:
-            if "_" not in f:
+            if ("_" not in f) and ("/" in f):
                 result.append(f)
         assert len(result) > 0
         return tuple(result)
