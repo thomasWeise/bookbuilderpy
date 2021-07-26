@@ -93,11 +93,12 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
         res = list(pathlib.Path(r.path).rglob("*.py"))
         if len(res) <= 0:
             raise ValueError(f"Repo {repo} is empty.")
-        res: List[str] = list()
+        result: List[str] = list()
         for f in [Path.file(str(f)).relative_to(r.path) for f in res]:
             if "_" not in f:
-                res.append(f)
-        return tuple(res)
+                result.append(f)
+        assert len(result) > 0
+        return tuple(result)
 
 
 #: The possible code files to include
