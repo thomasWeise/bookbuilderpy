@@ -15,6 +15,7 @@ from bookbuilderpy.git import Repo
 from bookbuilderpy.pandoc import has_pandoc
 from bookbuilderpy.temp import Path
 from bookbuilderpy.temp import TempDir
+from bookbuilderpy.strings import enforce_non_empty_str
 
 #: the list of repositories to use for testing
 REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
@@ -154,22 +155,22 @@ def make_gray_png(data) -> bytes:
     height = len(data)  # rows
     width = len(data[0])
     # generate these chunks depending on image type
-    makeIHDR = True
-    makeIDAT = True
-    makeIEND = True
+    make_ihdr = True
+    make_idat = True
+    make_iend = True
     png = b"\x89" + "PNG\r\n\x1A\n".encode('ascii')
-    if makeIHDR:
+    if make_ihdr:
         colortype = 0  # true gray image (no palette)
         bitdepth = 8  # with one byte per pixel (0..255)
         compression = 0  # zlib (no choice here)
         filtertype = 0  # adaptive (each scanline seperately)
         interlaced = 0  # no
-        IHDR = i4(width) + i4(height) + i1(bitdepth)
-        IHDR += i1(colortype) + i1(compression)
-        IHDR += i1(filtertype) + i1(interlaced)
-        block = "IHDR".encode('ascii') + IHDR
-        png += i4(len(IHDR)) + block + i4(zlib.crc32(block))
-    if makeIDAT:
+        ihdr = i4(width) + i4(height) + i1(bitdepth)
+        ihdr += i1(colortype) + i1(compression)
+        ihdr += i1(filtertype) + i1(interlaced)
+        block = "IHDR".encode('ascii') + ihdr
+        png += i4(len(ihdr)) + block + i4(zlib.crc32(block))
+    if make_idat:
         raw = b""
         for y in range(height):
             raw += b"\0"  # no filter for this scanline
@@ -183,7 +184,7 @@ def make_gray_png(data) -> bytes:
         compressed += compressor.flush()  # !!
         block = "IDAT".encode('ascii') + compressed
         png += i4(len(compressed)) + block + i4(zlib.crc32(block))
-    if makeIEND:
+    if make_iend:
         block = "IEND".encode('ascii')
         png += i4(0) + block + i4(zlib.crc32(block))
     return png
@@ -393,6 +394,14 @@ def __no_pandoc_build(input_file: Path,
                       lang_id: Optional[str],
                       lang_name: Optional[str]) -> None:
     """A dummy method with no purpose."""
+    input_file.enforce_file()
+    output_dir.enforce_dir()
+    if lang_id is not None:
+        enforce_non_empty_str(lang_id)
+        enforce_non_empty_str(lang_name)
+    else:
+        if lang_name is not None:
+            raise ValueError("lang_name must be None.")
     return None
 
 
