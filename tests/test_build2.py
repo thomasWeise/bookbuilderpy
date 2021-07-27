@@ -12,8 +12,6 @@ from typing import Final, Tuple, List, Optional, cast, Set
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build import Build
 from bookbuilderpy.git import Repo
-from bookbuilderpy.pandoc import has_pandoc
-from bookbuilderpy.strings import enforce_non_empty_str
 from bookbuilderpy.temp import Path
 from bookbuilderpy.temp import TempDir
 
@@ -387,7 +385,6 @@ def generate_example(dest: Path,
     for lang in LANG_LIST:
         generate_example_lang(struc, lang[0], dest, repos)
     return root
-
 
 
 def test_build_examples():
