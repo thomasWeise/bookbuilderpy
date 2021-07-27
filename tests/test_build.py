@@ -36,7 +36,7 @@ def test_in_out_path():
 
             f.write_all(txt)
 
-            with Build(f, dst) as build:
+            with Build(f, dst, False) as build:
                 assert build.input_file is not None
 
                 build.build()
