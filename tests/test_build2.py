@@ -406,5 +406,5 @@ def test_generate_examples():
         with TempDir.create() as dest:
             build: Final[Build] = Build(root, dest)
             if not has_pandoc():
-                build._Build__pandoc_build = __no_pandoc_build
+                setattr(build, "_Build__pandoc_build", __no_pandoc_build)
             build.build()
