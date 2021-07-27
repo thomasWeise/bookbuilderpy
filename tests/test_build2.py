@@ -13,9 +13,9 @@ import bookbuilderpy.constants as bc
 from bookbuilderpy.build import Build
 from bookbuilderpy.git import Repo
 from bookbuilderpy.pandoc import has_pandoc
+from bookbuilderpy.strings import enforce_non_empty_str
 from bookbuilderpy.temp import Path
 from bookbuilderpy.temp import TempDir
-from bookbuilderpy.strings import enforce_non_empty_str
 
 #: the list of repositories to use for testing
 REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
@@ -389,23 +389,27 @@ def generate_example(dest: Path,
     return root
 
 
-def __no_pandoc_build(input_file: Path,
-                      output_dir: Path,
-                      lang_id: Optional[str],
-                      lang_name: Optional[str]) -> None:
-    """A dummy method with no purpose."""
-    input_file.enforce_file()
-    output_dir.enforce_dir()
-    if lang_id is not None:
-        enforce_non_empty_str(lang_id)
-        enforce_non_empty_str(lang_name)
-    else:
-        if lang_name is not None:
-            raise ValueError("lang_name must be None.")
-    return None
+class XBuild(Build):
+    """The non-pandoc build."""
+
+    def _Build__pandoc_build(self,
+                             input_file: Path,
+                             output_dir: Path,
+                             lang_id: Optional[str],
+                             lang_name: Optional[str]) -> None:
+        """A dummy method with no purpose."""
+        input_file.enforce_file()
+        output_dir.enforce_dir()
+        if lang_id is not None:
+            enforce_non_empty_str(lang_id)
+            enforce_non_empty_str(lang_name)
+        else:
+            if lang_name is not None:
+                raise ValueError("lang_name must be None.")
+        return None
 
 
-def test_generate_examples():
+def test_build_examples():
     """
     Test the generation of an example folder strucure.
     """
@@ -413,7 +417,6 @@ def test_generate_examples():
         root = generate_example(source,
                                 with_git=("GITHUB_JOB" in os.environ))
         with TempDir.create() as dest:
-            build: Final[Build] = Build(root, dest)
-            if not has_pandoc():
-                setattr(build, "_Build__pandoc_build", __no_pandoc_build)
+            build: Final[Build] = Build(root, dest) if has_pandoc() \
+                else XBuild(root, dest)
             build.build()
