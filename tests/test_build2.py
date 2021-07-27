@@ -389,34 +389,14 @@ def generate_example(dest: Path,
     return root
 
 
-class XBuild(Build):
-    """The non-pandoc build."""
-
-    def _Build__pandoc_build(self,
-                             input_file: Path,
-                             output_dir: Path,
-                             lang_id: Optional[str],
-                             lang_name: Optional[str]) -> None:
-        """A dummy method with no purpose."""
-        input_file.enforce_file()
-        output_dir.enforce_dir()
-        if lang_id is not None:
-            enforce_non_empty_str(lang_id)
-            enforce_non_empty_str(lang_name)
-        else:
-            if lang_name is not None:
-                raise ValueError("lang_name must be None.")
-        return None
-
 
 def test_build_examples():
     """
-    Test the generation of an example folder strucure.
+    Test the generation of an example folder structure.
     """
     with TempDir.create() as source:
         root = generate_example(source,
                                 with_git=("GITHUB_JOB" in os.environ))
         with TempDir.create() as dest:
-            build: Final[Build] = Build(root, dest) if has_pandoc() \
-                else XBuild(root, dest)
+            build: Final[Build] = Build(root, dest, False)
             build.build()

@@ -26,12 +26,14 @@ class Build(AbstractContextManager):
 
     def __init__(self,
                  input_file: str,
-                 output_dir: str):
+                 output_dir: str,
+                 fail_without_pandoc: bool = True):
         """
         Set up the build.
 
         :param str input_file: the input file
         :param str output_dir: the output dir
+        :param bool fail_without_pandoc: fail if pandoc is not available?
         """
         super().__init__()
 
@@ -68,6 +70,8 @@ class Build(AbstractContextManager):
         self.__results: List[LangResult] = list()
         #: the own repository information
         self.__repo: Optional[Repo] = None
+        #: fail if pandoc is not available?
+        self.__fail_without_pandoc: Final[bool] = fail_without_pandoc
 
     @property
     def input_dir(self) -> Path:
@@ -214,7 +218,9 @@ class Build(AbstractContextManager):
         :param Optional[str] lang_name: the language name
         """
         if not has_pandoc():
-            raise ValueError("Pandoc not installed.")
+            if self.__fail_without_pandoc:
+                raise ValueError("Pandoc not installed.")
+            return
         input_file.enforce_file()
         output_dir.enforce_dir()
 
