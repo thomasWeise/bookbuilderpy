@@ -12,6 +12,7 @@ from typing import Final, Tuple, List, Optional, cast, Set
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build import Build
 from bookbuilderpy.git import Repo
+from bookbuilderpy.pandoc import has_pandoc
 from bookbuilderpy.temp import Path
 from bookbuilderpy.temp import TempDir
 
@@ -387,6 +388,14 @@ def generate_example(dest: Path,
     return root
 
 
+def __no_pandoc_build(input_file: Path,
+                      output_dir: Path,
+                      lang_id: Optional[str],
+                      lang_name: Optional[str]) -> None:
+    """A dummy method with no purpose."""
+    return None
+
+
 def test_generate_examples():
     """
     Test the generation of an example folder strucure.
@@ -396,4 +405,6 @@ def test_generate_examples():
                                 with_git=("GITHUB_JOB" in os.environ))
         with TempDir.create() as dest:
             build: Final[Build] = Build(root, dest)
+            if not has_pandoc():
+                build.__pandoc_build = __no_pandoc_build
             build.build()

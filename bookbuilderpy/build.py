@@ -7,7 +7,7 @@ from os.path import basename
 from typing import Final, Optional, Dict, Any, Iterable, List
 
 import bookbuilderpy.constants as bc
-from bookbuilderpy.build_result import LangResult
+from bookbuilderpy.build_result import File, LangResult
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
 from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
@@ -18,6 +18,7 @@ from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
     enforce_non_empty_str_without_ws
 from bookbuilderpy.temp import TempDir
+from bookbuilderpy.pandoc import has_pandoc, pandoc
 
 
 class Build(AbstractContextManager):
@@ -199,6 +200,36 @@ class Build(AbstractContextManager):
             raise ValueError(f"invalid repository '{name}'?")
         return r
 
+    def __pandoc_build(self,
+                       input_file: Path,
+                       output_dir: Path,
+                       lang_id: Optional[str],
+                       lang_name: Optional[str]) -> None:
+        """
+        Apply pandoc and build the input file to the output dir.
+
+        :param Path input_file: the path to the input file
+        :param Path output_dir: the path to the output directory
+        :param Optional[str] lang_id: the language ID
+        :param Optional[str] lang_name: the language name
+        """
+        if not has_pandoc():
+            raise ValueError("Pandoc not installed.")
+        input_file.enforce_file()
+        output_dir.enforce_dir()
+
+        results: List[File] = list()
+
+        path, size = pandoc(input_file, output_dir.resolve_inside("book.pdf"))
+        f = File(path)
+        if f.size != size:
+            raise ValueError(f"Size mismatch ({size} vs. {f.size}) "
+                             f"for file '{path}'.")
+        results.append(f)
+
+        self.__results.append(LangResult(lang_id, lang_name, output_dir,
+                                         tuple(results)))
+
     def __build_one_lang(self,
                          lang_id: Optional[str],
                          lang_name: Optional[str]) -> None:
@@ -251,6 +282,7 @@ class Build(AbstractContextManager):
                 f"now storing to file '{file}'.")
             file.write_all(text)
             del prefix, suffix, text
+            self.__pandoc_build(file, base_dir, lang_id, lang_name)
 
         # Finalize the build.
         self.__metadata_lang = None
