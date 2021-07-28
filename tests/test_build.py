@@ -14,9 +14,9 @@ def test_in_out_path():
             f = Path.path(os.path.join(src, "test.md"))
             f.write_all("\\relative.input{metadata.yaml}")
             f = Path.path(os.path.join(src, "metadata.yaml"))
-            txt = [
-                "---",
-            ]
+            txt = ["---",
+                   "title: The Great Book of Many Things",
+                   "author: Thomas Weise"]
             has_github = "GITHUB_JOB" in environ
             if has_github:
                 txt.extend([

@@ -99,7 +99,8 @@ def pandoc(source_file: str,
                              f"--from={format_in}",
                              f"--write={format_out}",
                              f"--output={output_file}",
-                             "--fail-if-warnings"]
+                             "--fail-if-warnings",
+                             "--strip-comments"]
 
     if tabstops is not None:
         if tabstops <= 0:
@@ -163,3 +164,115 @@ def pandoc(source_file: str,
     log(f"Finished applying pandoc call '{cmd}', got output file "
         f"'{res.path}' of size '{res.size}'.")
     return res
+
+
+def latex(source_file: str,
+          dest_file: str,
+          format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
+          lang: Optional[str] = None,
+          standalone: bool = True,
+          tabstops: Optional[int] = 2,
+          toc_print: bool = True,
+          toc_depth: int = 3,
+          crossref: bool = True,
+          bibliography: bool = True,
+          number_sections: bool = True,
+          top_level_division: str = "chapter",
+          use_listings: bool = False,
+          get_meta: Callable = lambda x: None,
+          resolve_resources: Callable = lambda x: None) -> File:
+    """
+    Invoke pandoc.
+
+    :param str source_file: the source file
+    :param str dest_file: the destination file
+    :param str format_in: the input format
+    :param Optional[str] lang: a language id code
+    :param bool standalone: should we produce a stand-alone document?
+    :param Optional[int] tabstops: the number of spaces with which we replace
+        a tab character, or None to not replace
+    :param bool toc_print: should we print the table of contents
+    :param bool toc_depth: the depth of the table of contents
+    :param bool crossref: should we use crossref
+    :param bool bibliography: should we use a bibliography
+    :param bool number_sections: should sections be numbered?
+    :param str top_level_division: the top-level division
+    :param bool use_listings: should the listings package be used?
+    :param Callable get_meta: a function to access meta-data
+    :param Callable resolve_resources: a function to resolve resources
+    :return: the Path to the generated output file and it size
+    :rtype: File
+    """
+    args = list()
+    if lang is not None:
+        if (lang == "zh") or (lang.startswith("zh-")):
+            args.append("--pdf-engine=xelatex")
+    top_level_division = enforce_non_empty_str_without_ws(top_level_division)
+    args.append(f"--top-level-division={top_level_division}")
+    if use_listings:
+        args.append("--listings")
+
+    return pandoc(source_file=source_file,
+                  dest_file=dest_file,
+                  format_in=format_in,
+                  format_out=bc.PANDOC_FORMAT_LATEX,
+                  standalone=standalone,
+                  tabstops=tabstops,
+                  toc_print=toc_print,
+                  toc_depth=toc_depth,
+                  crossref=crossref,
+                  bibliography=bibliography,
+                  template=get_meta(bc.PANDOC_TEMPLATE_LATEX),
+                  csl=get_meta(bc.PANDOC_CSL),
+                  number_sections=number_sections,
+                  resolve_resources=resolve_resources,
+                  args=args)
+
+
+def html(source_file: str,
+         dest_file: str,
+         format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
+         standalone: bool = True,
+         tabstops: Optional[int] = 2,
+         toc_print: bool = True,
+         toc_depth: int = 3,
+         crossref: bool = True,
+         bibliography: bool = True,
+         number_sections: bool = True,
+         get_meta: Callable = lambda x: None,
+         resolve_resources: Callable = lambda x: None) -> File:
+    """
+    Invoke pandoc.
+
+    :param str source_file: the source file
+    :param str dest_file: the destination file
+    :param str format_in: the input format
+    :param bool standalone: should we produce a stand-alone document?
+    :param Optional[int] tabstops: the number of spaces with which we replace
+        a tab character, or None to not replace
+    :param bool toc_print: should we print the table of contents
+    :param bool toc_depth: the depth of the table of contents
+    :param bool crossref: should we use crossref
+    :param bool bibliography: should we use a bibliography
+    :param bool number_sections: should sections be numbered?
+    :param Callable get_meta: a function to access meta-data
+    :param Callable resolve_resources: a function to resolve resources
+    :return: the Path to the generated output file and it size
+    :rtype: File
+    """
+    return pandoc(source_file=source_file,
+                  dest_file=dest_file,
+                  format_in=format_in,
+                  format_out=bc.PANDOC_FORMAT_HTML5,
+                  standalone=standalone,
+                  tabstops=tabstops,
+                  toc_print=toc_print,
+                  toc_depth=toc_depth,
+                  crossref=crossref,
+                  bibliography=bibliography,
+                  template=get_meta(bc.PANDOC_TEMPLATE_HTML5),
+                  csl=get_meta(bc.PANDOC_CSL),
+                  number_sections=number_sections,
+                  resolve_resources=resolve_resources,
+                  args=["--katex", "--ascii", "--html-q-tags",
+                        "--self-contained"])

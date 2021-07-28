@@ -48,7 +48,9 @@ def create_metadata(dest: Path,
     :rtype: Path
     """
     f: Final[Path] = dest.resolve_inside(META_NAME)
-    txt: List[str] = ["---"]
+    txt: List[str] = ["---",
+                      "title: The Great Book of Many Things",
+                      "author: Thomas Weise"]
     if with_git:
         txt.append("repos:")
         for repo in REPO_LIST:
@@ -59,6 +61,7 @@ def create_metadata(dest: Path,
         txt.append(f"  - id: {lang[0]}")
         txt.append(f"    name: {lang[1]}")
     txt.append(f"{bc.PANDOC_TEMPLATE_LATEX}: eisvogel.tex")
+    txt.append(f"{bc.PANDOC_TEMPLATE_HTML5}: GitHub.html5")
     if bib_file:
         dest.enforce_contains(bib_file)
         txt.append(f"{bc.PANDOC_CSL}: association-for-computing-machinery.csl")
@@ -349,6 +352,8 @@ def make_text(text, dotlinebreaks: bool = True,
                 text.write(chr(base + int(random.uniform(0, 26))))
             words += 1
         sentences = sentences + 1
+        if dotlinebreaks and (random.uniform(0,1) < 0.03):
+            text.write("$\\frac{5+\\sqrt{\\ln{7}}}{6}$")
         text.write(".")
         if dotlinebreaks:
             text.write("\n")

@@ -9,9 +9,8 @@ from typing import Final, Optional, Dict, Any, Iterable, List
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
 from bookbuilderpy.git import Repo
-from bookbuilderpy.latex import latex
 from bookbuilderpy.logger import log
-from bookbuilderpy.pandoc import has_pandoc
+from bookbuilderpy.pandoc import has_pandoc, latex, html
 from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor import preprocess
@@ -272,6 +271,11 @@ class Build(AbstractContextManager):
             source_file=input_file,
             dest_file=output_dir.resolve_inside(f"{name}.pdf"),
             lang=lang_id,
+            get_meta=self.__get_meta_no_error,
+            resolve_resources=self.__get_resource))
+        results.append(html(
+            source_file=input_file,
+            dest_file=output_dir.resolve_inside(f"{name}.html"),
             get_meta=self.__get_meta_no_error,
             resolve_resources=self.__get_resource))
 

@@ -85,8 +85,12 @@ LANG_UNDEFINED: Optional[str] = None
 PANDOC_FORMAT_MARKDOWN: Final[str] = "markdown"
 #: the pandoc latex format
 PANDOC_FORMAT_LATEX: Final[str] = "latex"
+#: the pandoc html5 format
+PANDOC_FORMAT_HTML5: Final[str] = "html5"
 #: the pandoc latex template
 PANDOC_TEMPLATE_LATEX: Final[str] = "template.latex"
+#: the pandoc html template
+PANDOC_TEMPLATE_HTML5: Final[str] = "template.html"
 #: the csl template
 PANDOC_CSL: Final[str] = "csl"
 #: the pandoc bibliography key
