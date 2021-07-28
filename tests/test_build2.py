@@ -352,7 +352,7 @@ def make_text(text, dotlinebreaks: bool = True,
                 text.write(chr(base + int(random.uniform(0, 26))))
             words += 1
         sentences = sentences + 1
-        if dotlinebreaks and (random.uniform(0,1) < 0.03):
+        if dotlinebreaks and (random.uniform(0, 1) < 0.03):
             text.write("$\\frac{5+\\sqrt{\\ln{7}}}{6}$")
         text.write(".")
         if dotlinebreaks:
