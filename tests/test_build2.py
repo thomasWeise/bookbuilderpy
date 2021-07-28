@@ -23,22 +23,26 @@ REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
 #: the list of languages
 LANG_LIST: Final[Tuple[Tuple[str, str], ...]] = (
     ("en", "English"),
-    ("de", "Deutsch"),
     ("zh", "Chinese"))
 
 #: the meta data file name
 META_NAME: Final[str] = "metadata.yaml"
+
+#: the bibliography data file name
+BIBLIOGRAPHY_NAME: Final[str] = "bibliography.bib"
 
 #: the root name
 ROOT_NAME: Final[str] = "book.md"
 
 
 def create_metadata(dest: Path,
-                    with_git: bool) -> Path:
+                    bib_file: Optional[Path] = None,
+                    with_git: bool = True) -> Path:
     """
     Create the metadata of the build.
 
     :param Path dest: the directory
+    :param Optional[Path] bib_file: the bibliography file
     :param bool with_git: should github repositories be used?
     :return: the path to the metadata file
     :rtype: Path
@@ -55,12 +59,64 @@ def create_metadata(dest: Path,
         txt.append(f"  - id: {lang[0]}")
         txt.append(f"    name: {lang[1]}")
     txt.append(f"{bc.PANDOC_TEMPLATE_LATEX}: eisvogel.tex")
-    txt.append(f"{bc.PANDOC_CSL}: association-for-computing-machinery.csl")
+    if bib_file:
+        dest.enforce_contains(bib_file)
+        txt.append(f"{bc.PANDOC_CSL}: association-for-computing-machinery.csl")
+        txt.append(f"bibliography: {bib_file.relative_to(dest)}")
     txt.append("...")
     f.write_all(txt)
     f.enforce_file()
     dest.enforce_contains(f)
     return f
+
+
+def create_bibliography(dest: Path) -> Tuple[Path, Tuple[str, ...]]:
+    """
+    Generate a bibliography into the given folder.
+
+    :param Path dest: the destination folder
+    :return: a tuple with the path to the bibliography and a tuple of the
+        available bibliographic keys
+    :rtype: Tuple[Path, Tuple[str, ...]]
+    """
+    f: Final[Path] = dest.resolve_inside(BIBLIOGRAPHY_NAME)
+    with open(f, "wt") as fd:
+        fd.write("@incollection{A,\n  title = {The Query Complexity of "
+                 "Finding a Hidden Permutation},\n  author = {Peyman "
+                 "Afshani and Manindra Agrawal and Benjamin Doerr and "
+                 "Kasper Green Larsen and Kurt Mehlhorn and Carola "
+                 "Winzen},\n  booktitle = {Space-Efficient Data Structures, "
+                 "Streams, and Algorithms},\n  pages = {1--11},\n  publisher "
+                 "= {Springer},\n  year = {2013},\n  chapter = {1},\n}"
+                 "\n\n@inproceedings{B,\n  author = {Denis Antipov and "
+                 "Benjamin Doerr},\n  title = {Precise Runtime Analysis "
+                 "for Plateaus},\n  booktitle = {15th Intl. Conf. on "
+                 "Parallel Problem Solving from Nature {{PPSN}~{XV}}, "
+                 "{Part~II}},\n  pages = {117--128},\n  year = {2018},"
+                 "\n  publisher = {Springer},\n}\n\n@article{C,\n  "
+                 "author = {Antoine Cully and Yiannis Demiris},\n  title "
+                 "= {Quality and Diversity Optimization: {A} Unifying "
+                 "Modular Framework},\n  journal = {{IEEE} Transactions "
+                 "on Evolutionary Computation},\n  volume = {22},\n  "
+                 "number = {2},\n  pages = {245--259},\n  year = {2018},"
+                 "\n}\n \n\n@misc{D,\n  title = {Towards a More Practice-"
+                 "Aware Runtime Analysis of Evolutionary Algorithms},\n  "
+                 "author = {Eduardo {Carvalho Pinto} and Carola Doerr},\n  "
+                 "year = {2017},\n  note = {arXiv:1812.00493v1 [cs.NE] 3~Dec~"
+                 "2018},\n  url = {http://arxiv.org/pdf/1812.00493.pdf},\n}"
+                 "\n\n@inproceedings{E,\n  author = {Benjamin Doerr and "
+                 "Carola Doerr},\n  title = {Optimal Parameter Choices "
+                 "Through Self-Adjustment: Applying the 1/5-th Rule in "
+                 "Discrete Settings},\n  booktitle = {Genetic and "
+                 "Evolutionary Computation Conf. ({GECCO'15})}},\n  pages = "
+                 "{1335--1342},\n  publisher = {{ACM}},\n  year = {2015},\n  "
+                 "doi = {10.1145/2739480.2754684},\n  note = {See also "
+                 "arXiv:1504.03212v1 [cs.NE] 13 Apr 2015}\n}\n\n\n@book{G,\n"
+                 "  author = {Richard Ernest Bellman},\n  title = {Dynamic "
+                 "Programming},\n  publisher = {Princeton University Press},"
+                 "\n  address = {Princeton, NJ, USA},\n  series = dbom,\n  "
+                 "year = {1957},\n  isbn = {0486428095}\n}")
+    return f, ("A", "B", "C", "D", "E", )
 
 
 def find_local_files() -> Tuple[str, ...]:
@@ -260,7 +316,7 @@ def make_structure() -> Tuple[str, Tuple, Tuple[str]]:
         root = make_name(names)
         sub = list()
         pics = list()
-        while (maxdepth > 0) and (random.uniform(0, 1) > 0.4):
+        while (maxdepth > 0) and (random.uniform(0, 1) > 0.5):
             sub.append(__make_structure(names, maxdepth - 1))
         while random.uniform(0, 1) > 0.5:
             pics.append(make_name(names))
@@ -301,11 +357,13 @@ def make_text(text, dotlinebreaks: bool = True,
 def generate_example_lang(
         struc: Tuple[str, Tuple, Tuple[str]],
         lang: str, dest: Path,
+        bib_keys: Tuple[str, ...],
         repos: Tuple[Tuple[Optional[str], Tuple[str, ...]], ...]) -> Path:
     """
     Generate an example for a given language
-    :param struc: the strucure
+    :param struc: the structure
     :param lang: the language
+    :param bib_keys: the available bibliographic keys
     :param repos: the repos
     :param dest: the destination directory
     :return: the path to the root file
@@ -318,16 +376,22 @@ def generate_example_lang(
         done.extend(struc[1])
         done.extend(struc[2])
         done.extend([True for _ in range(int(
-            random.uniform(1, 1.5 * len(done))))])
+            random.uniform(1, 2)))])
+        done.extend([False for _ in range(int(
+            random.uniform(1, 2)))])
         done.extend([int(random.uniform(1, 5)) for _ in range(int(
-            random.uniform(1, 1.5 * len(done))))])
+            random.uniform(1, 3)))])
         max_inner = 0
         random.shuffle(done)
         for sub in done:
             if isinstance(sub, tuple):
                 d = dest.resolve_inside(sub[0])
                 d.ensure_dir_exists()
-                ff = generate_example_lang(sub, lang, d, repos)
+                ff = generate_example_lang(struc=sub,
+                                           lang=lang,
+                                           bib_keys=bib_keys,
+                                           dest=d,
+                                           repos=repos)
                 ff.enforce_file()
                 make_text(fd, True)
                 fd.write(f"\n\n\\{bc.CMD_INPUT}"
@@ -335,33 +399,50 @@ def generate_example_lang(
                 make_text(fd, True)
             elif isinstance(sub, bool):
                 make_text(fd, True)
-                repo = repos[int(random.uniform(0, len(repos)))]
-                repofile = repo[1][int(random.uniform(0, len(repo[1])))]
-                if repo[0] is None:
-                    (handle, spath) = mkstemp(suffix=".py",
-                                              prefix="t", dir=dest)
-                    spath = Path.file(spath)
-                    label = spath.replace("/", "_").replace(".", "_")
-                    os.close(handle)
-                    shutil.copyfile(Path.file(repofile), spath)
-                    spath = spath.relative_to(dest)
-                    fd.write(f"\n\n\\{bc.CMD_RELATIVE_CODE}{{{label}}}{{")
-                    make_text(fd, False, 1)
-                    fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
+                if sub:
+                    repo = repos[int(random.uniform(0, len(repos)))]
+                    repofile = repo[1][int(random.uniform(0, len(repo[1])))]
+                    if repo[0] is None:
+                        (handle, spath) = mkstemp(suffix=".py",
+                                                  prefix="t", dir=dest)
+                        spath = Path.file(spath)
+                        label = spath.replace("/", "_").replace(".", "_")
+                        os.close(handle)
+                        shutil.copyfile(Path.file(repofile), spath)
+                        spath = spath.relative_to(dest)
+                        fd.write(f"\n\n\\{bc.CMD_RELATIVE_CODE}{{{label}}}{{")
+                        make_text(fd, False, 1)
+                        fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
+                    else:
+                        spath = repo[1][int(random.uniform(0, len(repo[1])))]
+                        label = spath.replace("/", "_").replace(".", "_")
+                        fd.write(f"\n\n\\{bc.CMD_GIT_CODE}"
+                                 f"{{{repo[0]}}}{{{label}}}{{")
+                        make_text(fd, False, 1)
+                        fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
                 else:
-                    spath = repo[1][int(random.uniform(0, len(repo[1])))]
-                    label = spath.replace("/", "_").replace(".", "_")
-                    fd.write(f"\n\n\\{bc.CMD_GIT_CODE}"
-                             f"{{{repo[0]}}}{{{label}}}{{")
-                    make_text(fd, False, 1)
-                    fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
+                    if len(bib_keys) > 0:
+                        st = set()
+                        for i in range(int(random.uniform(1, 5))):
+                            st.add(bib_keys[int(
+                                random.uniform(0, len(bib_keys)))])
+                        make_text(fd, False, 1)
+                        before = " ["
+                        for key in st:
+                            fd.write(before)
+                            fd.write("@")
+                            fd.write(key)
+                            before = ";"
+                        fd.write("]")
+                        make_text(fd, False, 1)
                 make_text(fd, True)
             elif isinstance(sub, int):
                 make_text(fd, True)
                 fd.write("\n\n")
-                for i in range(min(max_inner + 1, sub)):
+                sub = min(max_inner + 1, sub)
+                for i in range(sub):
                     fd.write("#")
-                max_inner = max(max_inner, sub)
+                max_inner = sub
                 fd.write(" ")
                 make_text(fd, False, 1)
                 fd.write("\n\n")
@@ -386,7 +467,9 @@ def generate_example(dest: Path,
     :return: the path to the root file
     """
     dest.enforce_dir()
-    meta: Final[Path] = create_metadata(dest, with_git=with_git)
+    bib_file, bib_keys = create_bibliography(dest)
+    meta: Final[Path] = create_metadata(dest, bib_file=bib_file,
+                                        with_git=with_git)
     assert os.path.basename(meta) == META_NAME
 
     struc = make_structure()
@@ -398,7 +481,11 @@ def generate_example(dest: Path,
 
     repos = get_possible_code_files(with_git=with_git)
     for lang in LANG_LIST:
-        generate_example_lang(struc, lang[0], dest, repos)
+        generate_example_lang(struc=struc,
+                              lang=lang[0],
+                              bib_keys=bib_keys,
+                              dest=dest,
+                              repos=repos)
     return root
 
 

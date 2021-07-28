@@ -314,6 +314,12 @@ class Build(AbstractContextManager):
             log(f"Building in temp directory '{temp}': "
                 "First applying preprocessor.")
 
+            bib = self.__get_meta_no_error(bc.PANDOC_BIBLIOGRAPHY)
+            if bib is not None:
+                Path.copy_resource(self.__input_dir,
+                                   self.__input_dir.resolve_inside(bib),
+                                   temp)
+
             text = enforce_non_empty_str(preprocess(
                 text=text, input_dir=self.input_dir,
                 get_meta=self.get_meta, get_repo=self.get_repo,

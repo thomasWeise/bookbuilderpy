@@ -89,3 +89,5 @@ PANDOC_FORMAT_LATEX: Final[str] = "latex"
 PANDOC_TEMPLATE_LATEX: Final[str] = "template.latex"
 #: the csl template
 PANDOC_CSL: Final[str] = "csl"
+#: the pandoc bibliography key
+PANDOC_BIBLIOGRAPHY: Final[str] = "bibliography"
