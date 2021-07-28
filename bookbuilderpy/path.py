@@ -39,7 +39,7 @@ def _canonicalize_path(path: str) -> str:
     return path
 
 
-def _copy_pure(path_in: str, path_out: str):
+def copy_pure(path_in: str, path_out: str):
     """
     The internal method to copy a file.
 
@@ -382,7 +382,7 @@ class Path(str):
                 ((ssuffix == "gz") and (dsuffix != "gz")):
             copy = _copy_un_gzip
         else:
-            copy = _copy_pure
+            copy = copy_pure
         copy(source_file, dest_file)
         dest_file.enforce_file()
         return dest_file

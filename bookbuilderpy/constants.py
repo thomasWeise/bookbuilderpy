@@ -80,3 +80,12 @@ LANG_PYTHON: Final[str] = "python"
 
 #: the undefined programming language
 LANG_UNDEFINED: Optional[str] = None
+
+#: the pandoc markdown format
+PANDOC_FORMAT_MARKDOWN: Final[str] = "markdown"
+#: the pandoc latex format
+PANDOC_FORMAT_LATEX: Final[str] = "latex"
+#: the pandoc latex template
+PANDOC_TEMPLATE_LATEX: Final[str] = "template.latex"
+#: the csl template
+PANDOC_CSL: Final[str] = "csl"

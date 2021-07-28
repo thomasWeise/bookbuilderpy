@@ -54,6 +54,8 @@ def create_metadata(dest: Path,
     for lang in LANG_LIST:
         txt.append(f"  - id: {lang[0]}")
         txt.append(f"    name: {lang[1]}")
+    txt.append(f"{bc.PANDOC_TEMPLATE_LATEX}: eisvogel.tex")
+    txt.append(f"{bc.PANDOC_CSL}: association-for-computing-machinery.csl")
     txt.append("...")
     f.write_all(txt)
     f.enforce_file()
@@ -317,6 +319,9 @@ def generate_example_lang(
         done.extend(struc[2])
         done.extend([True for _ in range(int(
             random.uniform(1, 1.5 * len(done))))])
+        done.extend([int(random.uniform(1, 5)) for _ in range(int(
+            random.uniform(1, 1.5 * len(done))))])
+        max_inner = 0
         random.shuffle(done)
         for sub in done:
             if isinstance(sub, tuple):
@@ -350,6 +355,16 @@ def generate_example_lang(
                              f"{{{repo[0]}}}{{{label}}}{{")
                     make_text(fd, False, 1)
                     fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
+                make_text(fd, True)
+            elif isinstance(sub, int):
+                make_text(fd, True)
+                fd.write("\n\n")
+                for i in range(min(max_inner + 1, sub)):
+                    fd.write("#")
+                max_inner = max(max_inner, sub)
+                fd.write(" ")
+                make_text(fd, False, 1)
+                fd.write("\n\n")
                 make_text(fd, True)
             else:
                 assert isinstance(sub, str)

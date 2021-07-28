@@ -9,4 +9,4 @@ def log(message: str) -> None:
 
     :param str message: the message
     """
-    print(f"{datetime.datetime.now()}: {message}.")
+    print(f"{datetime.datetime.now()}: {message}")

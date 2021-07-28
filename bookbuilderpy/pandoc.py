@@ -3,8 +3,10 @@
 import os.path
 import subprocess  # nosec
 from shutil import which
-from typing import Optional, Final, List, Tuple
+from typing import Optional, Final, List, Callable
 
+import bookbuilderpy.constants as bc
+from bookbuilderpy.build_result import File
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws
@@ -26,8 +28,8 @@ def has_pandoc() -> bool:
 
 def pandoc(source_file: str,
            dest_file: str,
-           format_in: str = "markdown",
-           format_out: str = "latex",
+           format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
+           format_out: str = bc.PANDOC_FORMAT_LATEX,
            standalone: bool = True,
            tabstops: Optional[int] = 2,
            toc_print: bool = True,
@@ -35,8 +37,10 @@ def pandoc(source_file: str,
            crossref: bool = True,
            bibliography: bool = True,
            template: Optional[str] = None,
+           csl: Optional[str] = None,
            number_sections: bool = True,
-           args: Optional[List[str]] = None) -> Tuple[Path, int]:
+           args: Optional[List[str]] = None,
+           resolve_resources: Callable = lambda x: None) -> File:
     """
     Invoke pandoc.
 
@@ -52,10 +56,12 @@ def pandoc(source_file: str,
     :param bool crossref: should we use crossref
     :param bool bibliography: should we use a bibliography
     :param Optional[str] template: which template should we use, if any?
+    :param Optional[str] csl: which csl file should we use, if any?
     :param bool number_sections: should sections be numbered?
     :param args: any additional arguments
-    :return: the Path to the generated output file
-    :rtype: Path
+    :param Callable resolve_resources: a function to resolve resources
+    :return: the Path to the generated output file and it size
+    :rtype: File
     """
     if __PANDOC_EXEC is None:
         raise ValueError("Pandoc is not installed.")
@@ -113,15 +119,28 @@ def pandoc(source_file: str,
                 raise ValueError(f"toc_depth cannot be {toc_depth}.")
             cmd.append(f"--toc-depth={toc_depth}")
 
+    template_file: Optional[Path] = None
     if template is not None:
         template = enforce_non_empty_str_without_ws(template)
+        template_file = resolve_resources(template, input_dir)
+        if template_file is not None:
+            template_file.enforce_file()
+            template = template_file
         cmd.append(f"--template={template}")
 
     if crossref:
         cmd.append("--filter=pandoc-crossref")
 
+    csl_file: Optional[Path] = None
     if bibliography:
         cmd.append("--citeproc")
+        if csl is not None:
+            csl = enforce_non_empty_str_without_ws(csl)
+            csl_file = resolve_resources(csl, input_dir)
+            if csl_file is not None:
+                csl_file.enforce_file()
+                csl = csl_file
+            cmd.append(f"--csl={csl}")
 
     if args is not None:
         cmd.extend([enforce_non_empty_str_without_ws(a).strip()
@@ -134,12 +153,13 @@ def pandoc(source_file: str,
         raise ValueError(
             f"Error when executing pandoc command '{cmd}'.")
 
-    output_file.enforce_file()
-    size = os.path.getsize(output_file)
-    if size <= 10:
-        raise ValueError(f"Output file '{output_file}' "
-                         f"too small, only has {size} bytes")
+    if template_file:
+        os.remove(template_file)
+    if csl_file:
+        os.remove(csl_file)
+
+    res = File(output_file)
 
     log(f"Finished applying pandoc call '{cmd}', got output file "
-        f"'{output_file}' of size '{size}'.")
-    return output_file, size
+        f"'{res.path}' of size '{res.size}'.")
+    return res

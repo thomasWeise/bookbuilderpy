@@ -9,16 +9,18 @@ from typing import Final, Optional, Dict, Any, Iterable, List
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
 from bookbuilderpy.git import Repo
+from bookbuilderpy.latex import latex
 from bookbuilderpy.logger import log
+from bookbuilderpy.pandoc import has_pandoc
 from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor import preprocess
 from bookbuilderpy.preprocessor_input import load_input
+from bookbuilderpy.resources import load_resource
 from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
     enforce_non_empty_str_without_ws
 from bookbuilderpy.temp import TempDir
-from bookbuilderpy.pandoc import has_pandoc, pandoc
 
 
 class Build(AbstractContextManager):
@@ -103,11 +105,13 @@ class Build(AbstractContextManager):
         """
         return self.__output_dir
 
-    def get_meta(self, key: str) -> Any:
+    def __get_meta(self, key: str, raise_on_none: bool = True) -> Any:
         """
         Get a meta-data element.
 
         :param str key: the key
+        :param bool raise_on_none: should we raise an error if the property
+            was not found (True) or return None (False)?
         :return: the meta-data element
         :rtype: Any
         """
@@ -123,15 +127,19 @@ class Build(AbstractContextManager):
             return self.__start_year
         if key in (bc.META_GIT_URL, bc.META_GIT_DATE, bc.META_GIT_COMMIT):
             if self.__repo is None:
-                raise ValueError(
-                    f"Cannot access {key} if build is not based on repo.")
+                if raise_on_none:
+                    raise ValueError(
+                        f"Cannot access {key} if build is not based on repo.")
+                return None
             if key == bc.META_GIT_URL:
                 return self.__repo.url
             if key == bc.META_GIT_COMMIT:
                 return self.__repo.commit
             if key == bc.META_GIT_DATE:
                 return self.__repo.date_time
-            raise ValueError("Huh?")
+            if raise_on_none:
+                raise ValueError("Huh?")
+            return None
 
         if self.__metadata_lang is not None:
             if key in self.__metadata_lang:
@@ -141,7 +149,29 @@ class Build(AbstractContextManager):
             if key in self.__metadata_raw:
                 return self.__metadata_raw[key]
 
-        raise ValueError(f"Metadata key '{key}' not found.")
+        if raise_on_none:
+            raise ValueError(f"Metadata key '{key}' not found.")
+        return None
+
+    def __get_meta_no_error(self, key: str) -> Any:
+        """
+        Get a meta data element without raising an error if it is not present.
+
+        :param str key: the key
+        :return: the meta data element, or None
+        :rtype: Any
+        """
+        return self.__get_meta(key, False)
+
+    def get_meta(self, key: str) -> Any:
+        """
+        Get a meta-data element.
+
+        :param str key: the key
+        :return: the meta-data element
+        :rtype: Any
+        """
+        self.__get_meta(key, True)
 
     def __load_repo(self, name: str, url: str) -> None:
         """
@@ -204,6 +234,18 @@ class Build(AbstractContextManager):
             raise ValueError(f"invalid repository '{name}'?")
         return r
 
+    def __get_resource(self, name: str, directory: Path) -> Optional[Path]:
+        """
+        A function used for getting an internal build resource to a directory.
+
+        :param str name: the resource name
+        :param Path directory: the destination path
+        :return: the path to the resource, or None if none was copied
+        :rtype: Optional[Path]
+        """
+        return load_resource(enforce_non_empty_str_without_ws(name),
+                             self.__input_dir, directory)
+
     def __pandoc_build(self,
                        input_file: Path,
                        output_dir: Path,
@@ -223,15 +265,15 @@ class Build(AbstractContextManager):
             return
         input_file.enforce_file()
         output_dir.enforce_dir()
-
+        name, _ = Path.split_prefix_suffix(os.path.basename(input_file))
         results: List[File] = list()
 
-        path, size = pandoc(input_file, output_dir.resolve_inside("book.pdf"))
-        f = File(path)
-        if f.size != size:
-            raise ValueError(f"Size mismatch ({size} vs. {f.size}) "
-                             f"for file '{path}'.")
-        results.append(f)
+        results.append(latex(
+            source_file=input_file,
+            dest_file=output_dir.resolve_inside(f"{name}.pdf"),
+            lang=lang_id,
+            get_meta=self.__get_meta_no_error,
+            resolve_resources=self.__get_resource))
 
         self.__results.append(LangResult(lang_id, lang_name, output_dir,
                                          tuple(results)))
