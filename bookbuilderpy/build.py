@@ -10,7 +10,7 @@ import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
-from bookbuilderpy.pandoc import has_pandoc, latex, html, epub
+from bookbuilderpy.pandoc import has_pandoc, latex, html, epub, azw3
 from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor import preprocess
@@ -282,12 +282,14 @@ class Build(AbstractContextManager):
             bibliography=has_bibliography,
             get_meta=self.__get_meta_no_error,
             resolve_resources=self.__get_resource))
-        results.append(epub(
+        epub_res = epub(
             source_file=input_file,
             dest_file=output_dir.resolve_inside(f"{name}.epub"),
             bibliography=has_bibliography,
             get_meta=self.__get_meta_no_error,
-            resolve_resources=self.__get_resource))
+            resolve_resources=self.__get_resource)
+        results.append(epub_res)
+        results.append(azw3(epub_res.path))
 
         self.__results.append(LangResult(lang_id, lang_name, output_dir,
                                          tuple(results)))

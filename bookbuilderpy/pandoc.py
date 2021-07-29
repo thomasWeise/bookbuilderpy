@@ -358,3 +358,25 @@ def epub(source_file: str,
                   resolve_resources=resolve_resources,
                   args=["--mathml", "--ascii", "--html-q-tags",
                         "--self-contained"])
+
+
+def azw3(epub_file: str) -> File:
+    """
+    Convert an epub book into an azw3 one.
+
+    :param str epub_file: the epub file
+    :return: the azw3 file
+    :rtype: File
+    """
+    input_file = Path.file(epub_file)
+    input_dir = Path.directory(os.path.dirname(input_file))
+    filename, _ = Path.split_prefix_suffix(os.path.basename(input_file))
+    dest_file = Path.resolve_inside(input_dir, f"{filename}.azw3")
+    cmd = ["ebook-convert", input_file, dest_file, "--embed-all-fonts"]
+    ret = subprocess.run(cmd, check=True, text=True, timeout=360,  # nosec
+                         cwd=input_dir)  # nosec
+    if ret.returncode != 0:
+        raise ValueError(
+            f"Error when executing calibre command '{cmd}'.")
+
+    return File(dest_file)
