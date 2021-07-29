@@ -57,6 +57,18 @@ META_GIT_COMMIT: Final[str] = "gitcommit"
 META_GIT_URL: Final[str] = "giturl"
 #: the git commit date and time
 META_GIT_DATE: Final[str] = "gitdate"
+#: the id of the language in which the project is currently built
+# This property can either be set explicitly or is computed from the current
+# language id. If the property is not set and there is not language id, then
+# this defaults to "en".
+META_LANG: Final[str] = "lang"
+#: the locale of the current build language
+# This property can either be set explicitly or it is computed from the
+# current language id. If the language id is a prefix for well-known locales,
+# the locale is expanded (e.g., "zh" -> "zh_CN", "en" -> "en_US"). If not,
+# then the language id is used as locale. If the language id is not specified,
+# then "en_US" is used.
+META_LOCALE: Final[str] = "locale"
 
 #: obtain a meta data element
 #: \\meta{id}
@@ -72,8 +84,10 @@ META_REPO_URL: Final[str] = "url"
 META_LANGS: Final[str] = "langs"
 #: the language id
 META_LANG_ID: Final[str] = META_REPO_ID
-#: the language name
+#: the language namehe
 META_LANG_NAME: Final[str] = "name"
+#: The name of the current language.
+META_CUR_LANG_NAME: Final[str] = f"{META_LANG}.{META_LANG_NAME}"
 
 #: the Python programming language
 LANG_PYTHON: Final[str] = "python"

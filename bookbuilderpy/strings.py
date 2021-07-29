@@ -1,7 +1,7 @@
 """Some utility methods for string processing."""
 import datetime
 import string
-from typing import Iterable, List, Union, Tuple
+from typing import Iterable, List, Union, Tuple, Final, Dict
 from urllib.parse import urlparse
 
 
@@ -158,3 +158,33 @@ def get_prefix_str(str_list: Union[Tuple[str, ...], List[str]]) -> str:
             break
         prefix_str += f
     return prefix_str
+
+
+#: The language to locale dictionary for base locales.
+__LANG_DICT: Final[Dict[str, str]] = {
+    "en": "en_us",
+    "zh": "zh_CN",
+    "cn": "zh_CN",
+    "tw": "zh_TW",
+    "de": "de_DE",
+    "fr": "fr_FR",
+    "it": "it_IT",
+    "ja": "ja_JP",
+    "ko": "ko_KR",
+    "pt": "pt_BR",
+    "es": "es_ES"
+}
+
+
+def lang_to_locale(lang: str) -> str:
+    """
+    Convert a language ID to a locale.
+
+    :param str lang: the language id
+    :return: the locale
+    :rtype: str
+    """
+    lang = enforce_non_empty_str_without_ws(lang)
+    if lang in __LANG_DICT.keys():
+        return __LANG_DICT[lang]
+    return lang

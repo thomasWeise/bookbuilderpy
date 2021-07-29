@@ -18,7 +18,7 @@ from bookbuilderpy.preprocessor_input import load_input
 from bookbuilderpy.resources import load_resource
 from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
-    enforce_non_empty_str_without_ws
+    enforce_non_empty_str_without_ws, lang_to_locale
 from bookbuilderpy.temp import TempDir
 
 
@@ -147,6 +147,14 @@ class Build(AbstractContextManager):
         if self.__metadata_raw is not None:
             if key in self.__metadata_raw:
                 return self.__metadata_raw[key]
+
+        # If no meta data language properties are set: return default values.
+        if key == bc.META_LANG:
+            return "en"
+        if key == bc.META_LOCALE:
+            return lang_to_locale(self.__get_meta(bc.META_LANG, False))
+        if key == bc.META_LANG_NAME:
+            return "English"
 
         if raise_on_none:
             raise ValueError(f"Metadata key '{key}' not found.")
@@ -322,6 +330,12 @@ class Build(AbstractContextManager):
 
         # Then we extract the meta-data.
         self.__metadata_lang = parse_metadata(text)
+        if lang_id:
+            # We set up the language id and lange name meta data properties.
+            if bc.META_LANG not in self.__metadata_lang.keys():
+                self.__metadata_lang[bc.META_LANG] = lang_id
+            if bc.META_LANG_NAME not in self.__metadata_lang.keys():
+                self.__metadata_lang[bc.META_LANG_NAME] = lang_name
 
         # Then load the repositories from the meta data.
         self.__load_repos_from_meta(self.__metadata_lang)
