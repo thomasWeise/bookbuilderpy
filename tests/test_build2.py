@@ -400,7 +400,7 @@ def make_text(text, dotlinebreaks: bool = True,
             words += 1
         sentences = sentences + 1
         if dotlinebreaks and (random.uniform(0, 1) < 0.03):
-            text.write("$\\frac{5+\\sqrt{\\ln{7}}}{6}$")
+            text.write(" $\\frac{5+\\sqrt{\\ln{7}}}{6}$")
         text.write(".")
         if dotlinebreaks:
             text.write("\n")

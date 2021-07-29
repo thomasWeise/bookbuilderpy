@@ -40,13 +40,15 @@ def preprocess(text: str,
     def __make_absolute_figure(label: str,
                                caption: str,
                                path: str,
-                               args: str) -> str:
-        new_path = dst.copy_resource(src, path, dst)
+                               args: str,
+                               _src: Path = src,
+                               _dst: Path = dst) -> str:
+        new_path = Path.copy_resource(_src, path, _dst)
         caption = enforce_non_empty_str(caption.strip())
-        use_path = enforce_non_empty_str(new_path.relative_to(dst).strip())
+        use_path = enforce_non_empty_str(new_path.relative_to(_dst).strip())
         cmd = enforce_non_empty_str(" ".join([enforce_non_empty_str(
             label.strip()), args.strip()]).strip())
-        return f"![{caption}]({use_path}){{#fig:{cmd}}}"
+        return f"\n\n![{caption}]({use_path}){{#fig:{cmd}}}\n\n"
 
     text = (create_preprocessor(name=bc.CMD_ABSOLUTE_FIGURE,
                                 func=__make_absolute_figure,
@@ -69,14 +71,14 @@ def preprocess(text: str,
             url = userepo.make_url(file.relative_to(userepo.path))
             caption = f"{caption} ([src]({url}))"
 
-        return f"Listing: {caption}\n\n" \
-               f"```{{#lst:{label}{plang} .numberLines}}\n{code}\n```\n"
+        return f"\n\nListing: {caption}\n\n" \
+               f"```{{#lst:{label}{plang} .numberLines}}\n{code}\n```\n\n"
 
     # create all local code
     def __make_absolute_code(label: str, caption: str, path: str, lines: str,
-                             labels: str, args: str) -> str:
+                             labels: str, args: str, _src: Path = src) -> str:
         file: Final[Path] = Path.file(path)
-        src.enforce_contains(file)
+        _src.enforce_contains(file)
         code = load_code(file, lines=lines, labels=labels, args=args)
         return __make_code(label=label, caption=caption,
                            code=code, file=file, userepo=repo)
@@ -99,5 +101,4 @@ def preprocess(text: str,
     text = (create_preprocessor(name=bc.CMD_GIT_CODE,
                                 func=__make_git_code,
                                 n=7, strip_white_space=True))(text)
-
     return text
