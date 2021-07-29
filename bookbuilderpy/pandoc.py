@@ -1,6 +1,7 @@
 """A routine for invoking pandoc."""
 
 import os.path
+import re
 import subprocess  # nosec
 from shutil import which
 from typing import Optional, Final, List, Callable
@@ -9,7 +10,9 @@ import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
-from bookbuilderpy.strings import enforce_non_empty_str_without_ws
+from bookbuilderpy.resources import ResourceServer
+from bookbuilderpy.strings import enforce_non_empty_str, \
+    enforce_non_empty_str_without_ws
 
 #: The pandoc executable.
 __PANDOC_EXEC: Final[Optional[Path]] = [None if (t is None) else Path.file(t)
@@ -182,7 +185,7 @@ def latex(source_file: str,
           get_meta: Callable = lambda x: None,
           resolve_resources: Callable = lambda x: None) -> File:
     """
-    Invoke pandoc.
+    Invoke pandoc to build LaTeX and then PDF output.
 
     :param str source_file: the source file
     :param str dest_file: the destination file
@@ -242,7 +245,86 @@ def html(source_file: str,
          get_meta: Callable = lambda x: None,
          resolve_resources: Callable = lambda x: None) -> File:
     """
-    Invoke pandoc.
+    Invoke pandoc to build HTML output.
+
+    :param str source_file: the source file
+    :param str dest_file: the destination file
+    :param str format_in: the input format
+    :param bool standalone: should we produce a stand-alone document?
+    :param Optional[int] tabstops: the number of spaces with which we replace
+        a tab character, or None to not replace
+    :param bool toc_print: should we print the table of contents
+    :param bool toc_depth: the depth of the table of contents
+    :param bool crossref: should we use crossref
+    :param bool bibliography: should we use a bibliography
+    :param bool number_sections: should sections be numbered?
+    :param Callable get_meta: a function to access meta-data
+    :param Callable resolve_resources: a function to resolve resources
+    :return: the Path to the generated output file and it size
+    :rtype: File
+    """
+    f: File
+    with ResourceServer() as serv:
+        f = pandoc(source_file=source_file,
+                   dest_file=dest_file,
+                   format_in=format_in,
+                   format_out=bc.PANDOC_FORMAT_HTML5,
+                   standalone=standalone,
+                   tabstops=tabstops,
+                   toc_print=toc_print,
+                   toc_depth=toc_depth,
+                   crossref=crossref,
+                   bibliography=bibliography,
+                   template=get_meta(bc.PANDOC_TEMPLATE_HTML5),
+                   csl=get_meta(bc.PANDOC_CSL),
+                   number_sections=number_sections,
+                   resolve_resources=resolve_resources,
+                   args=[f"--katex={serv.get_katex_server()}",
+                         "--ascii", "--html-q-tags",
+                         "--self-contained"])
+    if not bibliography:
+        return f
+
+    # For some reason, the id and the text of each bibliography
+    # item are each put into separate divs of classes for which
+    # no styles are given. Therefore, we convert these divs to
+    # spans and add some vertical spacing.
+    text = enforce_non_empty_str(f.path.read_all_str().strip())
+    end = text.rfind("<div id=\"refs\"")
+    if end <= 0:
+        return f
+    text_1 = text[:end]
+    text_2 = text[end:]
+    del text
+
+    text_2 = re.sub('<div class="csl-left-margin">(.*?)</div>',
+                    '<span class="csl-left-margin">\\1</span>',
+                    text_2, re.MULTILINE)
+    text_2 = re.sub('<div class="csl-right-inline">(.*?)</div>',
+                    '<span class="csl-right-inline">\\1</span>',
+                    text_2, re.MULTILINE)
+    text_2 = text_2.replace(
+        ' class="csl-entry" role="doc-biblioentry">',
+        ' class="csl-entry" role="doc-biblioentry" style="margin-top:0.33em">')
+
+    f.path.write_all([text_1, text_2])
+    return File(f.path)
+
+
+def epub(source_file: str,
+         dest_file: str,
+         format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
+         standalone: bool = True,
+         tabstops: Optional[int] = 2,
+         toc_print: bool = True,
+         toc_depth: int = 3,
+         crossref: bool = True,
+         bibliography: bool = True,
+         number_sections: bool = True,
+         get_meta: Callable = lambda x: None,
+         resolve_resources: Callable = lambda x: None) -> File:
+    """
+    Invoke pandoc to build epub output.
 
     :param str source_file: the source file
     :param str dest_file: the destination file
@@ -263,16 +345,16 @@ def html(source_file: str,
     return pandoc(source_file=source_file,
                   dest_file=dest_file,
                   format_in=format_in,
-                  format_out=bc.PANDOC_FORMAT_HTML5,
+                  format_out=bc.PANDOC_FORMAT_EPUB,
                   standalone=standalone,
                   tabstops=tabstops,
                   toc_print=toc_print,
                   toc_depth=toc_depth,
                   crossref=crossref,
                   bibliography=bibliography,
-                  template=get_meta(bc.PANDOC_TEMPLATE_HTML5),
+                  template=get_meta(bc.PANDOC_TEMPLATE_EPUB),
                   csl=get_meta(bc.PANDOC_CSL),
                   number_sections=number_sections,
                   resolve_resources=resolve_resources,
-                  args=["--katex", "--ascii", "--html-q-tags",
+                  args=["--mathml", "--ascii", "--html-q-tags",
                         "--self-contained"])

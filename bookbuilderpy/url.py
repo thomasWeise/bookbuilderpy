@@ -55,6 +55,25 @@ def __name(request: urllib3.HTTPResponse) -> str:
     return enforce_non_empty_str_without_ws(url[first + 1:])
 
 
+def load_binary_from_url(url: str) -> Tuple[str, bytes]:
+    """
+    Load all the binary data from one url.
+
+    :param str url: the url
+    :return: a tuple of the file name and the binary data that was loaded
+    :rtype: Tuple[str, bytes]
+    """
+    http: urllib3.PoolManager = urllib3.PoolManager()
+    request: urllib3.HTTPResponse = http.request("GET", url)
+    if request.status != 200:
+        raise ValueError(
+            f"Error '{request.status}' when downloading url '{url}'.")
+    data = request.data
+    name = __name(request)
+    request.close()
+    return name, data
+
+
 def load_text_from_url(url: str) -> Tuple[str, str]:
     """
     Load all the text from one url.
@@ -63,12 +82,5 @@ def load_text_from_url(url: str) -> Tuple[str, str]:
     :return: a tuple of the file name and the text that was loaded
     :rtype: Tuple[str, str]
     """
-    http: urllib3.PoolManager = urllib3.PoolManager()
-    request: urllib3.HTTPResponse = http.request("GET", url)
-    if request.status != 200:
-        raise ValueError(
-            f"Error '{request.status}' when downloading url '{url}'.")
-    text = enforce_non_empty_str(request.data.decode("utf-8"))
-    name = __name(request)
-    request.close()
-    return name, text
+    name, data = load_binary_from_url(url)
+    return name, data.decode("utf-8")

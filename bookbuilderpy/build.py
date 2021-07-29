@@ -10,7 +10,7 @@ import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
-from bookbuilderpy.pandoc import has_pandoc, latex, html
+from bookbuilderpy.pandoc import has_pandoc, latex, html, epub
 from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor import preprocess
@@ -249,7 +249,8 @@ class Build(AbstractContextManager):
                        input_file: Path,
                        output_dir: Path,
                        lang_id: Optional[str],
-                       lang_name: Optional[str]) -> None:
+                       lang_name: Optional[str],
+                       has_bibliography: bool) -> None:
         """
         Apply pandoc and build the input file to the output dir.
 
@@ -257,6 +258,7 @@ class Build(AbstractContextManager):
         :param Path output_dir: the path to the output directory
         :param Optional[str] lang_id: the language ID
         :param Optional[str] lang_name: the language name
+        :param bool has_bibliography: is there a bibliography?
         """
         if not has_pandoc():
             if self.__fail_without_pandoc:
@@ -270,12 +272,20 @@ class Build(AbstractContextManager):
         results.append(latex(
             source_file=input_file,
             dest_file=output_dir.resolve_inside(f"{name}.pdf"),
+            bibliography=has_bibliography,
             lang=lang_id,
             get_meta=self.__get_meta_no_error,
             resolve_resources=self.__get_resource))
         results.append(html(
             source_file=input_file,
             dest_file=output_dir.resolve_inside(f"{name}.html"),
+            bibliography=has_bibliography,
+            get_meta=self.__get_meta_no_error,
+            resolve_resources=self.__get_resource))
+        results.append(epub(
+            source_file=input_file,
+            dest_file=output_dir.resolve_inside(f"{name}.epub"),
+            bibliography=has_bibliography,
             get_meta=self.__get_meta_no_error,
             resolve_resources=self.__get_resource))
 
@@ -318,16 +328,18 @@ class Build(AbstractContextManager):
             log(f"Building in temp directory '{temp}': "
                 "First applying preprocessor.")
 
-            bib = self.__get_meta_no_error(bc.PANDOC_BIBLIOGRAPHY)
-            if bib is not None:
-                Path.copy_resource(self.__input_dir,
-                                   self.__input_dir.resolve_inside(bib),
-                                   temp)
-
             text = enforce_non_empty_str(preprocess(
                 text=text, input_dir=self.input_dir,
                 get_meta=self.get_meta, get_repo=self.get_repo,
                 repo=self.__repo, output_dir=temp))
+
+            has_bibliography = False
+            bib = self.__get_meta_no_error(bc.PANDOC_BIBLIOGRAPHY)
+            if bib:
+                Path.copy_resource(self.__input_dir,
+                                   self.__input_dir.resolve_inside(bib),
+                                   temp)
+                has_bibliography = True
 
             prefix, suffix = Path.split_prefix_suffix(
                 basename(self.__input_file))
@@ -340,7 +352,11 @@ class Build(AbstractContextManager):
                 f"now storing to file '{file}'.")
             file.write_all(text)
             del prefix, suffix, text
-            self.__pandoc_build(file, base_dir, lang_id, lang_name)
+            self.__pandoc_build(input_file=file,
+                                output_dir=base_dir,
+                                lang_id=lang_id,
+                                lang_name=lang_name,
+                                has_bibliography=has_bibliography)
 
         # Finalize the build.
         self.__metadata_lang = None

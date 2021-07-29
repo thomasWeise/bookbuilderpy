@@ -48,9 +48,42 @@ def create_metadata(dest: Path,
     :rtype: Path
     """
     f: Final[Path] = dest.resolve_inside(META_NAME)
-    txt: List[str] = ["---",
-                      "title: The Great Book of Many Things",
-                      "author: Thomas Weise"]
+    txt: List[str] = [
+        "---",
+        "title: The Great Book of Many Things",
+        "author: [Thomas Weise]",
+        'date: "2021-07-23"',
+        "header-includes:",
+        "- |",
+        "  ```{=latex}",
+        "  \\usepackage[section,above,below]{placeins}",
+        "  \\let\\Oldsubsection\\subsection",
+        "  \\renewcommand{\\subsection}{\\FloatBarrier\\Oldsubsection}",
+        "  \\addtolength{\\topskip}{0pt plus 10pt}",
+        "  \\interfootnotelinepenalty=10000",
+        "  \\raggedbottom",
+        "  ```",
+        "cref: true",
+        "chapters: true",
+        'figPrefix:',
+        '  - "Figure"',
+        '  - "Figures"',
+        'eqnPrefix:',
+        '  - "Equation"',
+        '  - "Equations"',
+        'tblPrefix:',
+        '  - "Table"',
+        '  - "Tables"',
+        'lstPrefix:',
+        '  - "Listing"',
+        '  - "Listings"',
+        'secPrefix:',
+        '  - "Section"',
+        '  - "Sections"',
+        'linkReferences: true',
+        'listings: false',
+        'codeBlockCaptions: true']
+
     if with_git:
         txt.append("repos:")
         for repo in REPO_LIST:
@@ -60,12 +93,26 @@ def create_metadata(dest: Path,
     for lang in LANG_LIST:
         txt.append(f"  - id: {lang[0]}")
         txt.append(f"    name: {lang[1]}")
-    txt.append(f"{bc.PANDOC_TEMPLATE_LATEX}: eisvogel.tex")
+
+    txt.extend([
+        f"{bc.PANDOC_TEMPLATE_LATEX}: eisvogel.tex",
+        'titlepage: true',
+        'titlepage-color: "9F2925"',
+        'titlepage-text-color: "FFFFFF"',
+        'titlepage-rule-color: "E67015"',
+        'toc-own-page: true',
+        'linkcolor: blue!50!black',
+        'citecolor: blue!50!black',
+        'urlcolor: blue!50!black',
+        'toccolor: black'])
+
     txt.append(f"{bc.PANDOC_TEMPLATE_HTML5}: GitHub.html5")
     if bib_file:
         dest.enforce_contains(bib_file)
         txt.append(f"{bc.PANDOC_CSL}: association-for-computing-machinery.csl")
         txt.append(f"bibliography: {bib_file.relative_to(dest)}")
+        txt.append("link-citations: true")
+        txt.append("reference-section-title: References")
     txt.append("...")
     f.write_all(txt)
     f.enforce_file()
@@ -119,7 +166,7 @@ def create_bibliography(dest: Path) -> Tuple[Path, Tuple[str, ...]]:
                  "Programming},\n  publisher = {Princeton University Press},"
                  "\n  address = {Princeton, NJ, USA},\n  series = dbom,\n  "
                  "year = {1957},\n  isbn = {0486428095}\n}")
-    return f, ("A", "B", "C", "D", "E", )
+    return f, ("A", "B", "C", "D", "E",)
 
 
 def find_local_files() -> Tuple[str, ...]:
@@ -494,13 +541,24 @@ def generate_example(dest: Path,
     return root
 
 
+def build_example(source_dir: str, dest_dir: str) -> None:
+    """
+    Test the generation of an example folder structure.
+    """
+    in_dir = Path.path(source_dir)
+    in_dir.ensure_dir_exists()
+    out_dir = Path.path(dest_dir)
+    out_dir.ensure_dir_exists()
+    root = generate_example(in_dir,
+                            with_git=("GITHUB_JOB" in os.environ))
+    with Build(root, out_dir, False) as build:
+        build.build()
+
+
 def test_build_examples():
     """
     Test the generation of an example folder structure.
     """
     with TempDir.create() as source:
-        root = generate_example(source,
-                                with_git=("GITHUB_JOB" in os.environ))
         with TempDir.create() as dest:
-            build: Final[Build] = Build(root, dest, False)
-            build.build()
+            build_example(source, dest)

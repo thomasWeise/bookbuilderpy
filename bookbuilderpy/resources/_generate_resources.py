@@ -6,7 +6,7 @@ from bookbuilderpy.git import Repo
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str
 from bookbuilderpy.temp import TempDir
-from bookbuilderpy.url import load_text_from_url
+from bookbuilderpy.url import load_text_from_url, load_binary_from_url
 
 
 def load_html_github_template(dest: Path) -> Path:
@@ -89,8 +89,28 @@ def load_csl_template(dest: Path) -> List[Path]:
     return paths
 
 
+def load_katex(dest: Path) -> Path:
+    """
+    Download a full katex installation with all required resources.
+
+    :param Path dest: the destination
+    :return: the paths to the downloaded resources
+    :rtype: Path
+    """
+    name = "katex.zip"
+    url = "https://github.com/KaTeX/KaTeX/releases/download/" \
+          "v0.13.13/katex.zip"
+    _, data = load_binary_from_url(url)
+    dst_file = dest.resolve_inside(name)
+    with open(dst_file, "wb") as fd:
+        fd.write(data)
+
+    return dst_file
+
+
 if __name__ == "__main__":
     current_dir = Path.directory(dirname(__file__))
+    load_katex(current_dir)
     load_html_github_template(current_dir)
     load_csl_template(current_dir)
     load_latex_eisvogel_template(current_dir)

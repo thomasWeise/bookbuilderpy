@@ -87,10 +87,14 @@ PANDOC_FORMAT_MARKDOWN: Final[str] = "markdown"
 PANDOC_FORMAT_LATEX: Final[str] = "latex"
 #: the pandoc html5 format
 PANDOC_FORMAT_HTML5: Final[str] = "html5"
+#: the pandoc epub format
+PANDOC_FORMAT_EPUB: Final[str] = "epub3"
 #: the pandoc latex template
 PANDOC_TEMPLATE_LATEX: Final[str] = "template.latex"
 #: the pandoc html template
 PANDOC_TEMPLATE_HTML5: Final[str] = "template.html"
+#: the pandoc epub template
+PANDOC_TEMPLATE_EPUB: Final[str] = "template.epub"
 #: the csl template
 PANDOC_CSL: Final[str] = "csl"
 #: the pandoc bibliography key
