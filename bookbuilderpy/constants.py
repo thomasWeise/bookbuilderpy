@@ -89,6 +89,29 @@ META_LANG_NAME: Final[str] = "name"
 #: The name of the current language.
 META_CUR_LANG_NAME: Final[str] = f"{META_LANG}.{META_LANG_NAME}"
 
+#: A meta-data property identifying the website template markdown file.
+# The website body markdown *can* contain a tag of the form
+# '<div id="files">...</div>'.
+# If it does, then this tag an all contents within will be replaced with
+# an automatically generated list of files, relative links to files, and
+# file sizes.
+META_WEBSITE_BODY: Final[str] = "website_body"
+#: The begin of the tag to be replaced.
+WEBSITE_BODY_TAG_1: Final[str] = '<div id="files">'
+#: The end of the tag to be replaced.
+WEBSITE_BODY_TAG_2: Final[str] = '</div>'
+#: A meta-data property identifying the HTML website wrapper file.
+# If this file contains the string "{body}" somewhere, then we will load
+# the markdown data identified by the "website_body" attribute, compile
+# it, and replace the tag "{body}" with it.
+META_WEBSITE_OUTER: Final[str] = "website_outer"
+#: The outer tag of the website to be replaced with the body.
+WEBSITE_OUTER_TAG: Final[str] = "{body}"
+#: A meta-data property identifying the title of a book.
+META_TITLE: Final[str] = "title"
+#: A meta-data property identifying the author of a book.
+META_AUTHOR: Final[str] = "author"
+
 #: the Python programming language
 LANG_PYTHON: Final[str] = "python"
 

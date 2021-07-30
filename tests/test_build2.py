@@ -35,14 +35,52 @@ BIBLIOGRAPHY_NAME: Final[str] = "bibliography.bib"
 ROOT_NAME: Final[str] = "book.md"
 
 
+def create_website_templates(dest: str) -> Tuple[Path, Path]:
+    """
+    Create a template for a website.
+    :param str dest: the destination directory
+    :return: the paths to the outer and inner website
+    :rtype: Tuple[Path, Path]
+    """
+    output = Path.directory(dest)
+    html = output.resolve_inside("index.html")
+    html.write_all([
+        "<!DOCTYPE html>",
+        "<html dir=\"ltr\" lang=\"en\">",
+        "<head>",
+        "<meta charset=\"utf-8\">",
+        "<title>\\meta{title}</title>",
+        "</head><body>", bc.WEBSITE_OUTER_TAG,
+        "<p>Build date: \\meta{date}. "
+        "Copyright 2021-\\meta{year}, Thomas Weise.</p></body></html>"
+    ])
+    markdown = output.resolve_inside("README.md")
+
+    markdown.write_all([
+        "# This is the Website of our Book",
+        "Here I talk a lot about things, such as our book '\\meta{title}'.",
+        "## List of Files for Download:",
+        "This book is available in the following languages and formats.",
+        bc.WEBSITE_BODY_TAG_1,
+        "- item 1\n- item 2\n- item 3",
+        bc.WEBSITE_BODY_TAG_2,
+        "## Further Discussions",
+        "Blabla."
+    ])
+
+    return html, markdown
+
+
 def create_metadata(dest: Path,
                     bib_file: Optional[Path] = None,
+                    website: Optional[Tuple[Path, Path]] = None,
                     with_git: bool = True) -> Path:
     """
     Create the metadata of the build.
 
     :param Path dest: the directory
     :param Optional[Path] bib_file: the bibliography file
+    :param website: the website templates
     :param bool with_git: should github repositories be used?
     :return: the path to the metadata file
     :rtype: Path
@@ -83,6 +121,10 @@ def create_metadata(dest: Path,
         'linkReferences: true',
         'listings: false',
         'codeBlockCaptions: true']
+
+    if website:
+        txt.append(f"{bc.META_WEBSITE_OUTER}: {website[0].relative_to(dest)}")
+        txt.append(f"{bc.META_WEBSITE_BODY}: {website[1].relative_to(dest)}")
 
     if with_git:
         txt.append("repos:")
@@ -400,7 +442,7 @@ def make_text(text, dotlinebreaks: bool = True,
             words += 1
         sentences = sentences + 1
         if dotlinebreaks and (random.uniform(0, 1) < 0.03):
-            text.write(" $\\frac{5+\\sqrt{\\ln{7}}}{6}$")
+            text.write("$\\frac{5+\\sqrt{\\ln{7}}}{6}$")
         text.write(".")
         if dotlinebreaks:
             text.write("\n")
@@ -519,8 +561,10 @@ def generate_example(dest: Path,
     :return: the path to the root file
     """
     dest.enforce_dir()
+    website = create_website_templates(dest)
     bib_file, bib_keys = create_bibliography(dest)
     meta: Final[Path] = create_metadata(dest, bib_file=bib_file,
+                                        website=website,
                                         with_git=with_git)
     assert os.path.basename(meta) == META_NAME
 

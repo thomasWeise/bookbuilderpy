@@ -188,3 +188,25 @@ def lang_to_locale(lang: str) -> str:
     if lang in __LANG_DICT.keys():
         return __LANG_DICT[lang]
     return lang
+
+
+def file_size(size: int) -> str:
+    """
+    Convert a file size to a string.
+
+    :param int size: the size
+    :return: the string
+    :rtype: str
+    """
+    if isinstance(size, int) and (size >= 0):
+        if size <= 0:
+            return "0 B"
+        base_size: int = 1
+        for suffix in ["B", "KiB", "MiB", "GiB", "TiB", "PiB",
+                       "EiB", "ZiB", "YiB"]:
+            ret_size = int((size + base_size - 1) / base_size)
+            if ret_size >= 1024:
+                base_size *= 1024
+                continue
+            return f"{ret_size} {suffix}"
+    raise ValueError(f"Invalid size: {size}.")

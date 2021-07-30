@@ -1,14 +1,17 @@
-# yapf is a python code formatter
-yapf >= 0.31.0
-
-# strip-hints is a tool for removing type hints
-strip-hints >= 0.1.9
-
-# regex is needed for processing commands as regular expressions
-regex >= 2021.4.4
+# for internal markdown conversion when building the website
+markdown >= 3.3.4
 
 # we need pyyaml to process the metadata formatted in yaml
 pyyaml >= 5.4.1
 
+# regex is needed for processing commands as regular expressions
+regex >= 2021.4.4
+
+# strip-hints is a tool for removing type hints
+strip-hints >= 0.1.9
+
 # urllib3 is needed to generate the resources
 urllib3 >= 1.26.2
+
+# yapf is a python code formatter
+yapf >= 0.31.0

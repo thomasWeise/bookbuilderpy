@@ -20,6 +20,7 @@ from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
     enforce_non_empty_str_without_ws, lang_to_locale
 from bookbuilderpy.temp import TempDir
+from bookbuilderpy.website import build_website
 
 
 class Build(AbstractContextManager):
@@ -178,7 +179,7 @@ class Build(AbstractContextManager):
         :return: the meta-data element
         :rtype: Any
         """
-        self.__get_meta(key, True)
+        return self.__get_meta(key, True)
 
     def __load_repo(self, name: str, url: str) -> None:
         """
@@ -421,8 +422,19 @@ class Build(AbstractContextManager):
         if no_lang:
             self.__build_one_lang(None, None)
 
-        # if len(self.__results) <= 0:
-        #    raise ValueError("No builds discovered!")
+    def __build_website(self) -> None:
+        """Build the website, if any."""
+        template = self.__get_meta_no_error(bc.META_WEBSITE_OUTER)
+        if template:
+            template = self.input_dir.resolve_inside(template)
+            body = self.__get_meta_no_error(bc.META_WEBSITE_BODY)
+            if body:
+                body = self.input_dir.resolve_inside(body)
+            build_website(self.__results,
+                          template,
+                          body,
+                          self.__output_dir,
+                          self.get_meta)
 
     def build(self) -> None:
         """Perform the build."""
@@ -431,6 +443,7 @@ class Build(AbstractContextManager):
                                                     self.__input_dir)
         self.__load_repos_from_meta(self.__metadata_raw)
         self.__build_all_langs()
+        self.__build_website()
 
     def __enter__(self) -> 'Build':
         """Nothing, just exists for `with`."""
