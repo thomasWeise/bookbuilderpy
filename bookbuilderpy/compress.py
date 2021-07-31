@@ -9,13 +9,12 @@ from bookbuilderpy.path import Path
 from bookbuilderpy.temp import TempFile
 
 
-def compress_xz(source: Iterable[Union[Path, File, str]],
-                dest: str) -> File:
+def __paths(source: Iterable[Union[Path, File, str]]):
     """
-    Compress a sequence of files.
+    Convert the iterable of input files into a common path list.
 
-    :param source: the list of files
-    :param dest: the destination file
+    :param source: the paths
+    :return: a tuple of a common base path (if any) and the paths
     """
     files: List[Path] = []
     for f in source:
@@ -32,18 +31,31 @@ def compress_xz(source: Iterable[Union[Path, File, str]],
     if len(files) <= 1:
         raise ValueError("Nothing to compress?")
 
+    base_dir = os.path.commonpath(files)
+    if base_dir:
+        return Path.directory(base_dir), \
+            [f.relative_to(base_dir) for f in files]
+    return None, files
+
+
+def compress_xz(source: Iterable[Union[Path, File, str]],
+                dest: str) -> File:
+    """
+    Compress a sequence of files to tar.xz.
+
+    :param source: the list of files
+    :param dest: the destination file
+    """
+    base_dir, files = __paths(source)
+
     out = Path.path(dest)
     if os.path.exists(out):
         raise ValueError(f"File '{out}' already exists!")
     out_dir = Path.directory(os.path.dirname(out))
 
-    base_dir = os.path.commonpath(files)
-    if base_dir:
-        base_dir = Path.directory(base_dir)
-        paths = '" "'.join([f.relative_to(base_dir) for f in files])
-    else:
+    paths = '" "'.join(files)
+    if not base_dir:
         base_dir = out_dir
-        paths = '" "'.join(files)
 
     with TempFile.create() as tf:
         tf.write_all(
@@ -53,5 +65,35 @@ def compress_xz(source: Iterable[Union[Path, File, str]],
                              timeout=360, cwd=base_dir)  # nosec
 
     if ret.returncode != 0:
-        raise ValueError("Error when executing compressor.")
+        raise ValueError("Error when executing tar.xz compressor.")
+    return File(out)
+
+
+def compress_zip(source: Iterable[Union[Path, File, str]],
+                 dest: str) -> File:
+    """
+    Compress a sequence of files to zip.
+
+    :param source: the list of files
+    :param dest: the destination file
+    """
+    base_dir, files = __paths(source)
+
+    out = Path.path(dest)
+    if os.path.exists(out):
+        raise ValueError(f"File '{out}' already exists!")
+    out_dir = Path.directory(os.path.dirname(out))
+
+    if not base_dir:
+        base_dir = out_dir
+
+    files.insert(0, out)
+    files.insert(0, "-9")
+    files.insert(0, "zip")
+
+    ret = subprocess.run(files, check=True, text=True,  # nosec
+                         timeout=360, cwd=base_dir)  # nosec
+
+    if ret.returncode != 0:
+        raise ValueError("Error when executing zip compressor.")
     return File(out)
