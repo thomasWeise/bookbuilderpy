@@ -307,11 +307,17 @@ class Path(str):
         :return: a tuple of [prefix, suffix]
         :rtype: Tuple[str, str]
         """
-        dot: Final[int] = name.rfind(".")
+        dot: int = name.rfind(".")
         if (dot < 0) or (dot >= (len(name) - 1)):
             if enforce_suffix:
                 raise ValueError(f"'{name}' does not have suffix?")
             return enforce_non_empty_str_without_ws(name), ""
+
+        # check for stuff such as tar.xz and tar.gz
+        dot2: Final[int] = name.rfind(".", 0, dot - 1)
+        if 0 < dot2 < dot:
+            if name[dot2 + 1:dot] == "tar":
+                dot = dot2
         return enforce_non_empty_str_without_ws(name[:dot]), \
             enforce_non_empty_str_without_ws(name[dot + 1:])
 
