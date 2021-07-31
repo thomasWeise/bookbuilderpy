@@ -151,7 +151,7 @@ def pandoc(source_file: str,
                     for a in args])
     cmd.append(input_file)
 
-    ret = subprocess.run(cmd, check=True, text=True, timeout=360,  # nosec
+    ret = subprocess.run(cmd, check=True, text=True, timeout=600,  # nosec
                          cwd=input_dir)  # nosec
     if ret.returncode != 0:
         raise ValueError(
