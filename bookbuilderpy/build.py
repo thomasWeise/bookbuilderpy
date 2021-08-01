@@ -21,6 +21,7 @@ from bookbuilderpy.strings import datetime_to_date_str, \
     enforce_non_empty_str_without_ws, lang_to_locale
 from bookbuilderpy.temp import TempDir
 from bookbuilderpy.website import build_website
+from bookbuilderpy.compress import compress_xz, compress_zip
 
 
 class Build(AbstractContextManager):
@@ -299,6 +300,11 @@ class Build(AbstractContextManager):
             resolve_resources=self.__get_resource)
         results.append(epub_res)
         results.append(azw3(epub_res.path))
+        tar_xz = compress_xz(results,
+                             output_dir.resolve_inside(f"{name}.tar.xz"))
+        zipf = compress_zip(results, output_dir.resolve_inside(f"{name}.zip"))
+        results.append(tar_xz)
+        results.append(zipf)
 
         self.__results.append(LangResult(lang_id, lang_name, output_dir,
                                          tuple(results)))

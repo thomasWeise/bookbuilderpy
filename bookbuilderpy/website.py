@@ -16,7 +16,9 @@ __SUFFIXES: Final[Dict[str, str]] = {
     "pdf": "portable document format",
     "html": "stand-alone web page",
     "epub": "electronic book",
-    "azw3": "Amazon Kindle e-book"
+    "azw3": "Amazon Kindle e-book",
+    "zip": "a zip archive with the pdf, html, epub, and azw3 files",
+    "tar.xz": "a tar.xz archive with the pdf, html, epub, and azw3 files",
 }
 
 

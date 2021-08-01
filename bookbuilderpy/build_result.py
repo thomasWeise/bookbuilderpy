@@ -37,13 +37,8 @@ class File:
         if size <= 0:
             raise ValueError(f"File size of '{path}' is {size}.")
         object.__setattr__(self, "size", size)
-        i = path.rfind(".")
-        if (i <= 0) or (i >= (len(path) - 1)):
-            raise ValueError(f"File '{path}' has no suffix?")
-        suffix = path[i + 1:]
-        if len(suffix) <= 0:
-            raise ValueError(f"File '{path}' has suffix '{suffix}'?")
-        object.__setattr__(self, "suffix", suffix)
+        _, ext = Path.split_prefix_suffix(os.path.basename(path))
+        object.__setattr__(self, "suffix", ext)
 
 
 @dataclass(frozen=True, init=False, order=True)

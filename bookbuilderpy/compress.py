@@ -5,6 +5,7 @@ import subprocess  # nosec
 from typing import Union, Iterable, List
 
 from bookbuilderpy.build_result import File
+from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.temp import TempFile
 
@@ -47,6 +48,7 @@ def compress_xz(source: Iterable[Union[Path, File, str]],
     :param dest: the destination file
     """
     base_dir, files = __paths(source)
+    log(f"Applying tar.xz compression to {files}.")
 
     out = Path.path(dest)
     if os.path.exists(out):
@@ -78,6 +80,7 @@ def compress_zip(source: Iterable[Union[Path, File, str]],
     :param dest: the destination file
     """
     base_dir, files = __paths(source)
+    log(f"Applying zip compression to {files}.")
 
     out = Path.path(dest)
     if os.path.exists(out):
