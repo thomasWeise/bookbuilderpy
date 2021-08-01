@@ -7,8 +7,8 @@ A python 3-based environment for the automated compilation of books from markdow
 ## 1. Introduction
 
 The goal of this package is to provide you with a pipeline that can:
-  - automatically compile books written in [markdown](http://pandoc.org/MANUAL.html#pandocs-markdown) to formats such as [pdf](http://thomasweise.github.io/aitoa/aitoa.pdf), stand-alone [html](http://thomasweise.github.io/aitoa/aitoa.html), 
-[epub](http://thomasweise.github.io/aitoa/aitoa.epub), and [azw3](http://thomasweise.github.io/aitoa/aitoa.azw3),
+  - automatically compile books written in [markdown](http://pandoc.org/MANUAL.html#pandocs-markdown) to formats such as [pdf](https://www.iso.org/standard/75839.html), stand-alone [html](https://www.w3.org/TR/html5/), 
+[epub](https://www.w3.org/publishing/epub32/), and [azw3](http://kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.pdf),
   - support a hierarchical file structure for the book sources, i.e., allow you divide the book into chapters in folders which can contain sub-folders with sections and sub-sub-folders with sub-sections,
   - support the automatic download and inclusion of code snippets from git repositories,
   - allow the book to be written in multiple languages, and finally

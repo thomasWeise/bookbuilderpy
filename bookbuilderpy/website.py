@@ -13,12 +13,28 @@ from bookbuilderpy.strings import file_size
 
 #: Explanations of file suffixes.
 __SUFFIXES: Final[Dict[str, str]] = {
-    "pdf": "portable document format",
-    "html": "stand-alone web page",
-    "epub": "electronic book",
-    "azw3": "Amazon Kindle e-book",
-    "zip": "a zip archive with the pdf, html, epub, and azw3 files",
-    "tar.xz": "a tar.xz archive with the pdf, html, epub, and azw3 files",
+    "pdf": 'The portable document format (<code><a href="https://www.iso.org/'
+           'standard/75839.html">pdf</a></code>) is most suitable for reading'
+           ' on a PC and for printing documents.',
+    "html": 'A stand-alone web page (<code><a href="https://www.w3.org/'
+            'TR/html5/">html</a></code>) can be viewed well both on mobile '
+            'phones as well as on PCs.',
+    "epub": 'The electronic book format (<code><a href="https://www.w3.org/'
+            'publishing/epub32/">epub</a></code>) is convenient for many '
+            'e-book readers as well as mobile phones.',
+    "azw3": 'The Amazon Kindle e-book format (<code><a href="http://'
+            'kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.'
+            'pdf">azw3</a></code>) is a proprietary format suitable for'
+            'reading on a Kindle device.',
+    "zip": 'A <code><a href="https://www.loc.gov/preservation/digital/'
+           'formats/fdd/fdd000354.shtml">zip</a></code> archive containing '
+           'the book in all the formats mentioned above for convenient '
+           'download.',
+    "tar.xz": 'A <code><a href="https://www.gnu.org/software/tar/manual/'
+              'html_node/Standard.html">tar</a>.<a href="https://tukaani.'
+              'org/xz/format.html">xz</a></code> archive containing the '
+              'book in all the formats mentioned above for convenient '
+              'download.'
 }
 
 
@@ -26,25 +42,7 @@ def build_website(docs: Iterable[LangResult],
                   outer_file: str,
                   body_file: Optional[str],
                   dest_dir: str,
-                  get_meta: Callable,
-                  table_args: str = ' style="border:none;margin-left:3em"',
-                  tbody_args: str = "",
-                  lang_tr_1_args: str = '',
-                  lang_tr_2_args: str = ' style="padding-top:1em"',
-                  lang_td_bullet_args: str =
-                  ' style="text-align:right;padding-right:0;margin-right:0"',
-                  file_td_bullet_lang_args: str =
-                  ' style="text-align:right;padding-left:2em;'
-                  'padding-right:0;margin-right:0"',
-                  file_td_bullet_no_lang_args: str =
-                  ' style="text-align:right;padding-left:2em;'
-                  'padding-right:0;margin-right:0"',
-                  file_td_file_args: str = '',
-                  size_td_args: str =
-                  ' style="text-align:right;padding-right:0;'
-                  'margin-right:0;padding-left:2em"',
-                  unit_td_args: str =
-                  ' style="padding-left:0;margin-left:0"') -> File:
+                  get_meta: Callable) -> File:
     """
     Build a website linking to all the generated documents.
 
@@ -53,18 +51,6 @@ def build_website(docs: Iterable[LangResult],
     :param Optional[str] body_file: the body file
     :param str dest_dir: the destination directory
     :param Callable get_meta: a callable used to get the results
-    :param str table_args: a string pasted in the table tag
-    :param str tbody_args: a string pasted in the tbody tag
-    :param str lang_tr_1_args: a string pasted into the first lang tr tag
-    :param str lang_tr_2_args: a string pasted into all following lang tr tags
-    :param str lang_td_bullet_args: a string pasted into the lang bullet td
-    :param str file_td_bullet_lang_args: a string pasted into the file bullets
-        if languages are specified
-    :param str file_td_bullet_no_lang_args: a string pasted into file bullets
-        if no language is specified
-    :param str file_td_file_args: the file path td tag parameters
-    :param str size_td_args: the size td tag parameters
-    :param str unit_td_args: the unit td tag parameters
     :return: the file record to the generated website
     :rtype: File
     """
@@ -102,34 +88,43 @@ def build_website(docs: Iterable[LangResult],
                 f"Website '{html}' contains "
                 f"'{bc.WEBSITE_BODY_TAG_1}' but not "
                 f"'{bc.WEBSITE_BODY_TAG_2}'.")
-        data = [html[:div_1].strip(),
-                f'<table{table_args}><tbody{tbody_args}>']
+        data = [html[:div_1].strip()]
+        has_lang_ul: bool = False
 
-        lang_tr = f"<tr{lang_tr_1_args}>"
         for lang in docs:
             if lang.lang_name:
+                if not has_lang_ul:
+                    data.append(f'<ul{bc.WEBSITE_LANGS_UL_ARG}>')
+                    has_lang_ul = True
                 data.append(
-                    f'{lang_tr}<td{lang_td_bullet_args}>&bull;'
-                    f'&nbsp;</td><td colspan="4">{lang.lang_name}'
-                    '</td></tr>')
-                lang_tr = f'<tr{lang_tr_2_args}>'
-                prefix = '<tr><td>&nbsp;</td>' \
-                         f'<td{file_td_bullet_lang_args}>&ndash;&nbsp;' \
-                         f'</td><td{file_td_file_args}>'
-            else:
-                prefix = f'<tr><td{file_td_bullet_no_lang_args}>' \
-                         f'&ndash;&nbsp;</td><td{file_td_file_args}>'
+                    f'<li{bc.WEBSITE_LANGS_LI_ARG}>'
+                    f'<span{bc.WEBSITE_LANGS_NAME_SPAN_ARG}>'
+                    f'{lang.lang_name}</span>')
+            data.append(f'<ul{bc.WEBSITE_DOWNLOAD_UL_ARG}>')
 
             for res in lang.results:
                 name = os.path.basename(res.path)
+                size = file_size(res.size).replace(" ", "&nbsp;")
+                data.append(
+                    f'<li{bc.WEBSITE_DOWNLOAD_LI_ARG}>'
+                    f'<span{bc.WEBSITE_DOWNLOAD_DOWNLOAD_SPAN_ARG}>'
+                    f'<a href="{res.path.relative_to(out_dir)}"'
+                    f'{bc.WEBSITE_DOWNLOAD_FILE_A_ARG}>'
+                    f'{name}</a>&nbsp;'
+                    f'<span{bc.WEBSITE_DOWNLOAD_SIZE_SPAN_ARG}>'
+                    f'({size})</span></span>')
+
                 if res.suffix in __SUFFIXES.keys():
-                    name = f"{__SUFFIXES[res.suffix]}&nbsp;({res.suffix})"
-                link = res.path.relative_to(out_dir)
-                size = file_size(res.size).replace(
-                    " ", f'</td><td{unit_td_args}>&nbsp;')
-                data.append(f'{prefix}<a href="{link}">{name}</a></td>'
-                            f'<td{size_td_args}>{size}</td></tr>')
-        data.append('</tbody></table>')
+                    desc = __SUFFIXES[res.suffix]
+                    data.append(
+                        f'<br><span{bc.WEBSITE_DOWNLOAD_FILE_DESC_SPAN_ARG}>'
+                        f'{desc}</span>')
+                data.append('</li>')
+            data.append('</ul>')
+            if has_lang_ul:
+                data.append('</li>')
+        if has_lang_ul:
+            data.append('</ul>')
         data.append(html[(div_2 + len(bc.WEBSITE_BODY_TAG_2)):].strip())
         html = "".join(data).strip()
         del data

@@ -136,3 +136,22 @@ PANDOC_TEMPLATE_EPUB: Final[str] = "template.epub"
 PANDOC_CSL: Final[str] = "csl"
 #: the pandoc bibliography key
 PANDOC_BIBLIOGRAPHY: Final[str] = "bibliography"
+
+#: The argument to the language list in the download files.
+WEBSITE_LANGS_UL_ARG: Final[str] = ' class="langs"'
+#: The argument to the language list item in the download files.
+WEBSITE_LANGS_LI_ARG: Final[str] = ' class="oneLang"'
+#: The argument to the language name item in the download files.
+WEBSITE_LANGS_NAME_SPAN_ARG: Final[str] = ' class="oneLangName"'
+#: The argument to the single language file download list.
+WEBSITE_DOWNLOAD_UL_ARG: Final[str] = ' class="downloads"'
+#: The argument to the single file download entry.
+WEBSITE_DOWNLOAD_LI_ARG: Final[str] = ' class="download"'
+#: The argument to the single file span entry.
+WEBSITE_DOWNLOAD_DOWNLOAD_SPAN_ARG: Final[str] = ' class="downloadFile"'
+#: The argument to the single file name span entry.
+WEBSITE_DOWNLOAD_FILE_A_ARG: Final[str] = ' class="downloadFileName"'
+#: The argument to the single file size span entry.
+WEBSITE_DOWNLOAD_SIZE_SPAN_ARG: Final[str] = ' class="downloadFileSize"'
+#: The argument to the single file description entry.
+WEBSITE_DOWNLOAD_FILE_DESC_SPAN_ARG: Final[str] = ' class="downloadFileDesc"'
