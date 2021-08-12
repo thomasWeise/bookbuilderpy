@@ -18,7 +18,7 @@ from bookbuilderpy.preprocessor_input import load_input
 from bookbuilderpy.resources import load_resource
 from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
-    enforce_non_empty_str_without_ws, lang_to_locale
+    enforce_non_empty_str_without_ws, lang_to_locale, to_string
 from bookbuilderpy.temp import TempDir
 from bookbuilderpy.website import build_website
 from bookbuilderpy.compress import compress_xz, compress_zip
@@ -181,6 +181,18 @@ class Build(AbstractContextManager):
         :rtype: Any
         """
         return self.__get_meta(key, True)
+
+    def get_meta_str(self, key: str) -> str:
+        """
+        Get a meta-data element as a string.
+
+        :param str key: the key
+        :return: the meta-data element
+        :rtype: str
+        """
+        return to_string(obj=self.get_meta(key),
+                         locale=self.__get_meta_no_error(bc.META_LOCALE),
+                         use_seq_and=key == bc.META_AUTHOR)
 
     def __load_repo(self, name: str, url: str) -> None:
         """
@@ -353,7 +365,7 @@ class Build(AbstractContextManager):
 
             text = enforce_non_empty_str(preprocess(
                 text=text, input_dir=self.input_dir,
-                get_meta=self.get_meta, get_repo=self.get_repo,
+                get_meta=self.get_meta_str, get_repo=self.get_repo,
                 repo=self.__repo, output_dir=temp))
 
             has_bibliography = False
@@ -436,11 +448,11 @@ class Build(AbstractContextManager):
             body = self.__get_meta_no_error(bc.META_WEBSITE_BODY)
             if body:
                 body = self.input_dir.resolve_inside(body)
-            build_website(self.__results,
-                          template,
-                          body,
-                          self.__output_dir,
-                          self.get_meta)
+            build_website(docs=self.__results,
+                          outer_file=template,
+                          body_file=body,
+                          dest_dir=self.__output_dir,
+                          get_meta=self.get_meta_str)
 
     def build(self) -> None:
         """Perform the build."""

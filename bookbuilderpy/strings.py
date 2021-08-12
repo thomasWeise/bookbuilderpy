@@ -1,7 +1,7 @@
 """Some utility methods for string processing."""
 import datetime
 import string
-from typing import Iterable, List, Union, Tuple, Final, Dict
+from typing import Iterable, List, Union, Tuple, Final, Dict, Optional
 from urllib.parse import urlparse
 
 
@@ -210,3 +210,51 @@ def file_size(size: int) -> str:
                 continue
             return f"{ret_size} {suffix}"
     raise ValueError(f"Invalid size: {size}.")
+
+
+def to_string(obj,
+              locale: Optional[str] = None,
+              use_seq_and: bool = True) -> str:
+    """
+    Convert any object to a string, try to use a proper locale.
+
+    :param obj: the input object
+    :param Optional[str] locale: the locale
+    :param bool use_seq_and: should we use "and" in sequences?
+    :return: the string representation
+    :rtype: str
+    """
+    if obj is None:
+        return "None"
+
+    if isinstance(obj, str):
+        return obj.strip()
+
+    if isinstance(obj, Iterable):
+        merge = ", "
+        if (locale is not None) and (locale.startswith("zh")):
+            merge = ","
+
+        seq = [to_string(r, locale, use_seq_and).strip() for r in obj]
+        seql = len(seq)
+        if seql == 1:
+            return seq[0]
+
+        if use_seq_and and (locale is not None):
+            mand = sand = None
+            if locale.startswith("en"):
+                mand = ", and "
+                sand = " and "
+            elif locale.startswith("de"):
+                sand = mand = " und "
+
+            if seql == 2:
+                if sand is not None:
+                    return sand.join(seq)
+            elif mand is not None:
+                res = merge.join(seq[:-1])
+                return mand.join([res, seq[-1]])
+
+        return merge.join(seq)
+
+    return str(obj).strip()
