@@ -185,7 +185,7 @@ def lang_to_locale(lang: str) -> str:
     :rtype: str
     """
     lang = enforce_non_empty_str_without_ws(lang)
-    if lang in __LANG_DICT.keys():
+    if lang in __LANG_DICT:
         return __LANG_DICT[lang]
     return lang
 
@@ -210,6 +210,13 @@ def file_size(size: int) -> str:
                 continue
             return f"{ret_size} {suffix}"
     raise ValueError(f"Invalid size: {size}.")
+
+
+#: The dictionary with "and" concatenations
+__AND_DICT: Dict[str, Tuple[str, str]] = {
+    "de": (" und ", " und "),
+    "en": (" and ", ", and ")
+}
 
 
 def to_string(obj,
@@ -241,19 +248,14 @@ def to_string(obj,
             return seq[0]
 
         if use_seq_and and (locale is not None):
-            mand = sand = None
-            if locale.startswith("en"):
-                mand = ", and "
-                sand = " and "
-            elif locale.startswith("de"):
-                sand = mand = " und "
-
-            if seql == 2:
-                if sand is not None:
-                    return sand.join(seq)
-            elif mand is not None:
+            ands = __AND_DICT.get(locale, None)
+            if not ands:
+                ands = __AND_DICT.get(locale.split("_")[0], None)
+            if ands:
+                if seql == 2:
+                    return ands[0].join(seq)
                 res = merge.join(seq[:-1])
-                return mand.join([res, seq[-1]])
+                return ands[1].join([res, seq[-1]])
 
         return merge.join(seq)
 
