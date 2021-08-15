@@ -1,7 +1,7 @@
 """An internal package for loading metadata."""
 import io
-import re
 import os.path
+import re
 from typing import Dict, Any, Final
 
 import yaml  # type: ignore
@@ -11,21 +11,19 @@ from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
 from bookbuilderpy.strings import enforce_non_empty_str
 
+#: the full metadata command
+__FULL_META_CMD: Final[str] = f"\\{bc.CMD_GET_META}"
 
-def parse_metadata(text: str,
-                   escape_backslash: bool = False) -> Dict[str, Any]:
+
+def parse_metadata(text: str) -> Dict[str, Any]:
     """
     Extract the metadata of a string and parse it.
 
     :param str text: the text
-    :param bool escape_backslash: should backslash characters be escaped?
     :return: the metadata
     :rtype: str
     """
     enforce_non_empty_str(text)
-    if not isinstance(escape_backslash, bool):
-        raise TypeError("escape_backslash must be bool, "
-                        f"but is '{type(escape_backslash)}'.")
 
     start = re.search(r"^\s*-{3,}\s*$", text, re.MULTILINE)
     if start is None:
@@ -42,8 +40,7 @@ def parse_metadata(text: str,
     if (text is None) or (len(text) <= 0):
         raise ValueError(f"Metadata is '{text}'.")
 
-    if escape_backslash:
-        text = text.replace("\\", "\\\\")
+    text = "\n".join([t for t in text.split("\n") if __FULL_META_CMD not in t])
 
     with io.StringIO(text) as stream:
         try:
@@ -60,8 +57,6 @@ def parse_metadata(text: str,
 
 #: the full input command
 __FULL_INPUT_CMD: Final[str] = f"\\{bc.CMD_INPUT}"
-#: the full metadata command
-__FULL_META_CMD: Final[str] = f"\\{bc.CMD_GET_META}"
 
 
 def __raw_load(in_file: Path,
@@ -98,7 +93,7 @@ def __raw_load(in_file: Path,
     cmd = create_preprocessor(name=bc.CMD_INPUT,
                               func=__side_load,
                               n=1,
-                              strip_white_space=True)
+                              strip_white_space=False)
     return cmd(text)
 
 
@@ -118,6 +113,4 @@ def load_initial_metadata(in_file: Path,
     :return: the map with the meta-data
     :rtype: Dict[str,Any]
     """
-    return parse_metadata("\n".join(
-        [t for t in __raw_load(in_file, in_dir, True).split("\n")
-         if __FULL_META_CMD not in t]))
+    return parse_metadata(__raw_load(in_file, in_dir, True))

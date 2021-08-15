@@ -8,7 +8,7 @@ from bookbuilderpy.parse_metadata import parse_metadata
 def test_parse_metadata():
     text = 'blabla\n---\n# book metadata\ntitle:  An Introduction to ' \
            'Optimization Algorithms\nauthor: [Thomas Weise]\ndate: ' \
-           '"\\meta.date"\nkeywords: [Optimization, Metaheuristics, ' \
+           '"\\meta{date}"\nkeywords: [Optimization, Metaheuristics, ' \
            'Local Search, Global Search]\nrights: © 2018 Thomas Weise, ' \
            'CC BY-NC-SA 4.0\nlang: en-US\n\n# reference to associated code ' \
            'repository\ncodeRepo: ' \
@@ -38,6 +38,6 @@ def test_parse_metadata():
            '"Listings"\nsecPrefix:\n  - "Section"\n  - ' \
            '"Sections"\nlinkReferences: true\nlistings: ' \
            'false\ncodeBlockCaptions: true\n...\nblabla\n\n'
-    d = parse_metadata(text, escape_backslash=True)
+    d = parse_metadata(text)
     assert isinstance(d, dict)
     assert d["title"] == "An Introduction to Optimization Algorithms"
