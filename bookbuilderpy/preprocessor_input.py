@@ -40,6 +40,7 @@ def load_input(input_file: str,
                          _lang: Optional[str] = lang_id) -> str:
         the_file = _in_dir.resolve_input_file(_in_file, _lang)
         the_dir = Path.directory(dirname(the_file))
+        _in_dir.enforce_contains(the_dir)
         return load_input(the_file, the_dir, _lang)
 
     rel_input = create_preprocessor(name=bc.CMD_INPUT,

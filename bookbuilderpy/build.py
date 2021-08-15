@@ -4,7 +4,7 @@ import datetime
 import os
 from contextlib import AbstractContextManager, ExitStack
 from os.path import basename
-from typing import Final, Optional, Dict, Any, Iterable, List
+from typing import Final, Optional, Dict, Any, Iterable, List, Tuple
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
@@ -323,15 +323,12 @@ class Build(AbstractContextManager):
 
     def __build_one_lang(self,
                          lang_id: Optional[str],
-                         lang_name: Optional[str],
-                         is_default: bool = False) -> None:
+                         lang_name: Optional[str]) -> None:
         """
         Perform the book build for one language.
 
         :param Optional[str] lang_id: the language ID
         :param Optional[str] lang_name: the language name
-        :param bool is_default: is this the default language, in which case
-            its keys will be preserved
         """
         self.__metadata_lang = None
 
@@ -397,15 +394,6 @@ class Build(AbstractContextManager):
                                 has_bibliography=has_bibliography)
 
         # Finalize the build.
-        if is_default and self.__metadata_lang:
-            # If the language is the default language, i.e., the first one
-            # in the list, then we copy all of the keys/values that are not
-            # in the raw data over to the raw data. This allows us to preserve
-            # a default book title for the website building process from the
-            # first language.
-            for k in self.__metadata_lang.keys():
-                if k not in self.__metadata_raw:
-                    self.__metadata_raw[k] = self.__metadata_lang[k]
         self.__metadata_lang = None
         if lang_id is None:
             log("Finished build with no language set.")
@@ -446,7 +434,7 @@ class Build(AbstractContextManager):
                 done.add(lang_id)
                 lang_name = enforce_non_empty_str(enforce_non_empty_str(
                     lang[bc.META_LANG_NAME]).strip())
-                self.__build_one_lang(lang_id, lang_name, no_lang)
+                self.__build_one_lang(lang_id, lang_name)
                 no_lang = False
 
         if no_lang:
@@ -498,3 +486,22 @@ class Build(AbstractContextManager):
             self.__exit.close()
             log(f"finished the build of '{self.__input_file}' "
                 f"to '{self.__output_dir}'.")
+
+    @staticmethod
+    def run(input_file: str,
+            output_dir: str) -> Tuple[LangResult, ...]:
+        """
+        Run a build on an input file to an output directory.
+
+        :param str input_file: the input file
+        :param str output_dir: the output directory
+        :return: a tuple of results
+        :rtype: Tuple[LangResult]
+        """
+        with Build(input_file, output_dir, True) as bd:
+            bd.build()
+            res = tuple(bd.__results)
+        if len(res) <= 0:
+            raise ValueError(f"Build '{input_file}' -> '{output_dir}' did not"
+                             "produce any results.")
+        return res

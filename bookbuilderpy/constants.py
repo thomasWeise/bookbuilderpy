@@ -4,7 +4,7 @@ from typing import Final, Optional
 
 #: the command for loading the input data
 #: \relative.input{path}
-CMD_INPUT: Final[str] = "relative.input"
+CMD_INPUT: Final[str] = "rel.input"
 
 #: a relative code input to be included as a listing:
 #: \relative.code{label}{caption}{path}{lines}{labels}{args}
@@ -14,7 +14,7 @@ CMD_INPUT: Final[str] = "relative.input"
 #: lines: the lines of the code to keep, or empty to keep all
 #: labels: the labels for selecting code pieces, or empty to keep all
 #: args: any additional arguments to pass to the code renderer
-CMD_RELATIVE_CODE: Final[str] = "relative.code"
+CMD_RELATIVE_CODE: Final[str] = "rel.code"
 
 #: an absolute code input to be included as a listing:
 #: \absolute.code{label}{caption}{path}{lines}{labels}{args}
@@ -24,7 +24,7 @@ CMD_RELATIVE_CODE: Final[str] = "relative.code"
 #: lines: the lines of the code to keep, or empty to keep all
 #: labels: the labels for selecting code pieces, or empty to keep all
 #: args: any additional arguments to pass to the code renderer
-CMD_ABSOLUTE_CODE: Final[str] = "absolute.code"
+CMD_ABSOLUTE_CODE: Final[str] = "abs.code"
 
 #: a git code include:
 #: \git.code{repo}{label}{caption}{path}{lines}{labels}{args}
@@ -39,11 +39,11 @@ CMD_GIT_CODE: Final[str] = "git.code"
 
 #: a relative figure reference
 #: \\relative.figure{label}{caption}{path}{args}
-CMD_RELATIVE_FIGURE: Final[str] = "relative.figure"
+CMD_RELATIVE_FIGURE: Final[str] = "rel.figure"
 
 #: an absolute figure reference
 #: \\absolute.figure{label}{caption}{path}{args}
-CMD_ABSOLUTE_FIGURE: Final[str] = "absolute.figure"
+CMD_ABSOLUTE_FIGURE: Final[str] = "abs.figure"
 
 #: the meta data id for the current date
 META_DATE: Final[str] = "date"

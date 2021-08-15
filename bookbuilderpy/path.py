@@ -112,6 +112,8 @@ class Path(str):
         :return: `True` is this path contains the other path, `False` of mpt
         :rtype: bool
         """
+        if self == other:
+            return True
         if self.__common is None:
             self.__common = os.path.commonpath([self])
         return self.__common == os.path.commonpath([self, Path.path(other)])

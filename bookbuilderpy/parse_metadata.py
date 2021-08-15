@@ -1,11 +1,12 @@
 """An internal package for loading metadata."""
 import io
 import re
-from typing import Dict, Any
+import os.path
+from typing import Dict, Any, Final
 
 import yaml  # type: ignore
 
-from bookbuilderpy.constants import CMD_INPUT
+import bookbuilderpy.constants as bc
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
 from bookbuilderpy.strings import enforce_non_empty_str
@@ -45,7 +46,10 @@ def parse_metadata(text: str,
         text = text.replace("\\", "\\\\")
 
     with io.StringIO(text) as stream:
-        res = yaml.safe_load(stream)
+        try:
+            res = yaml.safe_load(stream)
+        except BaseException as e:
+            raise ValueError(f"Invalid metadata '{text}'.") from e
 
     if not isinstance(res, dict):
         raise ValueError(f"Metadata should be dict, but is '{type(res)}'.")
@@ -54,39 +58,44 @@ def parse_metadata(text: str,
     return res
 
 
+#: the full input command
+__FULL_INPUT_CMD: Final[str] = f"\\{bc.CMD_INPUT}"
+#: the full metadata command
+__FULL_META_CMD: Final[str] = f"\\{bc.CMD_GET_META}"
+
+
 def __raw_load(in_file: Path,
                in_dir: Path,
-               resolve_cmd_only_once: bool = True,
-               cmd_cooked: str = f"\\{CMD_INPUT}") -> str:
+               resolve_cmd_only_once: bool = True) -> str:
     """
     A raw version of the recursive path resolution.
 
     :param Path in_file: the input file path
     :param Path in_dir: the input directory
     :param bool resolve_cmd_only_once: should only one include be resolved?
-    :param str cmd_cooked: the cooked command
     :return: the loaded string
     :rtype: str
     """
     text = in_file.read_all_str()
 
-    i = text.find(cmd_cooked)
+    i = text.find(__FULL_INPUT_CMD)
     if i < 0:
         return text
     if resolve_cmd_only_once:
-        i = text.find(cmd_cooked, i + len(cmd_cooked))
+        i = text.find(__FULL_INPUT_CMD, i + len(__FULL_INPUT_CMD))
         if i > 0:
             text = text[:i]
 
     def __side_load(path: str,
                     _in_file: Path = in_file,
                     _in_dir: Path = in_dir) -> str:
-        src = _in_file.resolve_input_file(path)
+        src = _in_dir.resolve_input_file(path)
         src.enforce_file()
-        _in_dir.enforce_contains(_in_file)
-        return __raw_load(src, _in_dir, False)
+        _new_dir = Path.directory(os.path.dirname(src))
+        _in_dir.enforce_contains(_new_dir)
+        return __raw_load(src, _new_dir, False)
 
-    cmd = create_preprocessor(name=CMD_INPUT,
+    cmd = create_preprocessor(name=bc.CMD_INPUT,
                               func=__side_load,
                               n=1,
                               strip_white_space=True)
@@ -109,4 +118,6 @@ def load_initial_metadata(in_file: Path,
     :return: the map with the meta-data
     :rtype: Dict[str,Any]
     """
-    return parse_metadata(__raw_load(in_file, in_dir), True)
+    return parse_metadata("\n".join(
+        [t for t in __raw_load(in_file, in_dir, True).split("\n")
+         if __FULL_META_CMD not in t]))
