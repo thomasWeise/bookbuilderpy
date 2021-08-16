@@ -48,11 +48,12 @@ def preprocess(text: str,
         use_path = enforce_non_empty_str(new_path.relative_to(_dst).strip())
         cmd = enforce_non_empty_str(" ".join([enforce_non_empty_str(
             label.strip()), args.strip()]).strip())
-        return f"\n\n![{caption}]({use_path}){{#fig:{cmd}}}\n\n"
+        return f"![{caption}]({use_path}){{#fig:{cmd}}}"
 
     text = (create_preprocessor(name=bc.CMD_ABSOLUTE_FIGURE,
                                 func=__make_absolute_figure,
-                                n=4, strip_white_space=True))(text)
+                                n=4, strip_white_space=True,
+                                wrap_in_newlines=2))(text)
 
     # make a code section
     def __make_code(label: str, caption: str, code: str, file: Path,
@@ -71,8 +72,8 @@ def preprocess(text: str,
             url = userepo.make_url(file.relative_to(userepo.path))
             caption = f"{caption} ([src]({url}))"
 
-        return f"\n\nListing: {caption}\n\n" \
-               f"```{{#lst:{label}{plang} .numberLines}}\n{code}\n```\n\n"
+        return f"Listing: {caption}\n\n" \
+               f"```{{#lst:{label}{plang} .numberLines}}\n{code}\n```"
 
     # create all local code
     def __make_absolute_code(label: str, caption: str, path: str, lines: str,
@@ -85,7 +86,8 @@ def preprocess(text: str,
 
     text = (create_preprocessor(name=bc.CMD_ABSOLUTE_CODE,
                                 func=__make_absolute_code,
-                                n=6, strip_white_space=True))(text)
+                                n=6, strip_white_space=True,
+                                wrap_in_newlines=2))(text)
 
     # create all git code
     def __make_git_code(repoid: str, label: str, caption: str, path: str,
@@ -100,5 +102,6 @@ def preprocess(text: str,
 
     text = (create_preprocessor(name=bc.CMD_GIT_CODE,
                                 func=__make_git_code,
-                                n=7, strip_white_space=True))(text)
+                                n=7, strip_white_space=True,
+                                wrap_in_newlines=2))(text)
     return text

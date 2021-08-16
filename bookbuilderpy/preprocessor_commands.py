@@ -115,7 +115,8 @@ def __strip_group(s: str) -> str:
 def create_preprocessor(name: str,
                         func: Callable,
                         n: int = 1,
-                        strip_white_space: bool = False) -> Callable:
+                        strip_white_space: bool = False,
+                        wrap_in_newlines: int = 0) -> Callable:
     r"""
     Create a preprocessor command.
 
@@ -137,6 +138,8 @@ def create_preprocessor(name: str,
     :param Callable func: the function to call
     :param int n: the number of arguments to pass to func
     :param bool strip_white_space: should surrounding white space be stripped?
+    :param int wrap_in_newlines: the number of newlines into which the output
+        should be wrapped
     :return: a function that can be invoked on a string and which replaces
         all the occurences of the command with the results of corresponding
         `func` invocations
@@ -159,13 +162,19 @@ def create_preprocessor(name: str,
     >>> cmd = create_preprocessor("y", lambda x: str(int(x)*2), 1)
     >>> cmd("12\y{3}4")
     '1264'
+    >>> cmd = create_preprocessor("y", lambda x: f"a{x}b", 1,
+    ...     wrap_in_newlines=2)
+    >>> cmd("12\y{3}4")
+    '12\n\na3b\n\n4'
     """
     if not callable(func):
         raise TypeError(f"func must be callable, but is {type(func)}.")
 
     # Create the inner function that sanitizes the arguments and passes them on
     # to func.
-    def __func(args, inner_n=n, inner_func=func) -> str:
+    def __func(args, inner_n=n, inner_func=func,
+               nls="\n" * wrap_in_newlines if
+               (wrap_in_newlines > 0) else None) -> str:
         if inner_n == 0:
             ret = inner_func()
         else:
@@ -176,6 +185,9 @@ def create_preprocessor(name: str,
             ret = inner_func(*[__strip_group(g) for g in groups])
         if not isinstance(ret, str):
             raise TypeError(f"return value must be str, but is {type(ret)}.")
+        if nls:
+            ret = ret.strip()
+            return nls if len(ret) <= 0 else f"{nls}{ret}{nls}"
         return ret
 
     # Create the actual command function that can be invoked and that

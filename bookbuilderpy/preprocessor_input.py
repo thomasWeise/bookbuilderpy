@@ -46,7 +46,8 @@ def load_input(input_file: str,
     rel_input = create_preprocessor(name=bc.CMD_INPUT,
                                     func=__relative_input,
                                     n=1,
-                                    strip_white_space=True)
+                                    strip_white_space=True,
+                                    wrap_in_newlines=1)
 
     def __relative_code(_label: str,
                         _caption: str,

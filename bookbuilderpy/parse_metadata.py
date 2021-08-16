@@ -93,7 +93,8 @@ def __raw_load(in_file: Path,
     cmd = create_preprocessor(name=bc.CMD_INPUT,
                               func=__side_load,
                               n=1,
-                              strip_white_space=False)
+                              strip_white_space=False,
+                              wrap_in_newlines=1)
     return cmd(text)
 
 
