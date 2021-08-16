@@ -42,6 +42,7 @@ def build_website(docs: Iterable[LangResult],
                   outer_file: str,
                   body_file: Optional[str],
                   dest_dir: str,
+                  input_dir: str,
                   get_meta: Callable) -> File:
     """
     Build a website linking to all the generated documents.
@@ -50,6 +51,7 @@ def build_website(docs: Iterable[LangResult],
     :param str outer_file: the wrapper file
     :param Optional[str] body_file: the body file
     :param str dest_dir: the destination directory
+    :param str input_dir: the base input directory
     :param Callable get_meta: a callable used to get the results
     :return: the file record to the generated website
     :rtype: File
@@ -57,19 +59,22 @@ def build_website(docs: Iterable[LangResult],
     if docs is None:
         raise ValueError("docs cannot be None.")
     out_dir: Final[Path] = Path.directory(dest_dir)
+    in_dir = Path.directory(input_dir)
 
     # load the html template
     out_file = out_dir.resolve_inside("index.html")
     if os.path.exists(out_file):
         raise ValueError(f"File '{out_file}' already exists.")
+
     log(f"Beginning to build website '{out_file}'.")
-    html = Path.file(outer_file).read_all_str()
+
+    html = in_dir.resolve_inside(outer_file).read_all_str()
 
     # should there be a body to be included?
     tag_index = html.find(bc.WEBSITE_OUTER_TAG)
     if tag_index >= 0:
         # yes, so we load the body
-        body = Path.file(body_file).read_all_str()
+        body = in_dir.resolve_inside(body_file).read_all_str()
         html = "\n".join(
             [html[:tag_index].strip(),
              markdown.markdown(text=body.strip(),
@@ -132,7 +137,7 @@ def build_website(docs: Iterable[LangResult],
     html = (create_preprocessor(name=bc.CMD_GET_META,
                                 func=get_meta,
                                 n=1,
-                                strip_white_space=True))(html)
+                                strip_white_space=False))(html)
     out_file.write_all(html.strip())
     res = File(out_file)
     log(f"Finished building website '{res.path}', size is {res.size}.")

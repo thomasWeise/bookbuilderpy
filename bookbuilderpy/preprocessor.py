@@ -34,7 +34,7 @@ def preprocess(text: str,
     text = (create_preprocessor(name=bc.CMD_GET_META,
                                 func=get_meta,
                                 n=1,
-                                strip_white_space=True))(text)
+                                strip_white_space=False))(text)
 
     # create all figures
     def __make_absolute_figure(label: str,

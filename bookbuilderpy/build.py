@@ -8,6 +8,7 @@ from typing import Final, Optional, Dict, Any, Iterable, List, Tuple
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
+from bookbuilderpy.compress import compress_xz, compress_zip
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
 from bookbuilderpy.pandoc import has_pandoc, latex, html, epub, azw3
@@ -21,7 +22,6 @@ from bookbuilderpy.strings import datetime_to_date_str, \
     enforce_non_empty_str_without_ws, lang_to_locale, to_string
 from bookbuilderpy.temp import TempDir
 from bookbuilderpy.website import build_website
-from bookbuilderpy.compress import compress_xz, compress_zip
 
 
 class Build(AbstractContextManager):
@@ -452,6 +452,7 @@ class Build(AbstractContextManager):
                           outer_file=template,
                           body_file=body,
                           dest_dir=self.__output_dir,
+                          input_dir=self.__input_dir,
                           get_meta=self.get_meta_str)
 
     def build(self) -> None:
