@@ -290,23 +290,26 @@ class Build(AbstractContextManager):
         output_dir.enforce_dir()
         name, _ = Path.split_prefix_suffix(os.path.basename(input_file))
         results: List[File] = list()
+        locale: Optional[str] = self.__get_meta_no_error(bc.META_LOCALE)
 
         results.append(latex(
             source_file=input_file,
             dest_file=output_dir.resolve_inside(f"{name}.pdf"),
+            locale=locale,
             bibliography=has_bibliography,
-            lang=lang_id,
             get_meta=self.__get_meta_no_error,
             resolve_resources=self.__get_resource))
         results.append(html(
             source_file=input_file,
             dest_file=output_dir.resolve_inside(f"{name}.html"),
+            locale=locale,
             bibliography=has_bibliography,
             get_meta=self.__get_meta_no_error,
             resolve_resources=self.__get_resource))
         epub_res = epub(
             source_file=input_file,
             dest_file=output_dir.resolve_inside(f"{name}.epub"),
+            locale=locale,
             bibliography=has_bibliography,
             get_meta=self.__get_meta_no_error,
             resolve_resources=self.__get_resource)

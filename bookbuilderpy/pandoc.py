@@ -33,6 +33,7 @@ def pandoc(source_file: str,
            dest_file: str,
            format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
            format_out: str = bc.PANDOC_FORMAT_LATEX,
+           locale: Optional[str] = None,
            standalone: bool = True,
            tabstops: Optional[int] = 2,
            toc_print: bool = True,
@@ -61,6 +62,7 @@ def pandoc(source_file: str,
     :param Optional[str] template: which template should we use, if any?
     :param Optional[str] csl: which csl file should we use, if any?
     :param bool number_sections: should sections be numbered?
+    :param Optional[str] locale: the language to be used for compiling
     :param args: any additional arguments
     :param Callable resolve_resources: a function to resolve resources
     :return: the Path to the generated output file and it size
@@ -147,9 +149,13 @@ def pandoc(source_file: str,
             cmd.append(f"--csl={csl}")
 
     if args is not None:
-        cmd.extend([enforce_non_empty_str_without_ws(a).strip()
+        cmd.extend([enforce_non_empty_str(a).strip()
                     for a in args])
     cmd.append(input_file)
+
+    if locale is not None:
+        locale = enforce_non_empty_str_without_ws(locale)
+        cmd.append(f"-V lang={locale.replace('_', '-')}")
 
     ret = subprocess.run(cmd, check=True, text=True, timeout=600,  # nosec
                          cwd=input_dir)  # nosec
@@ -172,7 +178,7 @@ def pandoc(source_file: str,
 def latex(source_file: str,
           dest_file: str,
           format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
-          lang: Optional[str] = None,
+          locale: Optional[str] = None,
           standalone: bool = True,
           tabstops: Optional[int] = 2,
           toc_print: bool = True,
@@ -190,7 +196,7 @@ def latex(source_file: str,
     :param str source_file: the source file
     :param str dest_file: the destination file
     :param str format_in: the input format
-    :param Optional[str] lang: a language id code
+    :param Optional[str] locale: the language to be used for compiling
     :param bool standalone: should we produce a stand-alone document?
     :param Optional[int] tabstops: the number of spaces with which we replace
         a tab character, or None to not replace
@@ -207,8 +213,10 @@ def latex(source_file: str,
     :rtype: File
     """
     args = list()
-    if lang is not None:
-        if (lang == "zh") or (lang.startswith("zh-")):
+    if locale is not None:
+        locale = enforce_non_empty_str_without_ws(locale)
+        if (locale == "zh") or (locale.startswith("zh-")) or \
+                (locale.startswith("zh_")):
             args.append("--pdf-engine=xelatex")
     top_level_division = enforce_non_empty_str_without_ws(top_level_division)
     args.append(f"--top-level-division={top_level_division}")
@@ -228,6 +236,7 @@ def latex(source_file: str,
                   template=get_meta(bc.PANDOC_TEMPLATE_LATEX),
                   csl=get_meta(bc.PANDOC_CSL),
                   number_sections=number_sections,
+                  locale=locale,
                   resolve_resources=resolve_resources,
                   args=args)
 
@@ -235,6 +244,7 @@ def latex(source_file: str,
 def html(source_file: str,
          dest_file: str,
          format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
+         locale: Optional[str] = None,
          standalone: bool = True,
          tabstops: Optional[int] = 2,
          toc_print: bool = True,
@@ -250,6 +260,7 @@ def html(source_file: str,
     :param str source_file: the source file
     :param str dest_file: the destination file
     :param str format_in: the input format
+    :param Optional[str] locale: the language to be used for compiling
     :param bool standalone: should we produce a stand-alone document?
     :param Optional[int] tabstops: the number of spaces with which we replace
         a tab character, or None to not replace
@@ -269,6 +280,7 @@ def html(source_file: str,
                    dest_file=dest_file,
                    format_in=format_in,
                    format_out=bc.PANDOC_FORMAT_HTML5,
+                   locale=locale,
                    standalone=standalone,
                    tabstops=tabstops,
                    toc_print=toc_print,
@@ -314,6 +326,7 @@ def html(source_file: str,
 def epub(source_file: str,
          dest_file: str,
          format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
+         locale: Optional[str] = None,
          standalone: bool = True,
          tabstops: Optional[int] = 2,
          toc_print: bool = True,
@@ -329,6 +342,7 @@ def epub(source_file: str,
     :param str source_file: the source file
     :param str dest_file: the destination file
     :param str format_in: the input format
+    :param Optional[str] locale: the language to be used for compiling
     :param bool standalone: should we produce a stand-alone document?
     :param Optional[int] tabstops: the number of spaces with which we replace
         a tab character, or None to not replace
@@ -346,6 +360,7 @@ def epub(source_file: str,
                   dest_file=dest_file,
                   format_in=format_in,
                   format_out=bc.PANDOC_FORMAT_EPUB,
+                  locale=locale,
                   standalone=standalone,
                   tabstops=tabstops,
                   toc_print=toc_print,

@@ -23,7 +23,7 @@ REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
 #: the list of languages
 LANG_LIST: Final[Tuple[Tuple[str, str], ...]] = (
     ("en", "English"),
-    ("zh", "Chinese"))
+    ("zh", "中文"))
 
 #: the meta data file name
 META_NAME: Final[str] = "metadata.yaml"

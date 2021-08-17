@@ -162,7 +162,7 @@ def get_prefix_str(str_list: Union[Tuple[str, ...], List[str]]) -> str:
 
 #: The language to locale dictionary for base locales.
 __LANG_DICT: Final[Dict[str, str]] = {
-    "en": "en_us",
+    "en": "en_US",
     "zh": "zh_CN",
     "cn": "zh_CN",
     "tw": "zh_TW",
