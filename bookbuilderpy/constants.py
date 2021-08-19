@@ -89,6 +89,15 @@ META_LANG_NAME: Final[str] = "name"
 #: The name of the current language.
 META_CUR_LANG_NAME: Final[str] = f"{META_LANG}.{META_LANG_NAME}"
 
+#: the key for the  repository name
+META_SELF_REPO_NAME: Final[str] = "repoName"
+#: the key for the  repository
+META_SELF_REPO_URL: Final[str] = "repoUrl"
+#: the key for the  repository commit
+META_SELF_REPO_COMMIT: Final[str] = "repoCommit"
+#: the key for the repository date
+META_SELF_REPO_DATE: Final[str] = "repoDate"
+
 #: A meta-data property identifying the website template markdown file.
 # The website body markdown *can* contain a tag of the form
 # '<div id="files">...</div>'.

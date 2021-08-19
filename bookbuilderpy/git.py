@@ -161,3 +161,21 @@ class Repo:
             base_url = enforce_non_empty_str_without_ws(base_url[:-4])
 
         return enforce_url(f"{base_url}/blob/{self.commit}/{path}")
+
+    def get_name(self) -> str:
+        """
+        Get the name of this repository in the form 'user/name'.
+
+        :return: the name of this repository in the form 'user/name'.
+        :rtype: str
+        """
+        base_url = self.url
+        if base_url.lower().endswith(".git"):
+            base_url = enforce_non_empty_str_without_ws(base_url[:-4])
+        si = base_url.rfind("/")
+        if si <= 0:
+            return base_url
+        si2 = base_url.rfind("/", si - 1)
+        if si2 > 0:
+            si = si2
+        return enforce_non_empty_str(base_url[si + 1:].strip())

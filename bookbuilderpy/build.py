@@ -158,6 +158,16 @@ class Build(AbstractContextManager):
         if key == bc.META_LANG_NAME:
             return "English"
 
+        if self.__repo:
+            if key == bc.META_SELF_REPO_URL:
+                return self.__repo.url
+            if key == bc.META_SELF_REPO_DATE:
+                return self.__repo.date_time
+            if key == bc.META_SELF_REPO_COMMIT:
+                return self.__repo.commit
+            if key == bc.META_SELF_REPO_NAME:
+                return self.__repo.get_name()
+
         if raise_on_none:
             raise ValueError(f"Metadata key '{key}' not found.")
         return None
