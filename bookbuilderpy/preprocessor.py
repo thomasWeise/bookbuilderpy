@@ -52,7 +52,7 @@ def preprocess(text: str,
     # execute all repo-info commands
     text = (create_preprocessor(name=bc.CMD_GET_REPO,
                                 func=_get_repo,
-                                n=1,
+                                n=2,
                                 strip_white_space=False))(text)
 
     # create all figures

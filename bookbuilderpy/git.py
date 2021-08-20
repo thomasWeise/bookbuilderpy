@@ -175,7 +175,5 @@ class Repo:
         si = base_url.rfind("/")
         if si <= 0:
             return base_url
-        si2 = base_url.rfind("/", si - 1)
-        if si2 > 0:
-            si = si2
+        si = max(0, base_url.rfind("/", 0, si - 1))
         return enforce_non_empty_str(base_url[si + 1:].strip())
