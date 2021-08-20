@@ -51,12 +51,6 @@ META_DATE: Final[str] = "date"
 META_DATE_TIME: Final[str] = "time"
 #: the meta data id for the current year
 META_YEAR: Final[str] = "year"
-#: the meta-information about the commit
-META_GIT_COMMIT: Final[str] = "gitcommit"
-#: the url to the git repository
-META_GIT_URL: Final[str] = "giturl"
-#: the git commit date and time
-META_GIT_DATE: Final[str] = "gitdate"
 #: the id of the language in which the project is currently built
 # This property can either be set explicitly or is computed from the current
 # language id. If the property is not set and there is not language id, then
@@ -71,8 +65,12 @@ META_LANG: Final[str] = "lang"
 META_LOCALE: Final[str] = "locale"
 
 #: obtain a meta data element
-#: \\meta{id}
+#: \meta{id}
 CMD_GET_META: Final[str] = "meta"
+
+#: obtain information about a repository
+#: \repo{repo-id}{info-id}
+CMD_GET_REPO: Final[str] = "repo"
 
 #: The key for the repository list
 META_REPOS: Final[str] = "repos"
@@ -90,13 +88,13 @@ META_LANG_NAME: Final[str] = "name"
 META_CUR_LANG_NAME: Final[str] = f"{META_LANG}.{META_LANG_NAME}"
 
 #: the key for the  repository name
-META_SELF_REPO_NAME: Final[str] = "repoName"
+META_REPO_INFO_NAME: Final[str] = "repo.name"
 #: the key for the  repository
-META_SELF_REPO_URL: Final[str] = "repoUrl"
+META_REPO_INFO_URL: Final[str] = "repo.url"
 #: the key for the  repository commit
-META_SELF_REPO_COMMIT: Final[str] = "repoCommit"
+META_REPO_INFO_COMMIT: Final[str] = "repo.commit"
 #: the key for the repository date
-META_SELF_REPO_DATE: Final[str] = "repoDate"
+META_REPO_INFO_DATE: Final[str] = "repo.date"
 
 #: A meta-data property identifying the website template markdown file.
 # The website body markdown *can* contain a tag of the form

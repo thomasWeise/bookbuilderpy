@@ -126,21 +126,6 @@ class Build(AbstractContextManager):
             return self.__start_time
         if key == bc.META_YEAR:
             return self.__start_year
-        if key in (bc.META_GIT_URL, bc.META_GIT_DATE, bc.META_GIT_COMMIT):
-            if self.__repo is None:
-                if raise_on_none:
-                    raise ValueError(
-                        f"Cannot access {key} if build is not based on repo.")
-                return None
-            if key == bc.META_GIT_URL:
-                return self.__repo.url
-            if key == bc.META_GIT_COMMIT:
-                return self.__repo.commit
-            if key == bc.META_GIT_DATE:
-                return self.__repo.date_time
-            if raise_on_none:
-                raise ValueError("Huh?")
-            return None
 
         if self.__metadata_lang is not None:
             if key in self.__metadata_lang:
@@ -158,15 +143,20 @@ class Build(AbstractContextManager):
         if key == bc.META_LANG_NAME:
             return "English"
 
-        if self.__repo:
-            if key == bc.META_SELF_REPO_URL:
+        if key in (bc.META_REPO_INFO_URL, bc.META_REPO_INFO_DATE,
+                   bc.META_REPO_INFO_COMMIT, bc.META_REPO_INFO_NAME):
+            if self.__repo is None:
+                if raise_on_none:
+                    raise ValueError(
+                        f"Cannot access {key} if build is not based on repo.")
+                return None
+            if key == bc.META_REPO_INFO_URL:
                 return self.__repo.url
-            if key == bc.META_SELF_REPO_DATE:
+            if key == bc.META_REPO_INFO_DATE:
                 return self.__repo.date_time
-            if key == bc.META_SELF_REPO_COMMIT:
+            if key == bc.META_REPO_INFO_COMMIT:
                 return self.__repo.commit
-            if key == bc.META_SELF_REPO_NAME:
-                return self.__repo.get_name()
+            return self.__repo.get_name()
 
         if raise_on_none:
             raise ValueError(f"Metadata key '{key}' not found.")

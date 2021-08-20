@@ -30,9 +30,28 @@ def preprocess(text: str,
     dst = Path.directory(output_dir)
     src.enforce_neither_contains(dst)
 
-    # flatten all meta-data commands
+    # execute all meta-data commands
     text = (create_preprocessor(name=bc.CMD_GET_META,
                                 func=get_meta,
+                                n=1,
+                                strip_white_space=False))(text)
+
+    def _get_repo(repo_id, info_id, _get_repo=get_repo) -> str:
+        gitrepo: Final[Repo] = _get_repo(repo_id)
+        if info_id == bc.META_REPO_INFO_URL:
+            return gitrepo.url
+        if info_id == bc.META_REPO_INFO_DATE:
+            return gitrepo.date_time
+        if info_id == bc.META_REPO_INFO_COMMIT:
+            return gitrepo.commit
+        if info_id == bc.META_REPO_INFO_NAME:
+            return gitrepo.get_name()
+        raise ValueError(
+            f"Invalid repo query '{info_id}' for repo '{repo_id}'.")
+
+    # execute all repo-info commands
+    text = (create_preprocessor(name=bc.CMD_GET_REPO,
+                                func=_get_repo,
                                 n=1,
                                 strip_white_space=False))(text)
 
