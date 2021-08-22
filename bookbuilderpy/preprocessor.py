@@ -1,5 +1,5 @@
 """The preprocessor commands to be applied once the text has been loaded."""
-from typing import Callable, Optional, Final
+from typing import Callable, Optional, Final, Dict
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.git import Repo
@@ -36,8 +36,8 @@ def preprocess(text: str,
                                 n=1,
                                 strip_white_space=False))(text)
 
-    def _get_repo(repo_id, info_id, _get_repo=get_repo) -> str:
-        gitrepo: Final[Repo] = _get_repo(repo_id)
+    def __get_repo(repo_id, info_id) -> str:
+        gitrepo: Final[Repo] = get_repo(repo_id)
         if info_id == bc.META_REPO_INFO_URL:
             return gitrepo.url
         if info_id == bc.META_REPO_INFO_DATE:
@@ -51,20 +51,55 @@ def preprocess(text: str,
 
     # execute all repo-info commands
     text = (create_preprocessor(name=bc.CMD_GET_REPO,
-                                func=_get_repo,
+                                func=__get_repo,
                                 n=2,
                                 strip_white_space=False))(text)
+
+    # make the definitions
+    def_map: Dict[str, str] = dict()
+    def_count: Dict[str, int] = dict()
+
+    def __make_def(deftype: str,
+                   label: str,
+                   body: str) -> str:
+        nonlocal def_map
+        nonlocal def_count
+        prefix = enforce_non_empty_str(get_meta(f"{deftype}Title").strip())
+        count: int = def_count.get(deftype, 0) + 1
+        def_count[deftype] = count
+        anchor = f"{prefix}&nbsp;{count}"
+        enforce_non_empty_str(label)
+        if label in def_map:
+            raise ValueError(
+                f"Redefined label '{label}' of type '{deftype}'.")
+        label_name = f"_def:{count}:{label}"
+        def_map[label] = f"[{anchor}](#{label_name})"
+        enforce_non_empty_str(body)
+        return f"<div id=\"{label_name}\">**{anchor}.**&nbsp;{body}</div>"
+
+    text = (create_preprocessor(name=bc.CMD_DEFINITION,
+                                func=__make_def,
+                                n=3,
+                                strip_white_space=True,
+                                wrap_in_newlines=2))(text)
+    del def_count, __make_def
+
+    text = (create_preprocessor(name=bc.CMD_DEF_REF,
+                                func=def_map.__getitem__,
+                                n=1,
+                                strip_white_space=False))(text)
+    del def_map
 
     # create all figures
     def __make_absolute_figure(label: str,
                                caption: str,
                                path: str,
-                               args: str,
-                               _src: Path = src,
-                               _dst: Path = dst) -> str:
-        new_path = Path.copy_resource(_src, path, _dst)
+                               args: str) -> str:
+        nonlocal src
+        nonlocal dst
+        new_path = Path.copy_resource(src, path, dst)
         caption = enforce_non_empty_str(caption.strip())
-        use_path = enforce_non_empty_str(new_path.relative_to(_dst).strip())
+        use_path = enforce_non_empty_str(new_path.relative_to(dst).strip())
         cmd = enforce_non_empty_str(" ".join([enforce_non_empty_str(
             label.strip()), args.strip()]).strip())
         return f"![{caption}]({use_path}){{#fig:{cmd}}}"
@@ -96,9 +131,10 @@ def preprocess(text: str,
 
     # create all local code
     def __make_absolute_code(label: str, caption: str, path: str, lines: str,
-                             labels: str, args: str, _src: Path = src) -> str:
+                             labels: str, args: str) -> str:
+        nonlocal src
         file: Final[Path] = Path.file(path)
-        _src.enforce_contains(file)
+        src.enforce_contains(file)
         code = load_code(file, lines=lines, labels=labels, args=args)
         return __make_code(label=label, caption=caption,
                            code=code, file=file, userepo=repo)

@@ -38,12 +38,20 @@ CMD_ABSOLUTE_CODE: Final[str] = "abs.code"
 CMD_GIT_CODE: Final[str] = "git.code"
 
 #: a relative figure reference
-#: \\relative.figure{label}{caption}{path}{args}
+#: \relative.figure{label}{caption}{path}{args}
 CMD_RELATIVE_FIGURE: Final[str] = "rel.figure"
 
 #: an absolute figure reference
-#: \\absolute.figure{label}{caption}{path}{args}
+#: \absolute.figure{label}{caption}{path}{args}
 CMD_ABSOLUTE_FIGURE: Final[str] = "abs.figure"
+
+#: an command for formatting definitions
+#: \definition{type}{label}{body}
+CMD_DEFINITION: Final[str] = "definition"
+
+#: reference a definition
+#: \def.ref{label}
+CMD_DEF_REF: Final[str] = "def.ref"
 
 #: the meta data id for the current date
 META_DATE: Final[str] = "date"
