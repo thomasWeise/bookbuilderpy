@@ -81,7 +81,7 @@ def preprocess(text: str,
                                 func=__make_def,
                                 n=3,
                                 strip_white_space=True,
-                                wrap_in_newlines=2))(text)
+                                wrap_in_newlines=3))(text)
     del def_count, __make_def
 
     text = (create_preprocessor(name=bc.CMD_DEF_REF,
