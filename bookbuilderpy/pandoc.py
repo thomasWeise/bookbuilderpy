@@ -212,7 +212,7 @@ def latex(source_file: str,
     :return: the Path to the generated output file and it size
     :rtype: File
     """
-    args = list()
+    args = []
     if locale is not None:
         locale = enforce_non_empty_str_without_ws(locale)
         if (locale == "zh") or (locale.startswith("zh-")) or \

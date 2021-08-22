@@ -72,7 +72,7 @@ def load_csl_template(dest: Path) -> List[Path]:
     :return: the full path of the template
     :rtype: List[Path]
     """
-    paths: Final[List[Path]] = list()
+    paths: Final[List[Path]] = []
 
     for name in ["association-for-computing-machinery"]:
         url = f"https://www.zotero.org/styles/{name}"

@@ -66,11 +66,11 @@ class Build(AbstractContextManager):
         #: the language-specific metadata
         self.__metadata_lang: Optional[Dict[str, Any]] = None
         #: the mapping of urls to repositories
-        self.__repo_urls: Dict[str, Repo] = dict()
+        self.__repo_urls: Dict[str, Repo] = {}
         #: the mapping of repo IDs to repositories
-        self.__repo_ids: Dict[str, Repo] = dict()
+        self.__repo_ids: Dict[str, Repo] = {}
         #: the internal collection of build results
-        self.__results: List[LangResult] = list()
+        self.__results: List[LangResult] = []
         #: the own repository information
         self.__repo: Optional[Repo] = None
         #: fail if pandoc is not available?
@@ -289,7 +289,7 @@ class Build(AbstractContextManager):
         input_file.enforce_file()
         output_dir.enforce_dir()
         name, _ = Path.split_prefix_suffix(os.path.basename(input_file))
-        results: List[File] = list()
+        results: List[File] = []
         locale: Optional[str] = self.__get_meta_no_error(bc.META_LOCALE)
 
         results.append(latex(

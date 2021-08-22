@@ -56,8 +56,8 @@ def preprocess(text: str,
                                 strip_white_space=False))(text)
 
     # make the definitions
-    def_map: Dict[str, str] = dict()
-    def_count: Dict[str, int] = dict()
+    def_map: Dict[str, str] = {}
+    def_count: Dict[str, int] = {}
 
     def __make_def(deftype: str,
                    label: str,

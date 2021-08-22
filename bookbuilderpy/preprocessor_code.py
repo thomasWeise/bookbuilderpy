@@ -51,7 +51,7 @@ def load_code(path: str,
                 f"line info needs to be str, but is {type(lines)}.")
 
         if len(lines) > 0:
-            keep_lines = list()
+            keep_lines = []
             for line in lines.split(","):
                 line = line.strip()
                 if "-" in line:
@@ -68,7 +68,7 @@ def load_code(path: str,
             raise TypeError(
                 f"labels info needs to be str, but is {type(labels)}.")
         if len(labels) > 0:
-            keep_labels = list()
+            keep_labels = []
             for label in labels.split(","):
                 keep_labels.append(
                     enforce_non_empty_str_without_ws(label.strip()))

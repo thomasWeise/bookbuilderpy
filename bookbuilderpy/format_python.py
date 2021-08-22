@@ -288,7 +288,7 @@ def preprocess_python(code: List[str],
     if labels is None:
         keep_lines = code
     else:
-        keep_lines = list()
+        keep_lines = []
         for label in labels:
             label = label.strip()
             start_label = f"# start {label}"

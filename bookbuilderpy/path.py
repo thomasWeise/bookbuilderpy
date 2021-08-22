@@ -209,7 +209,7 @@ class Path(str):
         :rtype: List[str]
         """
         self.enforce_file()
-        with io.open(self, "rt") as reader:
+        with io.open(self, "rt", encoding="utf-8") as reader:
             ret = reader.readlines()
         if not isinstance(ret, List):
             raise TypeError("List of strings expected, but "
@@ -226,7 +226,7 @@ class Path(str):
         :rtype: str
         """
         self.enforce_file()
-        with io.open(self, "rt") as reader:
+        with io.open(self, "rt", encoding="utf-8") as reader:
             ret = reader.read()
         if not isinstance(ret, str):
             raise TypeError("String expected, but "
@@ -245,7 +245,7 @@ class Path(str):
         if not isinstance(contents, (str, Iterable)):
             raise TypeError(
                 f"Excepted str or Iterable, got {type(contents)}.")
-        with io.open(self, "wt") as writer:
+        with io.open(self, "wt", encoding="utf-8") as writer:
             all_text = contents if isinstance(contents, str) \
                 else "\n".join(contents)
             if len(all_text) <= 0:

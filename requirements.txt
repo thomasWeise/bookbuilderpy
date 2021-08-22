@@ -5,13 +5,13 @@ markdown >= 3.3.4
 pyyaml >= 5.4.1
 
 # regex is needed for processing commands as regular expressions
-regex >= 2021.4.4
+regex >= 2021.8.21
 
 # strip-hints is a tool for removing type hints
-strip-hints >= 0.1.9
+strip-hints >= 0.1.10
 
 # urllib3 is needed to generate the resources
-urllib3 >= 1.26.2
+urllib3 >= 1.26.6
 
 # yapf is a python code formatter
 yapf >= 0.31.0
