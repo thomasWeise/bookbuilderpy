@@ -3,11 +3,11 @@
 from typing import Final, Optional
 
 #: the command for loading the input data
-#: \relative.input{path}
+#: \rel.inputpath}
 CMD_INPUT: Final[str] = "rel.input"
 
 #: a relative code input to be included as a listing:
-#: \relative.code{label}{caption}{path}{lines}{labels}{args}
+#: \rel.code{label}{caption}{path}{lines}{labels}{args}
 #: label: the label of the listing
 #: caption: the caption of the listing
 #: path: the relative path fragment to resolve
@@ -17,7 +17,7 @@ CMD_INPUT: Final[str] = "rel.input"
 CMD_RELATIVE_CODE: Final[str] = "rel.code"
 
 #: an absolute code input to be included as a listing:
-#: \absolute.code{label}{caption}{path}{lines}{labels}{args}
+#: \abs.code{label}{caption}{path}{lines}{labels}{args}
 #: label: the label of the listing
 #: caption: the caption of the listing
 #: path: the absolute path fragment to resolve
@@ -38,11 +38,11 @@ CMD_ABSOLUTE_CODE: Final[str] = "abs.code"
 CMD_GIT_CODE: Final[str] = "git.code"
 
 #: a relative figure reference
-#: \relative.figure{label}{caption}{path}{args}
+#: \rel.figure{label}{caption}{path}{args}
 CMD_RELATIVE_FIGURE: Final[str] = "rel.figure"
 
 #: an absolute figure reference
-#: \absolute.figure{label}{caption}{path}{args}
+#: \abs.figure{label}{caption}{path}{args}
 CMD_ABSOLUTE_FIGURE: Final[str] = "abs.figure"
 
 #: an command for formatting definitions
