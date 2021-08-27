@@ -36,9 +36,9 @@ test: init
 	export PATH="${PATH}:${PYTHON_PACKAGE_BINARIES}" &&\
 	echo "PATH is now '${PATH}'." &&\
 	echo "Running py.test tests." && \
-	py.test tests && \
+	py.test --strict-config tests && \
 	echo "Running py.test with doctests." && \
-	py.test --doctest-modules && \
+	py.test --strict-config --doctest-modules && \
     echo "Finished running py.test tests."
 
 # Perform static code analysis.

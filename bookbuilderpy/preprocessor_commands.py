@@ -50,7 +50,7 @@ def __create_command_re(name: str, n: int = 1,
     >>> reg.sub(cmd, lambda g: g[1]+g[3], "hello\n\\z{{A x}}{b k}{z}  df")
     'hello{{A x}}{z}df'
     >>> cmd = __create_command_re("sub", 2, True)
-    >>> reg.sub(cmd, lambda g: g[1]+"-"+g[2], "a \sub{1}{2} b")
+    >>> reg.sub(cmd, lambda g: g[1]+"-"+g[2], "a \\sub{1}{2} b")
     'a{1}-{2}b'
     """
     if not isinstance(name, str):
@@ -147,24 +147,24 @@ def create_preprocessor(name: str,
 
     >>> f = lambda a, b: a + "-" + b
     >>> cmd = create_preprocessor("sub", f, 2)
-    >>> cmd("x \sub{7}{3} y \sub{\sub{8}{5}}{\sub{4}{3}}")
+    >>> cmd("x \\sub{7}{3} y \\sub{\\sub{8}{5}}{\\sub{4}{3}}")
     'x 7-3 y 8-5-4-3'
     >>> cmd = create_preprocessor("mm", lambda: "Z", 0, True)
-    >>> cmd("a\mm\mm\mmb")
+    >>> cmd("a\\mm\\mm\\mmb")
     'aZZZb'
     >>> cmd = create_preprocessor("swp", lambda a, b: "("+b+","+a+")", 2)
-    >>> cmd("\swp{1}{2}")
+    >>> cmd("\\swp{1}{2}")
     '(2,1)'
-    >>> cmd("\swp{\swp{1}{2}}{3}")
+    >>> cmd("\\swp{\\swp{1}{2}}{3}")
     '(3,(2,1))'
-    >>> cmd("\swp{\swp{\swp{1}{2}}{3}}{\swp{4}{5}}")
+    >>> cmd("\\swp{\\swp{\\swp{1}{2}}{3}}{\\swp{4}{5}}")
     '((5,4),(3,(2,1)))'
     >>> cmd = create_preprocessor("y", lambda x: str(int(x)*2), 1)
-    >>> cmd("12\y{3}4")
+    >>> cmd("12\\y{3}4")
     '1264'
     >>> cmd = create_preprocessor("y", lambda x: f"a{x}b", 1,
     ...     wrap_in_newlines=2)
-    >>> cmd("12\y{3}4")
+    >>> cmd("12\\y{3}4")
     '12\n\na3b\n\n4'
     """
     if not callable(func):
