@@ -30,6 +30,7 @@ def __load_input(input_file: str,
     in_file = Path.file(input_file)
     in_dir = Path.directory(input_dir)
     in_dir.enforce_contains(in_file)
+    log(f"now loading file '{in_file}'.")
 
     text = in_file.read_all_str()
 
@@ -97,13 +98,13 @@ def load_input(input_file: str,
     :return: the fully-resolved input
     :rtype: str
     """
-    log(f"Beginning to load file '{input_file}' from input dir "
+    log(f"beginning to load file '{input_file}' from input dir "
         f"'{input_dir}' under lang id '{lang_id}'.")
     res = enforce_non_empty_str(enforce_non_empty_str(
         __load_input(input_file=input_file,
                      input_dir=input_dir,
                      lang_id=lang_id)).strip())
-    log(f"Done loading input file '{input_file}' from input dir "
+    log(f"done loading input file '{input_file}' from input dir "
         f"'{input_dir}' under lang id '{lang_id}', found {len(res)} "
         f"characters.")
     return res

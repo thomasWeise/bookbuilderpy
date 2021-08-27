@@ -66,7 +66,7 @@ def build_website(docs: Iterable[LangResult],
     if os.path.exists(out_file):
         raise ValueError(f"File '{out_file}' already exists.")
 
-    log(f"Beginning to build website '{out_file}'.")
+    log(f"beginning to build website '{out_file}'.")
 
     html = in_dir.resolve_inside(outer_file).read_all_str()
 
@@ -140,5 +140,5 @@ def build_website(docs: Iterable[LangResult],
                                 strip_white_space=False))(html)
     out_file.write_all(html.strip())
     res = File(out_file)
-    log(f"Finished building website '{res.path}', size is {res.size}.")
+    log(f"finished building website '{res.path}', size is {res.size}.")
     return res
