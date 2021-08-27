@@ -1,12 +1,13 @@
 """A preprocessor that loads one root file and resolves are relative inputs."""
 
-from typing import Optional, Final
 from os.path import dirname
+from typing import Optional, Final
 
 import bookbuilderpy.constants as bc
+from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
-from bookbuilderpy.strings import get_prefix_str
+from bookbuilderpy.strings import get_prefix_str, enforce_non_empty_str
 
 #: the common prefix
 __REL_PREFIX: Final[str] = "\\" + get_prefix_str([bc.CMD_RELATIVE_CODE,
@@ -14,9 +15,9 @@ __REL_PREFIX: Final[str] = "\\" + get_prefix_str([bc.CMD_RELATIVE_CODE,
                                                   bc.CMD_INPUT])
 
 
-def load_input(input_file: str,
-               input_dir: str,
-               lang_id: Optional[str]) -> str:
+def __load_input(input_file: str,
+                 input_dir: str,
+                 lang_id: Optional[str]) -> str:
     """
     Recursively load an input file.
 
@@ -41,7 +42,7 @@ def load_input(input_file: str,
         the_file = _in_dir.resolve_input_file(_in_file, _lang)
         the_dir = Path.directory(dirname(the_file))
         _in_dir.enforce_contains(the_dir)
-        return load_input(the_file, the_dir, _lang)
+        return __load_input(the_file, the_dir, _lang)
 
     rel_input = create_preprocessor(name=bc.CMD_INPUT,
                                     func=__relative_input,
@@ -82,3 +83,27 @@ def load_input(input_file: str,
                                   strip_white_space=True)
 
     return rel_input(rel_code(rel_fig(text)))
+
+
+def load_input(input_file: str,
+               input_dir: str,
+               lang_id: Optional[str]) -> str:
+    """
+    Recursively load an input file.
+
+    :param str input_file: the input file
+    :param str input_dir: the base directory
+    :param Optional[str] lang_id: the language to use
+    :return: the fully-resolved input
+    :rtype: str
+    """
+    log(f"Beginning to load file '{input_file}' from input dir "
+        f"'{input_dir}' under lang id '{lang_id}'.")
+    res = enforce_non_empty_str(enforce_non_empty_str(
+        __load_input(input_file=input_file,
+                     input_dir=input_dir,
+                     lang_id=lang_id)).strip())
+    log(f"Done loading input file '{input_file}' from input dir "
+        f"'{input_dir}' under lang id '{lang_id}', found {len(res)} "
+        f"characters.")
+    return res

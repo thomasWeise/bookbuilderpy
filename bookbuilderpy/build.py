@@ -224,6 +224,7 @@ class Build(AbstractContextManager):
         """
         if not isinstance(meta, dict):
             raise TypeError(f"Expected dict, got {type(meta)}.")
+        log("Checking metadata for repositories.")
         if bc.META_REPOS in meta:
             repo_list = meta[bc.META_REPOS]
             if not isinstance(repo_list, Iterable):
@@ -286,6 +287,8 @@ class Build(AbstractContextManager):
             if self.__fail_without_pandoc:
                 raise ValueError("Pandoc not installed.")
             return
+        log(f"Now invoking pandoc build steps to file '{input_file}' "
+            f"with target director '{output_dir}' for lang-id '{lang_id}'.")
         input_file.enforce_file()
         output_dir.enforce_dir()
         name, _ = Path.split_prefix_suffix(os.path.basename(input_file))
@@ -320,6 +323,9 @@ class Build(AbstractContextManager):
         zipf = compress_zip(results, output_dir.resolve_inside(f"{name}.zip"))
         results.append(tar_xz)
         results.append(zipf)
+        log(f"Finished pandoc build steps to file '{input_file}' "
+            f"with target director '{output_dir}' for lang-id '{lang_id}'"
+            f", produced {len(results)} files.")
 
         self.__results.append(LangResult(lang_id, lang_name, output_dir,
                                          tuple(results)))
@@ -352,6 +358,7 @@ class Build(AbstractContextManager):
 
         # Then we extract the meta-data.
         self.__metadata_lang = parse_metadata(text)
+        log("Done parsing metadata.")
         if lang_id:
             # We set up the language id and lange name meta data properties.
             if bc.META_LANG not in self.__metadata_lang.keys():
@@ -370,10 +377,12 @@ class Build(AbstractContextManager):
                 text=text, input_dir=self.input_dir,
                 get_meta=self.get_meta_str, get_repo=self.get_repo,
                 repo=self.__repo, output_dir=temp))
+            log("Finished applying preprocessor.")
 
             has_bibliography = False
             bib = self.__get_meta_no_error(bc.PANDOC_BIBLIOGRAPHY)
             if bib:
+                log(f"Found bibliography spec '{bib}', so we load it.")
                 Path.copy_resource(self.__input_dir,
                                    self.__input_dir.resolve_inside(bib),
                                    temp)
@@ -386,8 +395,8 @@ class Build(AbstractContextManager):
                 if not prefix.endswith(end):
                     prefix = prefix + end
             file = temp.resolve_inside(f"{prefix}.{suffix}")
-            log("Finished applying preprocessor, "
-                f"now storing to file '{file}'.")
+            log("Finished applying preprocessor, now storing "
+                f"{len(text)} characters to file '{file}'.")
             file.write_all(text)
             del prefix, suffix, text
             self.__pandoc_build(input_file=file,
@@ -405,20 +414,25 @@ class Build(AbstractContextManager):
 
     def __load_self_repo(self) -> None:
         """Attempt to load the self repository information."""
+        log("Checking if build process is based on git checkout.")
         check = self.__input_dir
         while True:
             if check == "/":
-                return
+                break
             if not os.access(check, os.R_OK):
-                return
+                break
             test = Path.path(os.path.join(check, ".git"))
             if os.path.isdir(test):
                 self.__repo = Repo.from_local(test)
+                log(f"Build process is based on commit '{self.__repo.commit}'"
+                    f" of repo '{self.__repo.url}'.")
                 return
             check = Path.path(os.path.join(check, ".."))
+        log("Build process is not based on git checkout.")
 
     def __build_all_langs(self) -> None:
         """Perform all the book build steps."""
+        log("Beginning the build loop for all languages.")
         no_lang = True
         if bc.META_LANGS in self.__metadata_raw:
             langs = self.__metadata_raw[bc.META_LANGS]
@@ -442,14 +456,17 @@ class Build(AbstractContextManager):
 
         if no_lang:
             self.__build_one_lang(None, None)
+        log("Finished the build loop for all languages.")
 
     def __build_website(self) -> None:
         """Build the website, if any."""
         template = self.__get_meta_no_error(bc.META_WEBSITE_OUTER)
         if template:
+            log(f"Found website template spec '{template}'.")
             template = self.input_dir.resolve_inside(template)
             body = self.__get_meta_no_error(bc.META_WEBSITE_BODY)
             if body:
+                log(f"Found website body spec '{body}'.")
                 body = self.input_dir.resolve_inside(body)
             build_website(docs=self.__results,
                           outer_file=template,
@@ -460,12 +477,16 @@ class Build(AbstractContextManager):
 
     def build(self) -> None:
         """Perform the build."""
+        log(f"Starting the build process for input file '{self.__input_file}'"
+            f", input dir '{self.__input_dir}', and output dir "
+            f"'{self.__output_dir}.")
         self.__load_self_repo()
         self.__metadata_raw = load_initial_metadata(self.__input_file,
                                                     self.__input_dir)
         self.__load_repos_from_meta(self.__metadata_raw)
         self.__build_all_langs()
         self.__build_website()
+        log(f"Build process completed, created {len(self.__results)} files.")
 
     def __enter__(self) -> 'Build':
         """Nothing, just exists for `with`."""
