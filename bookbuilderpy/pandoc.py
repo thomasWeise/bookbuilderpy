@@ -10,9 +10,11 @@ import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
+from bookbuilderpy.pdf import pdf_postprocess
 from bookbuilderpy.resources import ResourceServer
 from bookbuilderpy.strings import enforce_non_empty_str, \
     enforce_non_empty_str_without_ws
+from bookbuilderpy.temp import TempFile
 
 #: The pandoc executable.
 __PANDOC_EXEC: Final[Optional[Path]] = [None if (t is None) else Path.file(t)
@@ -44,7 +46,8 @@ def pandoc(source_file: str,
            csl: Optional[str] = None,
            number_sections: bool = True,
            args: Optional[List[str]] = None,
-           resolve_resources: Callable = lambda x: None) -> File:
+           resolve_resources: Callable = lambda x: None,
+           overwrite: bool = False) -> File:
     """
     Invoke pandoc.
 
@@ -65,6 +68,7 @@ def pandoc(source_file: str,
     :param Optional[str] locale: the language to be used for compiling
     :param args: any additional arguments
     :param Callable resolve_resources: a function to resolve resources
+    :param bool overwrite: should the output file be overwritten if it exists?
     :return: the Path to the generated output file and it size
     :rtype: File
     """
@@ -72,7 +76,7 @@ def pandoc(source_file: str,
         raise ValueError("Pandoc is not installed.")
 
     output_file = Path.path(dest_file)
-    if os.path.exists(output_file):
+    if (not overwrite) and os.path.exists(output_file):
         raise ValueError(f"Output file '{output_file}' already exists.")
     input_file = Path.file(source_file)
     if input_file == output_file:
@@ -223,22 +227,27 @@ def latex(source_file: str,
     if use_listings:
         args.append("--listings")
 
-    return pandoc(source_file=source_file,
-                  dest_file=dest_file,
-                  format_in=format_in,
-                  format_out=bc.PANDOC_FORMAT_LATEX,
-                  standalone=standalone,
-                  tabstops=tabstops,
-                  toc_print=toc_print,
-                  toc_depth=toc_depth,
-                  crossref=crossref,
-                  bibliography=bibliography,
-                  template=get_meta(bc.PANDOC_TEMPLATE_LATEX),
-                  csl=get_meta(bc.PANDOC_CSL),
-                  number_sections=number_sections,
-                  locale=locale,
-                  resolve_resources=resolve_resources,
-                  args=args)
+    with TempFile.create(suffix=".pdf") as tf:
+        res = pandoc(source_file=source_file,
+                     dest_file=tf,
+                     format_in=format_in,
+                     format_out=bc.PANDOC_FORMAT_LATEX,
+                     standalone=standalone,
+                     tabstops=tabstops,
+                     toc_print=toc_print,
+                     toc_depth=toc_depth,
+                     crossref=crossref,
+                     bibliography=bibliography,
+                     template=get_meta(bc.PANDOC_TEMPLATE_LATEX),
+                     csl=get_meta(bc.PANDOC_CSL),
+                     number_sections=number_sections,
+                     locale=locale,
+                     resolve_resources=resolve_resources,
+                     args=args,
+                     overwrite=True).path
+        res = pdf_postprocess(in_file=res,
+                              out_file=dest_file)
+    return File(res)
 
 
 def html(source_file: str,
