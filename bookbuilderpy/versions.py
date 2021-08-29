@@ -9,6 +9,33 @@ import bookbuilderpy.version as ver
 from bookbuilderpy.logger import log
 
 
+def __do_call(args: List[str]) -> str:
+    """
+    Invoke a sub-process.
+
+    :param List[str] args: the arguments
+    :return: the output
+    :rtype: str
+    """
+    try:
+        ret = subprocess.run(args, check=False,  # nosec
+                             text=True, capture_output=True,  # nosec
+                             timeout=360)  # nosec
+    except FileNotFoundError:
+        return f"{args[0]} not found"
+    except BaseException as be:
+        return f"encountered {type(be)} when invoking {args[0]}"
+
+    if ret.returncode != 0:
+        return f"failed to invoke {args[0]}"
+
+    lines = [a for a in [f.strip() for f in ret.stdout.split("\n")]
+             if len(a) > 0]
+    if len(lines) <= 0:
+        return f"{args[0]} query gives empty result"
+    return "\n".join(lines)
+
+
 def __get_versions() -> str:
     """
     Get the versions of all involved libraries and tools.
@@ -32,40 +59,11 @@ def __get_versions() -> str:
         verattr = "__version__" if len(package) < 3 else package[2]
         versions.append(f"package {modname}: {getattr(x, verattr)}")
 
-    ret = subprocess.run(["uname", "-a"], check=False,  # nosec
-                         text=True, capture_output=True,  # nosec
-                         timeout=360)  # nosec
-    if ret.returncode != 0:
-        versions.append("\nlinux: uname failed")
-    else:
-        lines = [a for a in [f.strip() for f in ret.stdout.split("\n")]
-                 if len(a) > 0]
-        if len(lines) <= 0:
-            versions.append("\nlinux: uname query gives empty result")
-        elif len(lines) == 1:
-            versions.append(f"\nlinux: {lines[0]}")
-        else:
-            versions.append(f"\nlinux: {lines[0]}")
-            versions.extend(lines[1:])
+    versions.append(f"\nlinux: {__do_call(['uname', '-a'])}")
 
     for tool in ["pdflatex", "xelatex", "pandoc", "calibre",
                  "gs", "zip", "xz"]:
-
-        ret = subprocess.run([tool, "--version"], check=False,  # nosec
-                             text=True, capture_output=True,  # nosec
-                             timeout=360)  # nosec
-        if ret.returncode != 0:
-            versions.append(f"\n{tool}: not installed")
-        else:
-            lines = [a for a in [f.strip() for f in ret.stdout.split("\n")]
-                     if len(a) > 0]
-            if len(lines) <= 0:
-                versions.append(f"\n{tool}: version query gives empty result")
-            elif len(lines) == 1:
-                versions.append(f"\n{tool}: {lines[0]}")
-            else:
-                versions.append(f"\n{tool}: {lines[0]}")
-                versions.extend(lines[1:])
+        versions.append(f"\n{tool}: {__do_call([tool, '--version'])}")
 
     return "\n".join(versions)
 
