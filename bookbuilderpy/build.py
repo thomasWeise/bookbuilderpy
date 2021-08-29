@@ -22,6 +22,7 @@ from bookbuilderpy.strings import datetime_to_date_str, \
     enforce_non_empty_str_without_ws, lang_to_locale, to_string
 from bookbuilderpy.temp import TempDir
 from bookbuilderpy.website import build_website
+from bookbuilderpy.versions import get_versions
 
 
 class Build(AbstractContextManager):
@@ -479,7 +480,8 @@ class Build(AbstractContextManager):
         """Perform the build."""
         log(f"starting the build process for input file '{self.__input_file}'"
             f", input dir '{self.__input_dir}', and output dir "
-            f"'{self.__output_dir}'.")
+            f"'{self.__output_dir}' with the following tool versions:\n"
+            f"{get_versions()}")
         self.__load_self_repo()
         self.__metadata_raw = load_initial_metadata(self.__input_file,
                                                     self.__input_dir)

@@ -86,7 +86,7 @@ def pandoc(source_file: str,
     output_dir.ensure_dir_exists()
     input_dir = Path.directory(os.path.dirname(input_file))
 
-    log(f"Applying pandoc to generate output file '{output_file}' "
+    log(f"applying pandoc to generate output file '{output_file}' "
         f"from '{input_file}'.")
 
     format_in = enforce_non_empty_str_without_ws(format_in)
@@ -174,7 +174,7 @@ def pandoc(source_file: str,
 
     res = File(output_file)
 
-    log(f"Finished applying pandoc call '{cmd}', got output file "
+    log(f"finished applying pandoc call '{cmd}', got output file "
         f"'{res.path}' of size '{res.size}'.")
     return res
 
