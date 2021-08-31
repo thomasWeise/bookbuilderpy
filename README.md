@@ -4,6 +4,28 @@
 
 A Python&nbsp;3-based environment for the automated compilation of books from markdown.
 
+1. [Introduction](#1-introduction)
+2. [Installation and Local Use](#2-installation-and-local-use)
+3. [Provided Functionality](#3-provided-functionality)
+   1. [Basic commands provided by `pandoc` and off-the-shelf filters](#31-basic-commands-provided-by-pandoc-and-off-the-shelf-filters)
+   2. [`bookbuilderpy`-specific commands](#32-bookbuilderpy-specific-commands)
+   3. [Metadata](#33-metadata)
+      1. [Language Specification and Resolution](#331-language-specification-and-resolution)
+      2. [Git Repositories](#332-git-repositories)
+      3. [Website Construction](#333-website-construction)
+      4. [Other Metadata](#334-other-metadata)
+   4. [Graphics](#34-graphics)
+4. [GitHub Pipeline](#4-github-pipeline)
+      1. [The Repository](#41-the-repository)
+      2. [The GitHub Action](#42-the-github-action)
+5. [Related Projects and Components](#5-related-projects-and-components)
+      1. [Own Contributed Projects and Components](#51-own-contributed-projects-and-components)
+      2. [Related Projects and Components Used](#52-related-projects-and-components-used)
+6. [License](#6-license)
+      1. [Wandmalfarbe/pandoc-latex-template](#61-wandmalfarbepandoc-latex-template)
+      2. [tajmone/pandoc-goodies HTML Template](#62-tajmonepandoc-goodies-html-template)
+7. [Contact](#7-contact)
+
 ## 1. Introduction
 
 The goal of this package is to provide you with a pipeline that can:
@@ -17,7 +39,7 @@ The goal of this package is to provide you with a pipeline that can:
 This python package requires that [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
 Most likely, this package will only work under Linux - at least I did not test it under Windows.
 
-## 2. Installation
+## 2. Installation and Local Use
 
 You can easily install this package and its required packages using [`pip`](https://pypi.org/project/pip/) by doing
 
@@ -26,22 +48,29 @@ pip install git+https://github.com/thomasWeise/bookbuilderpy.git
 ```
 
 If you want the full tool chain, though, you also need  [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) and run all of it on a Linux system.
-So it might be easier to just use the [docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilder/) that comes with everything pre-installed.
+So it might be easier to just use the [docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/) that comes with everything pre-installed.
 You can then run it as:
 
 ```
-docker run -v "INPUT_DIR":/input/ \
+docker run -v "INPUT_DIR":/input/:ro \
            -v "OUTPUT_DIR":/output/ \
-           -t -i thomasweise/docker-bookbuilderpy BOOK_ROOT_MD_FILE
+           thomasweise/docker-bookbuilderpy BOOK_ROOT_MD_FILE
 ```
 
 Here, it is assumed that
 
-- `INPUT_DIR` is the directory where your book sources reside, let's say `/home/my/book/sources/`.
+- `INPUT_DIR` is the directory where your book sources reside, let's say `/home/my/book/sources/`. (By adding `:ro`, we mount the input directory read-only, just in case.)
 - `BOOK_ROOT_MD_FILE` is the root file of your book, say `book.md` (in which case, the full path of `book.md` would be `/home/my/book/sources/book.md`). Notice that you can specify only a single file, but this file can reference other files in sub-directories of `INPUT_DIR` by using commands such as  `\rel.input` (see [below](#32-bookbuilderpy-specific-commands)).
 - `OUTPUT_DIR` is the output directory where the compiled files should be placed, e.g., `/home/my/book/compiled/`. This is where the resulting files will be placed.
 
+Notice that you can also automate your whole book building and publishing process using our [GitHub Pipeline](#4-github-pipeline) later discussed in [Section&nbsp;4](#4-github-pipeline).
+
 ## 3. Provided Functionality
+
+Our book building pipeline is based on [pandoc flavored markdown](http://pandoc.org/MANUAL.html#pandocs-markdown) and the filters [`pandoc-citeproc`](http://github.com/jgm/pandoc-citeproc), [`pandoc-crossref`](http://github.com/lierdakil/pandoc-crossref), [`latex-formulae-pandoc`](http://github.com/liamoc/latex-formulae), and [`pandoc-citeproc-preamble`](http://github.com/spwhitton/pandoc-citeproc-preamble).
+It supports the commands and syntax given there, some of which is summarized below in [Section&nbsp;3.1](#31-basic-commands-provided-by-pandoc-and-off-the-shelf-filters).
+However, we add several commands, such as a hierarchical file inclusion structure, a support for multi-language file resolution, a support for including program listings from git repositories, and so on.
+These extensions are discussed in [Section&nbsp;3.2](#32-bookbuilderpy-specific-commands).
 
 ## 3.1. Basic commands provided by `pandoc` and off-the-shelf filters
 
@@ -238,14 +267,144 @@ listings: false
 codeBlockCaptions: true
 ```
 
+### 3.4. Graphics
 
-## 4. License
+Generally, we suggest to use only [vector graphics](http://en.wikipedia.org/wiki/Vector_graphics) in your books, as opposed to [raster graphics](http://en.wikipedia.org/wiki/Raster_graphics) like [`jpg`](http://en.wikipedia.org/wiki/JPEG) or [`png`](http://en.wikipedia.org/wiki/Portable_Network_Graphics).
+Don't use `jpg` or `png` for anything different from photos.
+Vector graphics can scale well and have a higher quality when being printed or when being zoomed in.
+Raster graphics often get blurry or even display artifacts.
+
+In my opinion, the best graphics format to use in conjunction with our tool is [`svg`](http://en.wikipedia.org/wiki/Scalable_Vector_Graphics) (and, in particular, its compressed variant `svgz`).
+You can create `svg` graphics using the open-source editor [Inkscape](http://en.wikipedia.org/wiki/Inkscape) or software such as [Adobe Illustrator](http://en.wikipedia.org/wiki/Adobe_Illustrator) or [Corel DRAW](http://en.wikipedia.org/wiki/CorelDRAW).
+
+We provide the small tool [ultraSvgz](http://github.com/thomasWeise/ultraSvgz), which runs under Linux and can create very small, minified and compressed `svgz` files from `svg`s.
+Our tool suite supports `svgz` fully and such files tend to actually be smaller than [`pdf`](http://en.wikipedia.org/wiki/PDF) or [`eps`](http://en.wikipedia.org/wiki/Encapsulated_PostScript) graphics.
+
+## 4. GitHub Pipeline
+
+As discussed under point [Installation and Local Use](#2-installation-and-local-use), our tool suite is available as [docker container]([docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/), so you only need a docker installation to run the complete software locally.
+However, the bigger goal is to allow you to collaboratively write books, interact with your readers, and automatically publish them online.
+With docker in combination with [GitHub](http://www.github.com/) and [GitHub Actions](https://github.com/features/actions), this is now easily possible.
+
+You can find a [template book project](https://github.com/thomasWeise/bookbuilderpy-mwe) using the complete automated pipeline discussed here in the repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe).
+In other words, if you do not want to read the text and explanation below, you can as well just clone this template project and adapt everything to your liking.
+
+You can integrate the whole process with a [version control](http://en.wikipedia.org/wiki/Version_control) software like [Git](http://en.wikipedia.org/wiki/Git) and a [continuous integration](http://en.wikipedia.org/wiki/Continuous_integration) framework.
+Then, you can automate the compilation of your book to run every time you change your book sources.
+Actually, there are several open source and free environments that you can use to that for you for free &ndash; in exchange for you making your book free for everyone to read.
+
+First, both for writing and hosting the book, we suggest using a [GitHub](http://www.github.com/) repository, very much like the one for the book I just began working on [here](http://github.com/thomasWeise/oa).
+The book should be written in [Pandoc's markdown](http://pandoc.org/MANUAL.html#pandocs-markdown) syntax, which allows us to include most of the stuff we need, such as equations and citation references, with the additional comments listed above.
+For building the book, we will use [GitHub Actions](https://github.com/features/actions), which are triggered by repository commits.
+
+Every time you push a commit to your book repository, the GitHub Action will check out the repository.
+The docker container can the automatically build the book and book website.
+The result can automatically be deployed to the [GitHub Pages](http://help.github.com/articles/what-is-github-pages/) branch of your repository and which will then be the website of the repository.
+Once the repository, website, and Travis build procedure are all set up, we can concentrate on working on our book and whenever some section or text is finished, commit, and enjoy the automatically new versions.
+
+Having your book sources on GitHub brings several additional advantages, for instance:
+
+- Since the book's sources are available as GitHub repository, our readers can file issues to the repository, with change suggestions, discovered typos, or with questions to add clarification.
+- They may even file pull requests with content to include.
+- You could also write a book collaboratively &ndash; like a software project. This might also be interesting for students who write course notes together.
+
+### 4.1. The Repository
+
+In order to use our workflow, you need to first have an account at [GitHub](http://www.github.com/) and then create an open repository for your book.
+GitHub is built around the distributed version control system [git](http://git-scm.com/), for which a variety of [graphical user interfaces](http://git-scm.com/downloads/guis) exist - see, e.g., of [here](http://git-scm.com/downloads/guis).
+If you have a Debian-based Linux system, you can install the basic `git` client with command line interface as follows: `sudo apt-get install git` and the gui `git-cola`[https://git-cola.github.io/] which can be installed via `sudo apt-get install git-cola`.
+You can use either this client or such a GUI to work with your repository.
+
+You can now fill your repository with your book's source files.
+The repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe) gives you a bare example how that can look like.
+
+## 4.2. The GitHub Action
+
+Create a folder `.github/workflows` and inside this folder a file `build.yaml`.
+The contents of the file should be:
+
+```
+name: publish
+
+on:
+  push:    
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: docker-practice/actions-setup-docker@master
+    - name: build
+      run: |
+        mkdir -p /tmp/result
+        docker run -v $(pwd):/input/:ro -v /tmp/result/:/output/ thomasweise/docker-bookbuilderpy book.md
+
+    - name: deploy
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages
+        folder: /tmp/result
+        single-commit: true
+```
+
+This will toggle the build whenever you commit to the branch `main`.
+It will then first check out the book sources.
+Then it will create the temporary folder `/tmp/result` and use the docker container to build the book to this folder.
+After that, the files in this folder will be deployed to the branch `gh-pages`, which will become the website for your book.
+
+Let's say your username was `thomasWeise` and your book repository was `bookbuilderpy-mwe`.
+To make this website visible, go to your GitHub project's [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe), click `Settings`, then go to `Pages`, then under `Source` choose `gh-pages` and click `Save`.
+A few minutes afterwards, your book's website will appear as <https://thomasweise.github.io/bookbuilderpy-mwe>.
+Done.
+Whenever you commit to your book sources, the book will be compiled and the website is updated.
+Nothing else needed.
+
+## 5. Related Projects and Components
+
+### 5.1. Own Contributed Projects and Components
+
+The following components have been contributed by us to provide this tool chain.
+They are all open source and available on GitHub.
+
+- The `Python` package [bookbuilderpy](http://github.com/thomasWeise/bookbuilderpy) providing the commands wrapping around pandoc and extending Markdown to automatically build electronic books.
+- [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe), a minimum working example for using the complete bookbuilderpy tool suite.
+- A hierarchy of docker containers forms the infrastructure for the automated builds:
+  + [docker-bookbuilderpy](http://github.com/thomasWeise/docker-bookbuilderpy) is the docker container that can be used to compile an electronic book based on our tool chain. [Here](http://github.com/thomasWeise/docker-bookbuilderpy) you can find it on GitHub and [here](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/) on docker hub.
+  + [docker-pandoc-calibre](http://github.com/thomasWeise/docker-pandoc-calibre) is the container which is the basis for [docker-bookbuilderpy](http://github.com/thomasWeise/docker-bookbuilderpy). It holds a complete installation of pandoc, [calibre](http://calibre-ebook.com), which is used to convert EPUB3 to AZW3, and TeX Live and its sources are [here](http://github.com/thomasWeise/docker-pandoc-calibre) while it is located [here](http://hub.docker.com/r/thomasweise/docker-pandoc-calibre/).
+  + [docker-pandoc](http://github.com/thomasWeise/docker-pandoc) is the container which is the basis for [docker-pandoc-calibre](http://github.com/thomasWeise/docker-pandoc-calibre). It holds a complete installation of pandoc and TeX Live and its sources are [here](http://github.com/thomasWeise/docker-pandoc) while it is located [here](http://hub.docker.com/r/thomasweise/docker-pandoc/).
+  + [docker-texlive-thin](http://github.com/thomasWeise/docker-texlive-thin) is the container which is the basis for [docker-pandoc](http://github.com/thomasWeise/docker-pandoc). It holds a complete installation of TeX Live and its sources are [here](http://github.com/thomasWeise/docker-texlive-thin) while it is located [here](http://hub.docker.com/r/thomasweise/docker-texlive-thin/).
+
+### 5.2. Related Projects and Components Used
+
+- [pandoc](http://pandoc.org/), with which we convert markdown to HTML, pdf, and epub, along with several `pandoc` filters, namely
+   + [`pandoc-citeproc`](http://github.com/jgm/pandoc-citeproc),
+   + [`pandoc-crossref`](http://github.com/lierdakil/pandoc-crossref),
+   + [`latex-formulae-pandoc`](http://github.com/liamoc/latex-formulae), and
+   + [`pandoc-citeproc-preamble`](http://github.com/spwhitton/pandoc-citeproc-preamble)
+and the two `pandoc` templates
+   + [Wandmalfarbe/pandoc-latex-template](http://github.com/Wandmalfarbe/pandoc-latex-template/), an excellent `pandoc` template for LaTeX by [Pascal Wagler](http://github.com/Wandmalfarbe)
+   + the [GitHub Pandoc HTML5 template](http://github.com/tajmone/pandoc-goodies/tree/master/templates/html5/github) by [Tristano Ajmone](http://github.com/tajmone)
+- [TeX Live](http://tug.org/texlive/), a [LaTeX](http://en.wikipedia.org/wiki/LaTeX) installation used by pandoc for generating the pdf output
+- [`Python`](https://www.python.org/), the programming language in which this package is written
+- [docker](https://en.wikipedia.org/wiki/Docker_(software)), used to create containers in which all required software is pre-installed,
+- [`cabal`](http://www.haskell.org/cabal/), the compilation and package management system via which pandoc is obtained,
+- [`calibre`](http://calibre-ebook.com), which allows us to convert epub to awz3 files
+- [`imagemagick`](http://www.imagemagick.org/) used by `pandoc` for image conversion
+- [`ghostscript`](http://ghostscript.com/), used by our script to include all fonts into a pdf
+- [`poppler-utils`](http://poppler.freedesktop.org/), used by our script for checking whether the pdfs are OK.
+
+
+## 6. License
 
 The copyright holder of this package is Prof. Dr. Thomas Weise (see Contact).
 The package is licensed under the GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007.
 This package also contains third-party components which are under the following licenses;
 
-### 4.1. [Wandmalfarbe/pandoc-latex-template](http://github.com/Wandmalfarbe/pandoc-latex-template)
+### 6.1. Wandmalfarbe/pandoc-latex-template
 
 We include the pandoc LaTeX template from [Wandmalfarbe/pandoc-latex-template](http://github.com/Wandmalfarbe/pandoc-latex-template) by Pascal Wagler and John MacFarlane, which is under the [BSD 3 license](http://github.com/Wandmalfarbe/pandoc-latex-template/blob/master/LICENSE). For this, the following terms hold:
 
@@ -288,7 +447,7 @@ We include the pandoc LaTeX template from [Wandmalfarbe/pandoc-latex-template](h
     % http://github.com/Wandmalfarbe/pandoc-latex-template
     %%
     
-### 4.2 [tajmone/pandoc-goodies HTML Template](http://github.com/tajmone/pandoc-goodies)
+### 6.2 tajmone/pandoc-goodies HTML Template
 
 We include the pandoc HTML-5 template from [tajmone/pandoc-goodies](http://github.com/tajmone/pandoc-goodies) by Tristano Ajmone, Sindre Sorhus, and GitHub Inc., which is under the [MIT license](http://raw.githubusercontent.com/tajmone/pandoc-goodies/master/templates/html5/github/LICENSE). For this, the following terms hold:
 
@@ -324,7 +483,7 @@ We include the pandoc HTML-5 template from [tajmone/pandoc-goodies](http://githu
     SOFTWARE.
 
 
-## 5. Contact
+## 7. Contact
 
 If you have any questions or suggestions, please contact
 
