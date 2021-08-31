@@ -2,7 +2,29 @@
 
 # bookbuilderpy
 
-A Python&nbsp;3-based environment for the automated compilation of books from markdown.
+A [Python&nbsp;3](https://docs.python.org/3)-based environment for the automated compilation of books from markdown.
+
+1. [Introduction](#1-introduction)
+2. [Installation and Local Use](#2-installation-and-local-use)
+3. [Provided Functionality](#3-provided-functionality)
+   1. [Basic commands provided by `pandoc` and off-the-shelf filters](#31-basic-commands-provided-by-pandoc-and-off-the-shelf-filters)
+   2. [`bookbuilderpy`-specific commands](#32-bookbuilderpy-specific-commands)
+   3. [Metadata](#33-metadata)
+      1. [Language Specification and Resolution](#331-language-specification-and-resolution)
+      2. [Git Repositories](#332-git-repositories)
+      3. [Website Construction](#333-website-construction)
+      4. [Other Metadata](#334-other-metadata)
+   4. [Graphics](#34-graphics)
+4. [GitHub Pipeline](#4-github-pipeline)
+      1. [The Repository](#41-the-repository)
+      2. [The GitHub Action](#42-the-github-action)
+5. [Related Projects and Components](#5-related-projects-and-components)
+      1. [Own Contributed Projects and Components](#51-own-contributed-projects-and-components)
+      2. [Related Projects and Components Used](#52-related-projects-and-components-used)
+6. [License](#6-license)
+      1. [Wandmalfarbe/pandoc-latex-template](#61-wandmalfarbepandoc-latex-template)
+      2. [tajmone/pandoc-goodies HTML Template](#62-tajmonepandoc-goodies-html-template)
+7. [Contact](#7-contact)
 
 ## 1. Introduction
 
@@ -14,34 +36,66 @@ The goal of this package is to provide you with a pipeline that can:
   - allow the book to be written in multiple languages, and finally
   - generate a website that lists all produced files so that you can copy everything to a web folder and offer your work for download without any further hassle.
 
-This python package requires that [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
-Most likely, this package will only work under Linux - at least I did not test it under Windows.
+This [Python&nbsp;3](https://docs.python.org/3) package requires that [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
+Most likely, this package will only work under [Linux](https://www.linux.org) &ndash; at least I did not test it under Windows.
+All commands and examples in the following require [Linux](https://www.linux.org).
 
-## 2. Installation
+## 2. Installation and Local Use
+
+The following examples are for [Ubuntu](https://ubuntu.com) [Linux](https://www.linux.org).
+Under other flavors, they may work differently and different commands may be required.
+Execute the examples at your own risk.
 
 You can easily install this package and its required packages using [`pip`](https://pypi.org/project/pip/) by doing
 
-```shell
+```
 pip install git+https://github.com/thomasWeise/bookbuilderpy.git
 ```
 
 If you want the full tool chain, though, you also need  [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) and run all of it on a Linux system.
-So it might be easier to just use the [docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilder/) that comes with everything pre-installed.
+So it might be easier to just use the [docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/) that comes with everything pre-installed.
 You can then run it as:
 
-```shell
-docker run -v "INPUT_DIR":/input/ \
+```
+docker run -v "INPUT_DIR":/input/:ro \
            -v "OUTPUT_DIR":/output/ \
-           -t -i thomasweise/docker-bookbuilderpy BOOK_ROOT_MD_FILE
+           thomasweise/docker-bookbuilderpy BOOK_ROOT_MD_FILE
 ```
 
+Under many distributions, you need to run this command as `sudo`.
 Here, it is assumed that
 
-- `INPUT_DIR` is the directory where your book sources reside, let's say `/home/my/book/sources/`.
+- `INPUT_DIR` is the directory where your book sources reside, let's say `/home/my/book/sources/`. (By adding `:ro`, we mount the input directory read-only, just in case.)
 - `BOOK_ROOT_MD_FILE` is the root file of your book, say `book.md` (in which case, the full path of `book.md` would be `/home/my/book/sources/book.md`). Notice that you can specify only a single file, but this file can reference other files in sub-directories of `INPUT_DIR` by using commands such as  `\rel.input` (see [below](#32-bookbuilderpy-specific-commands)).
 - `OUTPUT_DIR` is the output directory where the compiled files should be placed, e.g., `/home/my/book/compiled/`. This is where the resulting files will be placed.
 
+If you want to try the above, you can clone the "minimal working example" repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe) and run the process to see what it does as follows **execute the code below at your own risk**:
+
+```
+mkdir example
+cd example
+git clone https://github.com/thomasWeise/bookbuilderpy-mwe.git
+mkdir result
+sudo docker run -v "$(pwd)/bookbuilderpy-mwe":/input/:ro -v "$(pwd)/result":/output/ thomasweise/docker-bookbuilderpy book.md
+sudo chown $USER -R result
+```
+
+Above, we create a folder called `example`.
+We then clone the repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe), creating the folder `bookbuilderpy-mwe` containing the example book sources.
+Then, directory `result` is created, into which we will build the book.
+With `sudo docker run -v bookbuilderpy-mwe:/input/:ro -v result:/output/ thomasweise/docker-bookbuilderpy book.md`, the build process is executed.
+Since it runs under `sudo`, the files will be generated with `sudo` permissions/ownership, so we transfer them to the user ownership via `sudo chown $USER -R result`.
+You can now peek into the `result` folder.
+It will contain a file `index.html`, which is the automatically generated (bare minimum) book website, from which you can access all other generated files.
+
+Notice that you can also automate your whole book building *and publishing* process using our [GitHub Pipeline](#4-github-pipeline) later discussed in [Section&nbsp;4](#4-github-pipeline).
+
 ## 3. Provided Functionality
+
+Our book building pipeline is based on [pandoc flavored markdown](http://pandoc.org/MANUAL.html#pandocs-markdown) and the filters [`pandoc-citeproc`](http://github.com/jgm/pandoc-citeproc), [`pandoc-crossref`](http://github.com/lierdakil/pandoc-crossref), [`latex-formulae-pandoc`](http://github.com/liamoc/latex-formulae), and [`pandoc-citeproc-preamble`](http://github.com/spwhitton/pandoc-citeproc-preamble).
+It supports the commands and syntax given there, some of which is summarized below in [Section&nbsp;3.1](#31-basic-commands-provided-by-pandoc-and-off-the-shelf-filters).
+However, we add several commands, such as a hierarchical file inclusion structure, a support for multi-language file resolution, a support for including program listings from git repositories, and so on.
+These extensions are discussed in [Section&nbsp;3.2](#32-bookbuilderpy-specific-commands).
 
 ## 3.1. Basic commands provided by `pandoc` and off-the-shelf filters
 
@@ -76,7 +130,7 @@ The following new commands are added:
   + `year`: the year when the book building process was started,
   + `lang`: the current [language](#331-language-specification-and-resolution) id, or `en` if none is specified
   + `locale`: the locale inferred from the current language id
-  + `lang.name`: the current language name, or `English` if none is specified
+  + `name`: the current language name, or `English` if none is specified (this is a bit a dodgy property name, but for now I will stick with it&hellip;)
   + `repo.name`: if it was detected that the build process is applied to a git repository checkout, then this is the repository name, e.g., `thomasweise/bookbuilderpy`; otherwise querying this property will fail the build process.
   + `repo.url`:  if it was detected that the build process is applied to a git repository check out, then this is the repository url, such as `https://github.com/thomasweise/bookbuilderpy`; otherwise querying this property will fail the build process.
   + `repo.commit`:  if it was detected that the build process is applied to a git repository checkout, then this is the commit id of the checkout; otherwise querying this property will fail the build process.
@@ -91,10 +145,10 @@ We added the following metadata items:
 
 ### 3.3.1. Language Specification and Resolution
 
-You can develop your book in one single language or in multiple languages in parallel.
-The language(s) can be specified in the metadata following the pattern below:
+You can develop your book in multiple languages in parallel.
+These can be specified in the metadata following the pattern below:
 
-```yaml
+```
 langs:
   - id: en
     name: English
@@ -105,19 +159,12 @@ langs:
 ```
 
 The `langs` entry specifies a list, where each item must have an `id` and a `name`.
-The `id` will be used to determine the [locale](https://cldr.unicode.org/)  of the text.
-You can either use a [locale](https://cldr.unicode.org/) directly, or one of the following shortcuts: `en` for `en_US`, `zh` or `cn` for `zh_CN`, `tw` for `zh_TW`, `de` for `de_DE`, `fr` for `fr_FR`, `it` for `it_IT`, `ja` for `ja_JP`, `ko` for `ko_KR`, `pt` for `pt_BR`, and `es` for `es_ES`.
-**Warning&nbsp;1**: Do not specify the `lang` attribute usually used by pandoc, as this causes some trouble.
-**Warning&nbsp;2**: If you only specify a single language, the book's main file name cannot be `index.md`.
-**Warning&nbsp;3**: If you want to build a book in the Chinese language, you must specify the language Chinese with one of the Chinese-related prefixes above.
-
-The language name will appear in things such as the automatically generate website, etc.
+The `id` will be used to determine the locale of the text and the name will appear in things such as the automatically generate website, etc.
 For each language, one book building process will be performed.
 In the above example, we will build the book three times, for English, German, and Chinese.
 If the book's basic file name was `book.md`, we will get `book_en.pdf`, `book_de.pdf`, and `book_zh.pdf`.
-If only one language was specified, we would just get `book.pdf`.
 
-If and only you specify multiple locales, then the language `id` has one very important purpose:
+The language `id` has one very important purpose:
 It allows for language-specific file resolution.
 For instance, let's say you do `\rel.input{folder/README.md}`.
 In the `en`-build step, this will first look for a file `folder/README_en.md`.
@@ -144,7 +191,7 @@ For instance, a language ID like `zh`, indicating Chinese, will lead to the use 
 It is possible to include code from one or multiple git repositories using the `\git.code` command.
 For this purpose, you first need to specify the repositories in the metadata section as follows:
 
-```yaml
+```
 repos:
   - id: mp
     url: https://github.com/thomasWeise/moptipy.git
@@ -198,7 +245,7 @@ The result of this rendering process is then stored in a file `index.html`.
 - `template.latex`: the template for rendering to PDF. Set this to `eisvogel.tex` to use the default style offered by the package.
 - The language-specific component titles explained-by-example are already supported by pandoc and its filters:
 
-```yaml
+``` 
 figureTitle: Figure
 tableTitle: Table
 listingTitle: Listing
@@ -223,7 +270,7 @@ reference-section-title: References
 ```
 - Any other `xxxTitle` allows you to specify a `type`to be used for a `\definition{type}{label}{body}` command.
 - `header-includes`: allows you to insert stuff into the headers of the format. For PDF/LaTeX, it is useful to put something like the stuff below, as it will make the result nicer if you have many code listings:
-```yaml
+```
 header-includes:
 - |
   ```{=latex}
@@ -236,7 +283,7 @@ header-includes:
 ```
 
 - Setup for pandoc's crossref: You may wish to include the following text
-```yaml
+```
 # pandoc-crossref setup
 cref: true
 chapters: true
@@ -245,97 +292,223 @@ listings: false
 codeBlockCaptions: true
 ```
 
+### 3.4. Graphics
 
-## 4. License
+Generally, we suggest to use only [vector graphics](http://en.wikipedia.org/wiki/Vector_graphics) in your books, as opposed to [raster graphics](http://en.wikipedia.org/wiki/Raster_graphics) like [`jpg`](http://en.wikipedia.org/wiki/JPEG) or [`png`](http://en.wikipedia.org/wiki/Portable_Network_Graphics).
+Don't use `jpg` or `png` for anything different from photos.
+Vector graphics can scale well and have a higher quality when being printed or when being zoomed in.
+Raster graphics often get blurry or even display artifacts.
+
+In my opinion, the best graphics format to use in conjunction with our tool is [`svg`](http://en.wikipedia.org/wiki/Scalable_Vector_Graphics) (and, in particular, its compressed variant `svgz`).
+You can create `svg` graphics using the open-source editor [Inkscape](http://en.wikipedia.org/wiki/Inkscape) or software such as [Adobe Illustrator](http://en.wikipedia.org/wiki/Adobe_Illustrator) or [Corel DRAW](http://en.wikipedia.org/wiki/CorelDRAW).
+
+We provide the small tool [ultraSvgz](http://github.com/thomasWeise/ultraSvgz), which runs under Linux and can create very small, minified and compressed `svgz` files from `svg`s.
+Our tool suite supports `svgz` fully and such files tend to actually be smaller than [`pdf`](http://en.wikipedia.org/wiki/PDF) or [`eps`](http://en.wikipedia.org/wiki/Encapsulated_PostScript) graphics.
+
+## 4. GitHub Pipeline
+
+As discussed under point [Installation and Local Use](#2-installation-and-local-use), our tool suite is available as [docker container]([docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/), so you only need a docker installation to run the complete software locally.
+However, the bigger goal is to allow you to collaboratively write books, interact with your readers, and automatically publish them online.
+With docker in combination with [GitHub](http://www.github.com/) and [GitHub Actions](https://github.com/features/actions), this is now easily possible.
+
+You can find a [template book project](https://github.com/thomasWeise/bookbuilderpy-mwe) using the complete automated pipeline discussed here in the repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe).
+In other words, if you do not want to read the text and explanation below, you can as well just clone this template project and adapt everything to your liking.
+
+You can integrate the whole process with a [version control](http://en.wikipedia.org/wiki/Version_control) software like [Git](http://en.wikipedia.org/wiki/Git) and a [continuous integration](http://en.wikipedia.org/wiki/Continuous_integration) framework.
+Then, you can automate the compilation of your book to run every time you change your book sources.
+Actually, there are several open source and free environments that you can use to that for you for free &ndash; in exchange for you making your book free for everyone to read.
+
+First, both for writing and hosting the book, we suggest using a [GitHub](http://www.github.com/) repository, very much like the one for the book I just began working on [here](http://github.com/thomasWeise/oa).
+The book should be written in [Pandoc's markdown](http://pandoc.org/MANUAL.html#pandocs-markdown) syntax, which allows us to include most of the stuff we need, such as equations and citation references, with the additional comments listed above.
+For building the book, we will use [GitHub Actions](https://github.com/features/actions), which are triggered by repository commits.
+
+Every time you push a commit to your book repository, the GitHub Action will check out the repository.
+The docker container can the automatically build the book and book website.
+The result can automatically be deployed to the [GitHub Pages](http://help.github.com/articles/what-is-github-pages/) branch of your repository and which will then be the website of the repository.
+Once the repository, website, and Travis build procedure are all set up, we can concentrate on working on our book and whenever some section or text is finished, commit, and enjoy the automatically new versions.
+
+Having your book sources on GitHub brings several additional advantages, for instance:
+
+- Since the book's sources are available as GitHub repository, our readers can file issues to the repository, with change suggestions, discovered typos, or with questions to add clarification.
+- They may even file pull requests with content to include.
+- You could also write a book collaboratively &ndash; like a software project. This might also be interesting for students who write course notes together.
+
+### 4.1. The Repository
+
+In order to use our workflow, you need to first have an account at [GitHub](http://www.github.com/) and then create an open repository for your book.
+GitHub is built around the distributed version control system [git](http://git-scm.com/), for which a variety of [graphical user interfaces](http://git-scm.com/downloads/guis) exist - see, e.g., of [here](http://git-scm.com/downloads/guis).
+If you have a Debian-based Linux system, you can install the basic `git` client with command line interface as follows: `sudo apt-get install git` and the gui `git-cola`[https://git-cola.github.io/] which can be installed via `sudo apt-get install git-cola`.
+You can use either this client or such a GUI to work with your repository.
+
+You can now fill your repository with your book's source files.
+The repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe) gives you a bare example how that can look like.
+
+## 4.2. The GitHub Action
+
+Create a folder `.github/workflows` and inside this folder a file `build.yaml`.
+The contents of the file should be:
+
+```
+name: publish
+
+on:
+  push:    
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: docker-practice/actions-setup-docker@master
+    - name: build
+      run: |
+        mkdir -p /tmp/result
+        docker run -v $(pwd):/input/:ro -v /tmp/result/:/output/ thomasweise/docker-bookbuilderpy book.md
+
+    - name: deploy
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages
+        folder: /tmp/result
+        single-commit: true
+```
+
+This will toggle the build whenever you commit to the branch `main`.
+It will then first check out the book sources.
+Then it will create the temporary folder `/tmp/result` and use the docker container to build the book to this folder.
+After that, the files in this folder will be deployed to the branch `gh-pages`, which will become the website for your book.
+
+Let's say your username was `thomasWeise` and your book repository was `bookbuilderpy-mwe`.
+To make this website visible, go to your GitHub project's [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe), click `Settings`, then go to `Pages`, then under `Source` choose `gh-pages` and click `Save`.
+A few minutes afterwards, your book's website will appear as <https://thomasweise.github.io/bookbuilderpy-mwe>.
+Done.
+Whenever you commit to your book sources, the book will be compiled and the website is updated.
+Nothing else needed.
+
+## 5. Related Projects and Components
+
+### 5.1. Own Contributed Projects and Components
+
+The following components have been contributed by us to provide this tool chain.
+They are all open source and available on GitHub.
+
+- The [Python&nbsp;3](https://docs.python.org/3) package [bookbuilderpy](http://github.com/thomasWeise/bookbuilderpy) providing the commands wrapping around pandoc and extending Markdown to automatically build electronic books.
+- [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe), a minimum working example for using the complete bookbuilderpy tool suite.
+- A hierarchy of docker containers forms the infrastructure for the automated builds:
+  + [docker-bookbuilderpy](http://github.com/thomasWeise/docker-bookbuilderpy) is the docker container that can be used to compile an electronic book based on our tool chain. [Here](http://github.com/thomasWeise/docker-bookbuilderpy) you can find it on GitHub and [here](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/) on docker hub.
+  + [docker-pandoc-calibre](http://github.com/thomasWeise/docker-pandoc-calibre) is the container which is the basis for [docker-bookbuilderpy](http://github.com/thomasWeise/docker-bookbuilderpy). It holds a complete installation of pandoc, [calibre](http://calibre-ebook.com), which is used to convert EPUB3 to AZW3, and TeX Live and its sources are [here](http://github.com/thomasWeise/docker-pandoc-calibre) while it is located [here](http://hub.docker.com/r/thomasweise/docker-pandoc-calibre/).
+  + [docker-pandoc](http://github.com/thomasWeise/docker-pandoc) is the container which is the basis for [docker-pandoc-calibre](http://github.com/thomasWeise/docker-pandoc-calibre). It holds a complete installation of pandoc and TeX Live and its sources are [here](http://github.com/thomasWeise/docker-pandoc) while it is located [here](http://hub.docker.com/r/thomasweise/docker-pandoc/).
+  + [docker-texlive-thin](http://github.com/thomasWeise/docker-texlive-thin) is the container which is the basis for [docker-pandoc](http://github.com/thomasWeise/docker-pandoc). It holds a complete installation of TeX Live and its sources are [here](http://github.com/thomasWeise/docker-texlive-thin) while it is located [here](http://hub.docker.com/r/thomasweise/docker-texlive-thin/).
+
+### 5.2. Related Projects and Components Used
+
+- [pandoc](http://pandoc.org/), with which we convert markdown to HTML, pdf, and epub, along with several `pandoc` filters, namely
+   + [`pandoc-citeproc`](http://github.com/jgm/pandoc-citeproc),
+   + [`pandoc-crossref`](http://github.com/lierdakil/pandoc-crossref),
+   + [`latex-formulae-pandoc`](http://github.com/liamoc/latex-formulae), and
+   + [`pandoc-citeproc-preamble`](http://github.com/spwhitton/pandoc-citeproc-preamble)
+and the two `pandoc` templates
+   + [Wandmalfarbe/pandoc-latex-template](http://github.com/Wandmalfarbe/pandoc-latex-template/), an excellent `pandoc` template for LaTeX by [Pascal Wagler](http://github.com/Wandmalfarbe)
+   + the [GitHub Pandoc HTML5 template](http://github.com/tajmone/pandoc-goodies/tree/master/templates/html5/github) by [Tristano Ajmone](http://github.com/tajmone)
+- [TeX Live](http://tug.org/texlive/), a [LaTeX](http://en.wikipedia.org/wiki/LaTeX) installation used by pandoc for generating the pdf output
+- [`Python 3`](https://www.python.org/), the programming language in which this package is written
+- [docker](https://en.wikipedia.org/wiki/Docker_(software)), used to create containers in which all required software is pre-installed,
+- [`cabal`](http://www.haskell.org/cabal/), the compilation and package management system via which pandoc is obtained,
+- [`calibre`](http://calibre-ebook.com), which allows us to convert epub to awz3 files
+- [`imagemagick`](http://www.imagemagick.org/) used by `pandoc` for image conversion
+- [`ghostscript`](http://ghostscript.com/), used by our script to include all fonts into a pdf
+- [`poppler-utils`](http://poppler.freedesktop.org/), used by our script for checking whether the pdfs are OK.
+
+
+## 6. License
 
 The copyright holder of this package is Prof. Dr. Thomas Weise (see Contact).
 The package is licensed under the GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007.
 This package also contains third-party components which are under the following licenses;
 
-### 4.1. [Wandmalfarbe/pandoc-latex-template](http://github.com/Wandmalfarbe/pandoc-latex-template)
+### 6.1. Wandmalfarbe/pandoc-latex-template
 
 We include the pandoc LaTeX template from [Wandmalfarbe/pandoc-latex-template](http://github.com/Wandmalfarbe/pandoc-latex-template) by Pascal Wagler and John MacFarlane, which is under the [BSD 3 license](http://github.com/Wandmalfarbe/pandoc-latex-template/blob/master/LICENSE). For this, the following terms hold:
 
-```
-% Copyright (c) 2018, Pascal Wagler;  
-% Copyright (c) 2014--2018, John MacFarlane
-% 
-% All rights reserved.
-% 
-% Redistribution and use in source and binary forms, with or without 
-% modification, are permitted provided that the following conditions 
-% are met:
-% 
-% - Redistributions of source code must retain the above copyright 
-% notice, this list of conditions and the following disclaimer.
-% 
-% - Redistributions in binary form must reproduce the above copyright 
-% notice, this list of conditions and the following disclaimer in the 
-% documentation and/or other materials provided with the distribution.
-% 
-% - Neither the name of John MacFarlane nor the names of other 
-% contributors may be used to endorse or promote products derived 
-% from this software without specific prior written permission.
-% 
-% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
-% LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-% FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-% COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-% INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-% BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-% CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
-% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
-% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-% POSSIBILITY OF SUCH DAMAGE.
-%%
-
-%%
-% For usage information and examples visit the GitHub page of this template:
-% http://github.com/Wandmalfarbe/pandoc-latex-template
-%%
-```
+    % Copyright (c) 2018, Pascal Wagler;  
+    % Copyright (c) 2014--2018, John MacFarlane
+    % 
+    % All rights reserved.
+    % 
+    % Redistribution and use in source and binary forms, with or without 
+    % modification, are permitted provided that the following conditions 
+    % are met:
+    % 
+    % - Redistributions of source code must retain the above copyright 
+    % notice, this list of conditions and the following disclaimer.
+    % 
+    % - Redistributions in binary form must reproduce the above copyright 
+    % notice, this list of conditions and the following disclaimer in the 
+    % documentation and/or other materials provided with the distribution.
+    % 
+    % - Neither the name of John MacFarlane nor the names of other 
+    % contributors may be used to endorse or promote products derived 
+    % from this software without specific prior written permission.
+    % 
+    % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+    % "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+    % LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+    % FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+    % COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+    % INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+    % BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+    % LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+    % CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+    % LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
+    % ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+    % POSSIBILITY OF SUCH DAMAGE.
+    %%
     
-### 4.2 [tajmone/pandoc-goodies HTML Template](http://github.com/tajmone/pandoc-goodies)
+    %%
+    % For usage information and examples visit the GitHub page of this template:
+    % http://github.com/Wandmalfarbe/pandoc-latex-template
+    %%
+    
+### 6.2 tajmone/pandoc-goodies HTML Template
 
 We include the pandoc HTML-5 template from [tajmone/pandoc-goodies](http://github.com/tajmone/pandoc-goodies) by Tristano Ajmone, Sindre Sorhus, and GitHub Inc., which is under the [MIT license](http://raw.githubusercontent.com/tajmone/pandoc-goodies/master/templates/html5/github/LICENSE). For this, the following terms hold:
 
-```
-MIT License
-
-Copyright (c) Tristano Ajmone, 2017 (github.com/tajmone/pandoc-goodies)
-Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
-Copyright (c) 2017 GitHub Inc.
-
-"GitHub Pandoc HTML5 Template" is Copyright (c) Tristano Ajmone, 2017, released
-under the MIT License (MIT); it contains readaptations of substantial portions
-of the following third party softwares:
-
-(1) "GitHub Markdown CSS", Copyright (c) Sindre Sorhus, MIT License (MIT).
-(2) "Primer CSS", Copyright (c) 2016 GitHub Inc., MIT License (MIT).
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+    MIT License
+    
+    Copyright (c) Tristano Ajmone, 2017 (github.com/tajmone/pandoc-goodies)
+    Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+    Copyright (c) 2017 GitHub Inc.
+    
+    "GitHub Pandoc HTML5 Template" is Copyright (c) Tristano Ajmone, 2017, released
+    under the MIT License (MIT); it contains readaptations of substantial portions
+    of the following third party softwares:
+    
+    (1) "GitHub Markdown CSS", Copyright (c) Sindre Sorhus, MIT License (MIT).
+    (2) "Primer CSS", Copyright (c) 2016 GitHub Inc., MIT License (MIT).
+    
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+    
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 
 
-## 5. Contact
+## 7. Contact
 
 If you have any questions or suggestions, please contact
 
