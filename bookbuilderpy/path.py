@@ -1,5 +1,6 @@
 """The base class with the information of a build."""
 
+import codecs
 import gzip
 import io
 import os.path
@@ -59,6 +60,35 @@ def _copy_un_gzip(path_in: str, path_out: str):
     with gzip.open(path_in, 'rb') as f_in:
         with open(path_out, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
+
+
+#: the UTF-8 encoding
+__UTF8: Final[str] = 'utf-8-sig'
+
+#: The list of possible text encodings
+__ENCODINGS: Final[Tuple[Tuple[Tuple[bytes, ...], str], ...]] = \
+    (((codecs.BOM_UTF8,), __UTF8),
+     ((codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE,), 'utf-32'),
+     ((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE), 'utf-16'))
+
+
+def _get_text_encoding(filename: str) -> str:
+    """
+    Get the text encoding from a BOM if present.
+
+    Adapted from https://stackoverflow.com/questions/13590749.
+
+    :param str filename: the filename
+    :return: the encoding
+    :rtype: str
+    """
+    with open(filename, 'rb') as f:
+        header = f.read(4)  # Read just the first four bytes.
+    for boms, encoding in __ENCODINGS:
+        for bom in boms:
+            if header.find(bom) == 0:
+                return encoding
+    return __UTF8
 
 
 class Path(str):
@@ -209,7 +239,7 @@ class Path(str):
         :rtype: List[str]
         """
         self.enforce_file()
-        with io.open(self, "rt", encoding="utf-8") as reader:
+        with io.open(self, "rt", encoding=_get_text_encoding(self)) as reader:
             ret = reader.readlines()
         if not isinstance(ret, List):
             raise TypeError("List of strings expected, but "
@@ -226,7 +256,7 @@ class Path(str):
         :rtype: str
         """
         self.enforce_file()
-        with io.open(self, "rt", encoding="utf-8") as reader:
+        with io.open(self, "rt", encoding=_get_text_encoding(self)) as reader:
             ret = reader.read()
         if not isinstance(ret, str):
             raise TypeError("String expected, but "
