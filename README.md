@@ -37,9 +37,14 @@ The goal of this package is to provide you with a pipeline that can:
   - generate a website that lists all produced files so that you can copy everything to a web folder and offer your work for download without any further hassle.
 
 This python package requires that [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
-Most likely, this package will only work under Linux - at least I did not test it under Windows.
+Most likely, this package will only work under [Linux](https://www.linux.org) &ndash; at least I did not test it under Windows.
+All commands and examples in the following require [Linux](https://www.linux.org).
 
 ## 2. Installation and Local Use
+
+The following examples are for [Ubuntu](https://ubuntu.com) [Linux](https://www.linux.org).
+Under other flavors, they may work differently and different commands may be required.
+Execute the examples at your own risk.
 
 You can easily install this package and its required packages using [`pip`](https://pypi.org/project/pip/) by doing
 
@@ -57,13 +62,33 @@ docker run -v "INPUT_DIR":/input/:ro \
            thomasweise/docker-bookbuilderpy BOOK_ROOT_MD_FILE
 ```
 
+Under many distributions, you need to run this command as `sudo`.
 Here, it is assumed that
 
 - `INPUT_DIR` is the directory where your book sources reside, let's say `/home/my/book/sources/`. (By adding `:ro`, we mount the input directory read-only, just in case.)
 - `BOOK_ROOT_MD_FILE` is the root file of your book, say `book.md` (in which case, the full path of `book.md` would be `/home/my/book/sources/book.md`). Notice that you can specify only a single file, but this file can reference other files in sub-directories of `INPUT_DIR` by using commands such as  `\rel.input` (see [below](#32-bookbuilderpy-specific-commands)).
 - `OUTPUT_DIR` is the output directory where the compiled files should be placed, e.g., `/home/my/book/compiled/`. This is where the resulting files will be placed.
 
-Notice that you can also automate your whole book building and publishing process using our [GitHub Pipeline](#4-github-pipeline) later discussed in [Section&nbsp;4](#4-github-pipeline).
+If you want to try the above, you can clone the "minimal working example" repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe) and run the process to see what it does as follows **execute the code below at your own risk**:
+
+```
+mkdir example
+cd example
+git clone https://github.com/thomasWeise/bookbuilderpy-mwe.git
+mkdir result
+sudo docker run -v "$(pwd)/bookbuilderpy-mwe":/input/:ro -v "$(pwd)/result":/output/ thomasweise/docker-bookbuilderpy book.md
+sudo chown $USER -R result
+```
+
+Above, we create a folder called `example`.
+We then clone the repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe), creating the folder `bookbuilderpy-mwe` containing the example book sources.
+Then, directory `result` is created, into which we will build the book.
+With `sudo docker run -v bookbuilderpy-mwe:/input/:ro -v result:/output/ thomasweise/docker-bookbuilderpy book.md`, the build process is executed.
+Since it runs under `sudo`, the files will be generated with `sudo` permissions/ownership, so we transfer them to the user ownership via `sudo chown $USER -R result`.
+You can now peek into the `result` folder.
+It will contain a file `index.html`, which is the automatically generated (bare minimum) book website, from which you can access all other generated files.
+
+Notice that you can also automate your whole book building *and publishing* process using our [GitHub Pipeline](#4-github-pipeline) later discussed in [Section&nbsp;4](#4-github-pipeline).
 
 ## 3. Provided Functionality
 
