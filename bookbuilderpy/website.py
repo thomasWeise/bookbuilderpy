@@ -1,6 +1,7 @@
 """The routine for building the website for the book."""
 import os.path
-from typing import Iterable, Final, Callable, Optional, Dict
+from typing import Dict
+from typing import Iterable, Final, Callable, Optional
 
 import markdown  # type: ignore
 
@@ -9,7 +10,7 @@ from bookbuilderpy.build_result import LangResult, File
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
-from bookbuilderpy.strings import file_size
+from bookbuilderpy.strings import file_size, enforce_non_empty_str
 
 #: Explanations of file suffixes.
 __SUFFIXES: Final[Dict[str, str]] = {
@@ -94,13 +95,15 @@ def build_website(docs: Iterable[LangResult],
                 f"'{bc.WEBSITE_BODY_TAG_1}' but not "
                 f"'{bc.WEBSITE_BODY_TAG_2}'.")
         data = [html[:div_1].strip()]
-        has_lang_ul: bool = False
 
-        for lang in docs:
-            if lang.lang_name:
-                if not has_lang_ul:
-                    data.append(f'<ul{bc.WEBSITE_LANGS_UL_ARG}>')
-                    has_lang_ul = True
+        ldocs = list(docs)
+        has_lang_ul = len(ldocs) > 1
+        if has_lang_ul:
+            data.append(f'<ul{bc.WEBSITE_LANGS_UL_ARG}>')
+
+        for lang in ldocs:
+            if has_lang_ul:
+                enforce_non_empty_str(lang.lang_name)
                 data.append(
                     f'<li{bc.WEBSITE_LANGS_LI_ARG}>'
                     f'<span{bc.WEBSITE_LANGS_NAME_SPAN_ARG}>'
@@ -124,6 +127,7 @@ def build_website(docs: Iterable[LangResult],
                     data.append(
                         f'<br><span{bc.WEBSITE_DOWNLOAD_FILE_DESC_SPAN_ARG}>'
                         f'{desc}</span>')
+
                 data.append('</li>')
             data.append('</ul>')
             if has_lang_ul:

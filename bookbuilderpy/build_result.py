@@ -71,13 +71,16 @@ class LangResult:
             raise ValueError(
                 f"lang cannot be '{lang}' if lang name is '{lang_name}'.")
         if lang is None:
-            object.__setattr__(self, "lang", lang)
-            object.__setattr__(self, "lang_name", lang_name)
+            object.__setattr__(self, "lang", None)
+            object.__setattr__(self, "lang_name", None)
         else:
             object.__setattr__(self, "lang",
                                enforce_non_empty_str_without_ws(lang))
-            object.__setattr__(self, "lang_name",
-                               enforce_non_empty_str(lang_name))
+            if lang_name is not None:
+                object.__setattr__(self, "lang_name",
+                                   enforce_non_empty_str(lang_name))
+            else:
+                object.__setattr__(self, "lang_name", None)
         if not isinstance(directory, Path):
             raise TypeError(
                 f"directory must be Path, but is {type(directory)}.")

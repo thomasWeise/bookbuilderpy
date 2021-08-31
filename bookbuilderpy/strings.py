@@ -187,6 +187,8 @@ def lang_to_locale(lang: str) -> str:
     lang = enforce_non_empty_str_without_ws(lang)
     if lang in __LANG_DICT:
         return __LANG_DICT[lang]
+    if "-" in lang:
+        return "_".join(lang.split("-"))
     return lang
 
 

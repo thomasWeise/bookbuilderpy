@@ -2,6 +2,7 @@
 
 import datetime
 import os
+import sys
 from contextlib import AbstractContextManager, ExitStack
 from os.path import basename
 from typing import Final, Optional, Dict, Any, Iterable, List, Tuple
@@ -21,8 +22,8 @@ from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
     enforce_non_empty_str_without_ws, lang_to_locale, to_string
 from bookbuilderpy.temp import TempDir
-from bookbuilderpy.website import build_website
 from bookbuilderpy.versions import get_versions
+from bookbuilderpy.website import build_website
 
 
 class Build(AbstractContextManager):
@@ -141,7 +142,7 @@ class Build(AbstractContextManager):
             return "en"
         if key == bc.META_LOCALE:
             return lang_to_locale(self.__get_meta(bc.META_LANG, False))
-        if key == bc.META_LANG_NAME:
+        if key in (bc.META_LANG_NAME, bc.META_CUR_LANG_NAME):
             return "English"
 
         if key in (bc.META_REPO_INFO_URL, bc.META_REPO_INFO_DATE,
@@ -333,12 +334,15 @@ class Build(AbstractContextManager):
 
     def __build_one_lang(self,
                          lang_id: Optional[str],
-                         lang_name: Optional[str]) -> None:
+                         lang_name: Optional[str],
+                         use_lang_id_as_suffix: bool = False) -> None:
         """
         Perform the book build for one language.
 
         :param Optional[str] lang_id: the language ID
         :param Optional[str] lang_name: the language name
+        :param bool use_lang_id_as_suffix: should we use the language id as
+            file name suffix?
         """
         self.__metadata_lang = None
 
@@ -346,11 +350,20 @@ class Build(AbstractContextManager):
         if lang_id is None:
             log("beginning build with no language set.")
             base_dir = self.output_dir
-        else:
+            if lang_name:
+                raise ValueError("Cannot have language name "
+                                 f"'{lang_name}' but no language id!")
+        elif use_lang_id_as_suffix:
             lang_id = enforce_non_empty_str_without_ws(lang_id)
-            log(f"beginning build in language {lang_id}.")
+            log(f"beginning multi-language build for language {lang_id}.")
             base_dir = self.output_dir.resolve_inside(lang_id)
-            enforce_non_empty_str(lang_name)
+            if lang_name:
+                enforce_non_empty_str(lang_name)
+        else:
+            log(f"beginning single-language build in language {lang_id}.")
+            base_dir = self.output_dir
+            if lang_name:
+                enforce_non_empty_str(lang_name)
         base_dir.ensure_dir_exists()
 
         # First obtain the full language-specific input text.
@@ -364,8 +377,8 @@ class Build(AbstractContextManager):
             # We set up the language id and lange name meta data properties.
             if bc.META_LANG not in self.__metadata_lang.keys():
                 self.__metadata_lang[bc.META_LANG] = lang_id
-            if bc.META_LANG_NAME not in self.__metadata_lang.keys():
-                self.__metadata_lang[bc.META_LANG_NAME] = lang_name
+            if bc.META_CUR_LANG_NAME not in self.__metadata_lang.keys():
+                self.__metadata_lang[bc.META_CUR_LANG_NAME] = lang_name
 
         # Then load the repositories from the meta data.
         self.__load_repos_from_meta(self.__metadata_lang)
@@ -391,8 +404,8 @@ class Build(AbstractContextManager):
 
             prefix, suffix = Path.split_prefix_suffix(
                 basename(self.__input_file))
-            if lang_id is not None:
-                end = "_" + lang_id
+            if use_lang_id_as_suffix:
+                end = "_" + enforce_non_empty_str_without_ws(lang_id)
                 if not prefix.endswith(end):
                     prefix = prefix + end
             file = temp.resolve_inside(f"{prefix}.{suffix}")
@@ -441,7 +454,8 @@ class Build(AbstractContextManager):
             if not isinstance(langs, Iterable):
                 raise TypeError(
                     f"{bc.META_LANGS} must be Iterable but is {type(langs)}.")
-            for lang in langs:
+            llangs = list(langs)
+            for lang in llangs:
                 if not isinstance(lang, dict):
                     raise TypeError(
                         f"Language item must be dict, but is {type(lang)}.")
@@ -452,11 +466,12 @@ class Build(AbstractContextManager):
                 done.add(lang_id)
                 lang_name = enforce_non_empty_str(enforce_non_empty_str(
                     lang[bc.META_LANG_NAME]).strip())
-                self.__build_one_lang(lang_id, lang_name)
+                self.__build_one_lang(lang_id, lang_name, len(llangs) > 1)
                 no_lang = False
 
         if no_lang:
-            self.__build_one_lang(None, None)
+            self.__build_one_lang(
+                self.__get_meta_no_error(bc.META_LANG), None, False)
         log("finished the build loop for all languages.")
 
     def __build_website(self) -> None:
@@ -516,19 +531,28 @@ class Build(AbstractContextManager):
 
     @staticmethod
     def run(input_file: str,
-            output_dir: str) -> Tuple[LangResult, ...]:
+            output_dir: str,
+            exit_on_error: bool = False) -> Tuple[LangResult, ...]:
         """
         Run a build on an input file to an output directory.
 
         :param str input_file: the input file
         :param str output_dir: the output directory
+        :param str exit_on_error: should we quit Python upon error?
         :return: a tuple of results
         :rtype: Tuple[LangResult]
         """
-        with Build(input_file, output_dir, True) as bd:
-            bd.build()
-            res = tuple(bd.__results)
-        if len(res) <= 0:
-            raise ValueError(f"Build '{input_file}' -> '{output_dir}' did not"
-                             "produce any results.")
-        return res
+        try:
+            with Build(input_file, output_dir, True) as bd:
+                bd.build()
+                res = tuple(bd.__results)
+            if len(res) <= 0:
+                raise ValueError(
+                    f"Build '{input_file}' -> '{output_dir}' did not produce "
+                    "any results.")
+            return res
+        except BaseException as be:
+            log(f"The build process has FAILED with error {be}.")
+            if exit_on_error:
+                sys.exit(1)
+            raise be

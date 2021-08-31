@@ -21,7 +21,7 @@ Most likely, this package will only work under Linux - at least I did not test i
 
 You can easily install this package and its required packages using [`pip`](https://pypi.org/project/pip/) by doing
 
-```
+```shell
 pip install git+https://github.com/thomasWeise/bookbuilderpy.git
 ```
 
@@ -29,7 +29,7 @@ If you want the full tool chain, though, you also need  [pandoc](http://pandoc.o
 So it might be easier to just use the [docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilder/) that comes with everything pre-installed.
 You can then run it as:
 
-```
+```shell
 docker run -v "INPUT_DIR":/input/ \
            -v "OUTPUT_DIR":/output/ \
            -t -i thomasweise/docker-bookbuilderpy BOOK_ROOT_MD_FILE
@@ -76,7 +76,7 @@ The following new commands are added:
   + `year`: the year when the book building process was started,
   + `lang`: the current [language](#331-language-specification-and-resolution) id, or `en` if none is specified
   + `locale`: the locale inferred from the current language id
-  + `name`: the current language name, or `English` if none is specified (this is a bit a dodgy property name, but for now I will stick with it&hellip;)
+  + `lang.name`: the current language name, or `English` if none is specified
   + `repo.name`: if it was detected that the build process is applied to a git repository checkout, then this is the repository name, e.g., `thomasweise/bookbuilderpy`; otherwise querying this property will fail the build process.
   + `repo.url`:  if it was detected that the build process is applied to a git repository check out, then this is the repository url, such as `https://github.com/thomasweise/bookbuilderpy`; otherwise querying this property will fail the build process.
   + `repo.commit`:  if it was detected that the build process is applied to a git repository checkout, then this is the commit id of the checkout; otherwise querying this property will fail the build process.
@@ -91,10 +91,10 @@ We added the following metadata items:
 
 ### 3.3.1. Language Specification and Resolution
 
-You can develop your book in multiple languages in parallel.
-These can be specified in the metadata following the pattern below:
+You can develop your book in one single language or in multiple languages in parallel.
+The language(s) can be specified in the metadata following the pattern below:
 
-```
+```yaml
 langs:
   - id: en
     name: English
@@ -105,12 +105,19 @@ langs:
 ```
 
 The `langs` entry specifies a list, where each item must have an `id` and a `name`.
-The `id` will be used to determine the locale of the text and the name will appear in things such as the automatically generate website, etc.
+The `id` will be used to determine the [locale](https://cldr.unicode.org/)  of the text.
+You can either use a [locale](https://cldr.unicode.org/) directly, or one of the following shortcuts: `en` for `en_US`, `zh` or `cn` for `zh_CN`, `tw` for `zh_TW`, `de` for `de_DE`, `fr` for `fr_FR`, `it` for `it_IT`, `ja` for `ja_JP`, `ko` for `ko_KR`, `pt` for `pt_BR`, and `es` for `es_ES`.
+**Warning&nbsp;1**: Do not specify the `lang` attribute usually used by pandoc, as this causes some trouble.
+**Warning&nbsp;2**: If you only specify a single language, the book's main file name cannot be `index.md`.
+**Warning&nbsp;3**: If you want to build a book in the Chinese language, you must specify the language Chinese with one of the Chinese-related prefixes above.
+
+The language name will appear in things such as the automatically generate website, etc.
 For each language, one book building process will be performed.
 In the above example, we will build the book three times, for English, German, and Chinese.
 If the book's basic file name was `book.md`, we will get `book_en.pdf`, `book_de.pdf`, and `book_zh.pdf`.
+If only one language was specified, we would just get `book.pdf`.
 
-The language `id` has one very important purpose:
+If and only you specify multiple locales, then the language `id` has one very important purpose:
 It allows for language-specific file resolution.
 For instance, let's say you do `\rel.input{folder/README.md}`.
 In the `en`-build step, this will first look for a file `folder/README_en.md`.
@@ -137,7 +144,7 @@ For instance, a language ID like `zh`, indicating Chinese, will lead to the use 
 It is possible to include code from one or multiple git repositories using the `\git.code` command.
 For this purpose, you first need to specify the repositories in the metadata section as follows:
 
-```
+```yaml
 repos:
   - id: mp
     url: https://github.com/thomasWeise/moptipy.git
@@ -191,7 +198,7 @@ The result of this rendering process is then stored in a file `index.html`.
 - `template.latex`: the template for rendering to PDF. Set this to `eisvogel.tex` to use the default style offered by the package.
 - The language-specific component titles explained-by-example are already supported by pandoc and its filters:
 
-``` 
+```yaml
 figureTitle: Figure
 tableTitle: Table
 listingTitle: Listing
@@ -216,7 +223,7 @@ reference-section-title: References
 ```
 - Any other `xxxTitle` allows you to specify a `type`to be used for a `\definition{type}{label}{body}` command.
 - `header-includes`: allows you to insert stuff into the headers of the format. For PDF/LaTeX, it is useful to put something like the stuff below, as it will make the result nicer if you have many code listings:
-```
+```yaml
 header-includes:
 - |
   ```{=latex}
@@ -229,7 +236,7 @@ header-includes:
 ```
 
 - Setup for pandoc's crossref: You may wish to include the following text
-```
+```yaml
 # pandoc-crossref setup
 cref: true
 chapters: true
@@ -249,79 +256,83 @@ This package also contains third-party components which are under the following 
 
 We include the pandoc LaTeX template from [Wandmalfarbe/pandoc-latex-template](http://github.com/Wandmalfarbe/pandoc-latex-template) by Pascal Wagler and John MacFarlane, which is under the [BSD 3 license](http://github.com/Wandmalfarbe/pandoc-latex-template/blob/master/LICENSE). For this, the following terms hold:
 
-    % Copyright (c) 2018, Pascal Wagler;  
-    % Copyright (c) 2014--2018, John MacFarlane
-    % 
-    % All rights reserved.
-    % 
-    % Redistribution and use in source and binary forms, with or without 
-    % modification, are permitted provided that the following conditions 
-    % are met:
-    % 
-    % - Redistributions of source code must retain the above copyright 
-    % notice, this list of conditions and the following disclaimer.
-    % 
-    % - Redistributions in binary form must reproduce the above copyright 
-    % notice, this list of conditions and the following disclaimer in the 
-    % documentation and/or other materials provided with the distribution.
-    % 
-    % - Neither the name of John MacFarlane nor the names of other 
-    % contributors may be used to endorse or promote products derived 
-    % from this software without specific prior written permission.
-    % 
-    % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-    % "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
-    % LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-    % FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-    % COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-    % INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-    % BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    % LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-    % CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
-    % LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
-    % ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-    % POSSIBILITY OF SUCH DAMAGE.
-    %%
-    
-    %%
-    % For usage information and examples visit the GitHub page of this template:
-    % http://github.com/Wandmalfarbe/pandoc-latex-template
-    %%
+```
+% Copyright (c) 2018, Pascal Wagler;  
+% Copyright (c) 2014--2018, John MacFarlane
+% 
+% All rights reserved.
+% 
+% Redistribution and use in source and binary forms, with or without 
+% modification, are permitted provided that the following conditions 
+% are met:
+% 
+% - Redistributions of source code must retain the above copyright 
+% notice, this list of conditions and the following disclaimer.
+% 
+% - Redistributions in binary form must reproduce the above copyright 
+% notice, this list of conditions and the following disclaimer in the 
+% documentation and/or other materials provided with the distribution.
+% 
+% - Neither the name of John MacFarlane nor the names of other 
+% contributors may be used to endorse or promote products derived 
+% from this software without specific prior written permission.
+% 
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+% LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+% FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+% COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+% INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+% BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+% LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+% CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+% LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
+% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+% POSSIBILITY OF SUCH DAMAGE.
+%%
+
+%%
+% For usage information and examples visit the GitHub page of this template:
+% http://github.com/Wandmalfarbe/pandoc-latex-template
+%%
+```
     
 ### 4.2 [tajmone/pandoc-goodies HTML Template](http://github.com/tajmone/pandoc-goodies)
 
 We include the pandoc HTML-5 template from [tajmone/pandoc-goodies](http://github.com/tajmone/pandoc-goodies) by Tristano Ajmone, Sindre Sorhus, and GitHub Inc., which is under the [MIT license](http://raw.githubusercontent.com/tajmone/pandoc-goodies/master/templates/html5/github/LICENSE). For this, the following terms hold:
 
-    MIT License
-    
-    Copyright (c) Tristano Ajmone, 2017 (github.com/tajmone/pandoc-goodies)
-    Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
-    Copyright (c) 2017 GitHub Inc.
-    
-    "GitHub Pandoc HTML5 Template" is Copyright (c) Tristano Ajmone, 2017, released
-    under the MIT License (MIT); it contains readaptations of substantial portions
-    of the following third party softwares:
-    
-    (1) "GitHub Markdown CSS", Copyright (c) Sindre Sorhus, MIT License (MIT).
-    (2) "Primer CSS", Copyright (c) 2016 GitHub Inc., MIT License (MIT).
-    
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-    
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-    
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
+```
+MIT License
+
+Copyright (c) Tristano Ajmone, 2017 (github.com/tajmone/pandoc-goodies)
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+Copyright (c) 2017 GitHub Inc.
+
+"GitHub Pandoc HTML5 Template" is Copyright (c) Tristano Ajmone, 2017, released
+under the MIT License (MIT); it contains readaptations of substantial portions
+of the following third party softwares:
+
+(1) "GitHub Markdown CSS", Copyright (c) Sindre Sorhus, MIT License (MIT).
+(2) "Primer CSS", Copyright (c) 2016 GitHub Inc., MIT License (MIT).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 
 ## 5. Contact
