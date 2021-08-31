@@ -552,7 +552,7 @@ class Build(AbstractContextManager):
                     "any results.")
             return res
         except BaseException as be:
-            log(f"The build process has FAILED with error {be}.")
+            log(f"The build process has FAILED with error '{be}'.")
             if exit_on_error:
                 sys.exit(1)
             raise be
