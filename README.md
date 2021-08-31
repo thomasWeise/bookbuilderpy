@@ -2,7 +2,7 @@
 
 # bookbuilderpy
 
-A Python&nbsp;3-based environment for the automated compilation of books from markdown.
+A [Python&nbsp;3](https://docs.python.org/3)-based environment for the automated compilation of books from markdown.
 
 1. [Introduction](#1-introduction)
 2. [Installation and Local Use](#2-installation-and-local-use)
@@ -36,7 +36,7 @@ The goal of this package is to provide you with a pipeline that can:
   - allow the book to be written in multiple languages, and finally
   - generate a website that lists all produced files so that you can copy everything to a web folder and offer your work for download without any further hassle.
 
-This python package requires that [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
+This [Python&nbsp;3](https://docs.python.org/3) package requires that [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
 Most likely, this package will only work under [Linux](https://www.linux.org) &ndash; at least I did not test it under Windows.
 All commands and examples in the following require [Linux](https://www.linux.org).
 
@@ -395,7 +395,7 @@ Nothing else needed.
 The following components have been contributed by us to provide this tool chain.
 They are all open source and available on GitHub.
 
-- The `Python` package [bookbuilderpy](http://github.com/thomasWeise/bookbuilderpy) providing the commands wrapping around pandoc and extending Markdown to automatically build electronic books.
+- The [Python&nbsp;3](https://docs.python.org/3) package [bookbuilderpy](http://github.com/thomasWeise/bookbuilderpy) providing the commands wrapping around pandoc and extending Markdown to automatically build electronic books.
 - [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe), a minimum working example for using the complete bookbuilderpy tool suite.
 - A hierarchy of docker containers forms the infrastructure for the automated builds:
   + [docker-bookbuilderpy](http://github.com/thomasWeise/docker-bookbuilderpy) is the docker container that can be used to compile an electronic book based on our tool chain. [Here](http://github.com/thomasWeise/docker-bookbuilderpy) you can find it on GitHub and [here](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/) on docker hub.
@@ -414,7 +414,7 @@ and the two `pandoc` templates
    + [Wandmalfarbe/pandoc-latex-template](http://github.com/Wandmalfarbe/pandoc-latex-template/), an excellent `pandoc` template for LaTeX by [Pascal Wagler](http://github.com/Wandmalfarbe)
    + the [GitHub Pandoc HTML5 template](http://github.com/tajmone/pandoc-goodies/tree/master/templates/html5/github) by [Tristano Ajmone](http://github.com/tajmone)
 - [TeX Live](http://tug.org/texlive/), a [LaTeX](http://en.wikipedia.org/wiki/LaTeX) installation used by pandoc for generating the pdf output
-- [`Python`](https://www.python.org/), the programming language in which this package is written
+- [`Python 3`](https://www.python.org/), the programming language in which this package is written
 - [docker](https://en.wikipedia.org/wiki/Docker_(software)), used to create containers in which all required software is pre-installed,
 - [`cabal`](http://www.haskell.org/cabal/), the compilation and package management system via which pandoc is obtained,
 - [`calibre`](http://calibre-ebook.com), which allows us to convert epub to awz3 files
