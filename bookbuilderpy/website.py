@@ -10,33 +10,73 @@ from bookbuilderpy.build_result import LangResult, File
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
-from bookbuilderpy.strings import file_size, enforce_non_empty_str
+from bookbuilderpy.strings import file_size, enforce_non_empty_str, \
+    lang_to_locale
 
 #: Explanations of file suffixes.
-__SUFFIXES: Final[Dict[str, str]] = {
-    "pdf": 'The portable document format (<code><a href="https://www.iso.org/'
-           'standard/75839.html">pdf</a></code>) is most suitable for reading'
-           ' on a PC and for printing documents.',
-    "html": 'A stand-alone web page (<code><a href="https://www.w3.org/'
-            'TR/html5/">html</a></code>) can be viewed well both on mobile '
-            'phones as well as on PCs.',
-    "epub": 'The electronic book format (<code><a href="https://www.w3.org/'
-            'publishing/epub32/">epub</a></code>) is convenient for many '
-            'e-book readers as well as mobile phones.',
-    "azw3": 'The Amazon Kindle e-book format (<code><a href="http://'
-            'kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.'
-            'pdf">azw3</a></code>) is a proprietary format suitable for'
-            'reading on a Kindle device.',
-    "zip": 'A <code><a href="https://www.loc.gov/preservation/digital/'
-           'formats/fdd/fdd000354.shtml">zip</a></code> archive containing '
-           'the book in all the formats mentioned above for convenient '
-           'download.',
-    "tar.xz": 'A <code><a href="https://www.gnu.org/software/tar/manual/'
-              'html_node/Standard.html">tar</a>.<a href="https://tukaani.'
-              'org/xz/format.html">xz</a></code> archive containing the '
-              'book in all the formats mentioned above for convenient '
-              'download.'
-}
+__SUFFIXES: Final[Dict[str, Dict[str, str]]] = \
+    {"en": {
+        "pdf": 'The &quot;portable document format&quot; (<code>'
+               '<a href="https://www.iso.org/standard/75839.html">pdf</a>'
+               '</code>) is most suitable for reading on a PC and for '
+               'printing documents.',
+        "html": 'A stand-alone web page (<code><a href="https://www.w3.org/'
+                'TR/html5/">html</a></code>) can be viewed well both on '
+                'mobile phones as well as on PCs.',
+        "epub": 'The electronic book format (<code><a href="https://www.w3'
+                '.org/publishing/epub32/">epub</a></code>) is convenient for '
+                'many e-book readers as well as mobile phones.',
+        "azw3": 'The Amazon Kindle e-book format (<code><a href="http://'
+                'kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.'
+                'pdf">azw3</a></code>) is a proprietary format suitable for '
+                'reading on a Kindle device.',
+        "zip": 'A <code><a href="https://www.loc.gov/preservation/digital/'
+               'formats/fdd/fdd000354.shtml">zip</a></code> archive '
+               'containing the book in all the formats mentioned above for '
+               'convenient download.',
+        "tar.xz": 'A <code><a href="https://www.gnu.org/software/tar/manual/'
+                  'html_node/Standard.html">tar</a>.<a href="https://tukaani.'
+                  'org/xz/format.html">xz</a></code> archive containing the '
+                  'book in all the formats mentioned above for convenient '
+                  'download.'
+    }, "de": {
+        "pdf": 'Das &quot;portable document format&quot; (<code><a href='
+               '"https://www.iso.org/standard/75839.html">pdf</a></code>) ist'
+               'f&uuml;r das Lesen am PC oder das Ausdrucken geeignet.',
+        "html": 'Eine stand-alone Webseite (<code><a href="https://www.w3.org/'
+                'TR/html5/">html</a></code>) kann sowohl auf dem Mobiltelefon'
+                'als auch dem PC gut gelesen werden.',
+        "epub": 'Das Format für E-Book (<code><a href="https://www.w3.org/'
+                'publishing/epub32/">epub</a></code>) ist günstig für, naja, '
+                'E-Book Lesegeräte, Tablets, und Mobiltelefone.',
+        "azw3": 'Das Amazon Kindle E-Book Format (<code><a href="http://'
+                'kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.'
+                'pdf">azw3</a></code>) ist proprietär und für Kindles '
+                'gedacht.',
+        "zip": 'Ein <code><a href="https://www.loc.gov/preservation/digital/'
+               'formats/fdd/fdd000354.shtml">zip</a></code> Archiv mit allen '
+               'oben genannten Formaten des Buchs.',
+        "tar.xz": 'Ein <code><a href="https://www.gnu.org/software/tar/manual/'
+                  'html_node/Standard.html">tar</a>.<a href="https://tukaani.'
+                  'org/xz/format.html">xz</a></code> Archiv mit allen '
+                  'oben genannten Formaten des Buchs.',
+    }, "zh": {
+        "pdf": '便携式文档格式（<code><a href="https://www.iso.org/standard/'
+               '75839.html">pdf</a></code>）最适合在PC上阅读和打印文档。',
+        "html": '无论是在手机上还是在PC上，都可以很好地查看独立的网页（<code>'
+                '<a href="https://www.w3.org/TR/html5/">html</a></code>）。',
+        "epub": '电子书格式（<code><a href="https://www.w3.org/publishing/epub32/">'
+                'epub</a></code>）为许多电子书阅读器和手机提供了便利。',
+        "azw3": '亚马逊Kindle电子书格式（<code><a href="http://'
+                'kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.'
+                'pdf">azw3</a></code>）是一种适合在Kindle设备上阅读的专有格式。',
+        "zip": '一个<code><a href="https://www.loc.gov/preservation/digital/'
+               'formats/fdd/fdd000354.shtml">zip</a></code>存档，包含上述所有格式的书籍，'
+               '便于下载。',
+        "tar.xz": '一个<code><a href="https://www.gnu.org/software/tar/manual/'
+                  'html_node/Standard.html">tar</a>.<a href="https://tukaani.'
+                  'org/xz/format.html">xz</a></code>存档，包含上述所有格式的书籍，便于下载。',
+    }}
 
 
 def build_website(docs: Iterable[LangResult],
@@ -109,6 +149,10 @@ def build_website(docs: Iterable[LangResult],
                     f'<span{bc.WEBSITE_LANGS_NAME_SPAN_ARG}>'
                     f'{lang.lang_name}</span>')
             data.append(f'<ul{bc.WEBSITE_DOWNLOAD_UL_ARG}>')
+            locale = "en" if not lang.lang else \
+                lang_to_locale(lang.lang).split("_")[0]
+            suffixes = __SUFFIXES[locale] if locale in __SUFFIXES.keys() \
+                else None
 
             for res in lang.results:
                 name = os.path.basename(res.path)
@@ -122,8 +166,8 @@ def build_website(docs: Iterable[LangResult],
                     f'<span{bc.WEBSITE_DOWNLOAD_SIZE_SPAN_ARG}>'
                     f'({size})</span></span>')
 
-                if res.suffix in __SUFFIXES.keys():
-                    desc = __SUFFIXES[res.suffix]
+                if suffixes and (res.suffix in suffixes.keys()):
+                    desc = suffixes[res.suffix]
                     data.append(
                         f'<br><span{bc.WEBSITE_DOWNLOAD_FILE_DESC_SPAN_ARG}>'
                         f'{desc}</span>')
