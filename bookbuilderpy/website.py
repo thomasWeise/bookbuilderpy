@@ -42,7 +42,7 @@ __SUFFIXES: Final[Dict[str, Dict[str, str]]] = \
     }, "de": {
         "pdf": 'Das &quot;portable document format&quot; (<code><a href='
                '"https://www.iso.org/standard/75839.html">pdf</a></code>) ist'
-               'f&uuml;r das Lesen am PC oder das Ausdrucken geeignet.',
+               ' f&uuml;r das Lesen am PC oder das Ausdrucken geeignet.',
         "html": 'Eine stand-alone Webseite (<code><a href="https://www.w3.org/'
                 'TR/html5/">html</a></code>) kann sowohl auf dem Mobiltelefon'
                 ' als auch dem PC gut gelesen werden.',
