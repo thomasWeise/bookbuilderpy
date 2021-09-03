@@ -45,14 +45,15 @@ __SUFFIXES: Final[Dict[str, Dict[str, str]]] = \
                ' f&uuml;r das Lesen am PC oder das Ausdrucken geeignet.',
         "html": 'Eine stand-alone Webseite (<code><a href="https://www.w3.org/'
                 'TR/html5/">html</a></code>) kann sowohl auf dem Mobiltelefon'
-                ' als auch dem PC gut gelesen werden.',
-        "epub": 'Das Format für E-Book (<code><a href="https://www.w3.org/'
-                'publishing/epub32/">epub</a></code>) ist günstig für, naja, '
-                'E-Book Lesegeräte, Tablets, und Mobiltelefone.',
+                ' als auch auf dem PC gut gelesen werden.',
+        "epub": 'Das Format f&uuml;r E-Book (<code><a href="https://www.w3'
+                '.org/publishing/epub32/">epub</a></code>) ist g&uuml;nstig '
+                'f&uuml;r E-Book Leseger&auml;te, Tablets, und '
+                'Mobiltelefone.',
         "azw3": 'Das Amazon Kindle E-Book Format (<code><a href="http://'
                 'kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.'
-                'pdf">azw3</a></code>) ist proprietär und für Kindles '
-                'gedacht.',
+                'pdf">azw3</a></code>) ist propriet&auml;r und f&uuml;r '
+                'Kindles gedacht.',
         "zip": 'Ein <code><a href="https://www.loc.gov/preservation/digital/'
                'formats/fdd/fdd000354.shtml">zip</a></code> Archiv mit allen '
                'oben genannten Formaten des Buchs.',
