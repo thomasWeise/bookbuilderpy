@@ -194,17 +194,6 @@ langs:
     name: 中文
 ```
 
-
-```yaml
-langs:
-  - id: en
-    name: English
-  - id: de
-    name: Deutsch
-  - id: zh
-    name: 中文
-```
-
 The `langs` entry specifies a list, where each item must have an `id` and a `name`.
 The `id` will be used to determine the [locale](https://cldr.unicode.org/)  of the text.
 You can either use a [locale](https://cldr.unicode.org/) directly, or one of the following shortcuts: `en` for `en_US`, `zh` or `cn` for `zh_CN`, `tw` for `zh_TW`, `de` for `de_DE`, `fr` for `fr_FR`, `it` for `it_IT`, `ja` for `ja_JP`, `ko` for `ko_KR`, `pt` for `pt_BR`, and `es` for `es_ES`.
