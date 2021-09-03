@@ -101,9 +101,45 @@ These extensions are discussed in [Section&nbsp;3.2](#32-bookbuilderpy-specific-
 
 The following basic commands are already available in pandoc's [markdown](http://pandoc.org/MANUAL.html#pandocs-markdown) flavor and/or are provided by the existing pandoc plugins that we use:
 
-- Chapters, sections, sub-sections etc. are created by putting their title on a single line preceded by `#`, `##`, or `###`, etc. For example, the line `## This is a section` starts a section with the given title. 
-- You can use LaTeX maths as inline formulae such `$\sqrt{5}+4^4$` and as stand-alone equations like `$$x=\frac{5}{6}$$`. A line such as `$$ x = y + z $$ {#eq:xyz}` will create an equation that can be referenced using `[@eq:xyz]` in the text.
-- References to bibliography can be done `[@ABC; @DEF]` where `ABC` and `DEF` would then be keys into your BibTeX file, which, in turn, would be specified in the metadata as `bibliography: bibtexfile.bib`. 
+- Chapters, sections, sub-sections etc. are created by putting their title on a single line preceded by `#`, `##`, or `###`, etc.
+  For example, the line `## This is a section` (two `#`) starts a section with the given title, `# This is a chapter` (one `#`) starts a chapter. 
+  You can add labels to sections, by writing `# Chapter Title {#sec:myChap}` and reference them via `As already discussed in [@sec:myChap], we found...`.
+  The prefix `sec:` is required for such labels.
+  Sections and chapters etc. are numbered automatically.
+  If you want an unnumbered section, write `## Other Section {-}`.
+- You can use LaTeX maths as inline formulae such `$\sqrt{5}+4^4$` and as stand-alone equations like `$$x=\frac{5}{6}$$`.
+  A line such as `$$ x = y + z $$ {#eq:xyz}` will create an equation that can be referenced using `[@eq:xyz]` in the text.
+  Notice: It is best to use `\ldots` instead of `\dots` to avoid problems.
+- References to bibliography can be done `[@ABC; @DEF]` where `ABC` and `DEF` would then be keys into your [BibTeX](https://www.bibtex.com/g/bibtex-format/)) file, which, in turn, would be specified in the metadata as `bibliography: bibtexfile.bib`.
+- *Emphasized* text is written in between `*`s, e.g., `The word *text* is emphasized.`.
+- **Double emphasized** text is written in between double-`*`s, e.g. `The word **text** is very much emphasized.`
+- Short verbatim/code text is written in between &grave;s, e.g., *The word &grave;`text`&grave; appears as code.*
+- Abbreviations and LaTeX-style commands can be created and called normally, as long as they do not clash with the [`bookbuilderpy`-specific commands](#32-bookbuilderpy-specific-commands).
+  For example, you can do:
+
+```markdown
+\newcommand{\mathSpace}[1]{\mathbb{#1}}
+\newcommand{\realNumbers}{\mathSpace{R}}
+
+Assume that $x\in\realNumbers$ is a value larger than $2$, then $\sqrt{x}>1$ is also true.
+```
+
+- Tables can be created as follows:
+
+```markdown
+This is some normal text.
+
+|centered column|right-aligned column|left-aligned column|
+|:-:|--:|:--|
+|bla|r|l|
+|blub blub blub|abc|123|
+
+: This is the table caption. {#tbl:mytable}
+
+From [@tbl:mytable], we can see that...
+```
+
+- Figures should be included using the [`bookbuilderpy`-specific](#32-bookbuilderpy-specific-commands) `\rel.figure{...}` command.
 
 ## 3.2. `bookbuilderpy`-specific commands
 
@@ -111,7 +147,7 @@ The following new commands are added:
 
 - `\rel.input{path}` recursively includes and processes the contents of the file identified by `path`. `path` must be in a sub-folder of the current folder. The deepest folder of the new full path will become the current folder for any (recursive) `\rel.input{path}` invocations in the new file as well as `\rel.code` and `\rel.figure` commands. [Language-specific file resolution](#331-language-specification-and-resolution) will apply.
 - `\relative.code{label}{caption}{path}{lines}{labels}{args}` is used to include code (or portions of code) from a source code file located in the current folder (or any `path` beneath it). [Language-specific file resolution](#331-language-specification-and-resolution) will apply. This command has the following arguments:
-  + `label`: the label of the listing, must be of the form `lst:something` and can then be referenced in the text as `[@lst:something]`. 
+  + `label`: the label of the listing, e.g., `something`. Will automatically be prefixed by `lst:` and can then be referenced in the text, e.g., as `The algorithm is specified in [@lst:something].`. 
   + `caption`: the caption of the listing
   + `path`: the relative path fragment to resolve
   + `lines`: the lines of the code to keep in the form `1-3,6`, or empty to keep all
@@ -119,7 +155,7 @@ The following new commands are added:
   + args: any additional, language-specific arguments to pass to the code renderer. For python, we automatically strip type hints, docstrings, and comments from the code and also re-format the code. With `doc` you keep the docstrings, with `comments` you keep the comments, with `hints` you keep the type hints.
 - `\git.code{repo}{label}{caption}{path}{lines}{labels}{args}` works the same as `\relative.code`, but uses code from the specified git repository instead (see [Metadata](#332-git-repositories)). [Language-specific file resolution](#331-language-specification-and-resolution) does *not* apply.
 - `\rel.figure{label}{caption}{path}{args}` includes a figure into the book. [Language-specific file resolution](#331-language-specification-and-resolution) will apply. This command has the following arguments:
-  + `label`: the label of the figure, must be of the form `fig:something` and can then be referenced in the text as `[@fig:something]`.
+  + `label`: the label of the figure, e.g., `something`. It will be automatically prefixed by `fig:` can then be referenced in the text, e.g., as `As illustrated in [@fig:something], ...`.
   + `caption`: the caption of the figure
   + `path`: the relative path fragment to resolve
   + `args`: other arguments, e.g., `width=XX%` for making the figure having a width corresponding to `XX%` of the available with.
@@ -228,19 +264,36 @@ It is possible to automatically generate a website during the build process.
 You can then upload the website and all of the generated files to your website, offering an easy way to download your book.
 The mechanism is very simple:
 We can have an "outer" website, i.e., an HTML file with styles and headers and stuff and an "inner" website which can be a portion of markdown code.
-The idea is that the "inner" website could be the README.md file of the repository where your book is and the outer website allows you to specify a container and proper CSS styles for rendering it.
-This mechanism works as follows:
+The idea is that the "inner" website could be the `README.md` file of the repository where your book is and the outer website allows you to specify a container and proper CSS styles for rendering it.
+Both can be specified in the metadata, e.g., as follows:
 
-The inner website is loaded as a string.
-It can contain the text `{body}` exactly once and this text is then replaced by the rendered markdown of the inner website.
-The inner website must somewhere contain a div tag `<div id="files"> .... </div>`.
-This tag and everything inside will be replaced with an automatically generated list of all the generated files.
-If the [`langs` attribute](#331-language-specification-and-resolution) is specified, there will be one nested list per language.
+```yaml
+---
+# ... other stuff
+
+# the website
+website_outer: meta/website.html
+website_body: README.md
+
+# ... other stuff
+...
+```
+
+This mechanism works as follows:
+The inner website (in this case, the file ` website.html` in the folder `meta` is loaded as a string.
+Inside, all the `\meta{...}` commands accessing meta-data are evaluated (see [`bookbuilderpy` specific commands](#32-bookbuilderpy-specific-commands)).
+Here, the first language's metadata attribute values will be used if multiple languages were specified.
+The outer website *can* contain the text `{body}` exactly once and this text is then replaced by the rendered markdown of the inner website.
+Here, this would be the file `README.md` in the root folder.
+The inner website *can* then somewhere contain a div tag `<div id="files"> .... </div>`.
+If present, this tag and everything inside will be replaced with an automatically generated list of all the generated files.
+If the [`langs` attribute](#331-language-specification-and-resolution) is specified and contains more than one language, there will be one nested list per language.
+Otherwise, the list will be flat.
 The lists will have the following CSS-classes:
 
-- `langs`: for the main list of multiple languages
-- `oneLang`: for the language list item
-- `oneLangName`: for the span with the language name
+- `langs`: for the main list of multiple languages<sup>*</sup>
+- `oneLang`: for the language list item<sup>*</sup>
+- `oneLangName`: for the span with the language name<sup>*</sup>
 - `downloads`: for the download list per language
 - `download`: for the download list entry
 - `downloadFile`: for the span containing the file download
@@ -248,7 +301,17 @@ The lists will have the following CSS-classes:
 - `downloadFileSize`: for the span with the file size
 - `downloadFileDesc`: for the description of the file format
 
+<sup>*</sup> if the [`langs` attribute](#331-language-specification-and-resolution) is specified and contains more than one language
 The result of this rendering process is then stored in a file `index.html`.
+For this reason you should never call your main book file `index.md`.
+
+The idea of this website building process is as follows:
+Via the "outer" website, you can specify the structure, header, footer (where you could, e.g., place the build time via a `\meta{date}` command), and CSS styles.
+If you develop your book on GitHub, then you would probably write a `README.md` file explaining the book's content anyway.
+This file you can then automatically render and insert into the website as "inner" website part.
+Inside your `README.md` on GitHub, the tag `<div id="files"> .... </div>` would be invisible, but during the website building, it allows you to have the list of book files included automatically.
+This automatic inclusions allows us to specify file sizes.
+For course, we could also simply not insert this tag and instead have hard-coded links in the `README.md`, which is fine, too.
 
 ### 3.3.4. Other Metadata
 
@@ -256,12 +319,14 @@ The result of this rendering process is then stored in a file `index.html`.
 - `keywords`: a list of keywords
 - `author`: the book author or a list of authors
 - `date`: the date when the book was written (you can set this to `\meta{data}` and the current date of the build process will be used).
-- `bibliography`: the path to the BibTeX file, e.g., `bibliography.bib`
-- `csl`: the bibliography style. Set this to `association-for-computing-machinery.csl` to use the default style offered by the package.
-- `link-citations`: set this to `true` to get clickable bibliography references
+- `bibliography`: the path to the [BibTeX](https://www.bibtex.com/g/bibtex-format/) file, e.g., `bibliography.bib`
+- `csl`: the [bibliography style](https://citationstyles.org). Set this to `association-for-computing-machinery.csl` to use the default style offered by the package.
+  You can find many different bibliography styles at <https://www.zotero.org/styles>.
+- `link-citations`: set this to `true` to get clickable bibliography references.
 - `template.html`: the template for rendering to HTML. Set this to `GitHub.html5` to use the default style offered by the package.
 - `template.latex`: the template for rendering to PDF. Set this to `eisvogel.tex` to use the default style offered by the package.
-- The language-specific component titles explained-by-example are already supported by pandoc and its filters:
+- If you build a book in a language different from English, you will certainly want to change the default caption prefixes for figures and tables accordingly.
+  The following language-specific component titles (below explained-by-example) are supported by pandoc and its filters:
 
 ```yaml
 figureTitle: Figure
@@ -341,7 +406,7 @@ The book should be written in [Pandoc's markdown](http://pandoc.org/MANUAL.html#
 For building the book, we will use [GitHub Actions](https://github.com/features/actions), which are triggered by repository commits.
 
 Every time you push a commit to your book repository, the GitHub Action will check out the repository.
-The docker container can the automatically build the book and book website.
+The docker container can automatically build the book and book website.
 The result can automatically be deployed to the [GitHub Pages](http://help.github.com/articles/what-is-github-pages/) branch of your repository and which will then be the website of the repository.
 Once the repository, website, and Travis build procedure are all set up, we can concentrate on working on our book and whenever some section or text is finished, commit, and enjoy the automatically new versions.
 
@@ -439,7 +504,6 @@ and the two `pandoc` templates
 - [`imagemagick`](http://www.imagemagick.org/) used by `pandoc` for image conversion
 - [`ghostscript`](http://ghostscript.com/), used by our script to include all fonts into a pdf
 - [`poppler-utils`](http://poppler.freedesktop.org/), used by our script for checking whether the pdfs are OK.
-
 
 ## 6. License
 

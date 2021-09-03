@@ -45,7 +45,7 @@ __SUFFIXES: Final[Dict[str, Dict[str, str]]] = \
                'f&uuml;r das Lesen am PC oder das Ausdrucken geeignet.',
         "html": 'Eine stand-alone Webseite (<code><a href="https://www.w3.org/'
                 'TR/html5/">html</a></code>) kann sowohl auf dem Mobiltelefon'
-                'als auch dem PC gut gelesen werden.',
+                ' als auch dem PC gut gelesen werden.',
         "epub": 'Das Format für E-Book (<code><a href="https://www.w3.org/'
                 'publishing/epub32/">epub</a></code>) ist günstig für, naja, '
                 'E-Book Lesegeräte, Tablets, und Mobiltelefone.',

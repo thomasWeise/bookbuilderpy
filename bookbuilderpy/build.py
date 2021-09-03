@@ -503,7 +503,9 @@ class Build(AbstractContextManager):
         self.__load_repos_from_meta(self.__metadata_raw)
         self.__build_all_langs()
         self.__build_website()
-        log(f"build process completed, created {len(self.__results)} files.")
+        log("build process completed, created "
+            f"{sum(len(c.results) for c in self.__results)} "
+            f"book files in total for {len(self.__results)} language(s).")
 
     def __enter__(self) -> 'Build':
         """Nothing, just exists for `with`."""
