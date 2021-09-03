@@ -390,9 +390,9 @@ Our tool suite supports `svgz` fully and such files tend to actually be smaller 
 
 ## 4. GitHub Pipeline
 
-As discussed under point [Installation and Local Use](#2-installation-and-local-use), our tool suite is available as [docker container]([docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/), so you only need a docker installation to run the complete software locally.
+As discussed under point [Installation and Local Use](#2-installation-and-local-use), our tool suite is available as [docker container]([docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/), so you only need a [docker installation](https://docs.docker.com/engine/install/ubuntu/) to run the complete software locally.
 However, the bigger goal is to allow you to collaboratively write books, interact with your readers, and automatically publish them online.
-With docker in combination with [GitHub](http://www.github.com/) and [GitHub Actions](https://github.com/features/actions), this is now easily possible.
+With [docker](https://www.docker.com) in combination with [GitHub](http://www.github.com/) and [GitHub Actions](https://github.com/features/actions), this is now easily possible.
 
 You can find a [template book project](https://github.com/thomasWeise/bookbuilderpy-mwe) using the complete automated pipeline discussed here in the repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe).
 In other words, if you do not want to read the text and explanation below, you can as well just clone this template project and adapt everything to your liking.
