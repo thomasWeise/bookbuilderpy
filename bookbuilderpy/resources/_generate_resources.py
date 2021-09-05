@@ -3,6 +3,7 @@ from os.path import dirname
 from typing import Final, List
 
 from bookbuilderpy.git import Repo
+from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str
 from bookbuilderpy.temp import TempDir
@@ -17,6 +18,7 @@ def load_html_github_template(dest: Path) -> Path:
     :return: the full path of the template
     :rtype: Path
     """
+    log(f"now loading html github template to '{dest}'.")
     with TempDir.create() as temp:
         name = "GitHub.html5"
         repo = Repo.download("https://github.com/tajmone/pandoc-goodies/",
@@ -34,6 +36,7 @@ def load_html_github_template(dest: Path) -> Path:
         if name != dst_file.relative_to(dest):
             raise ValueError(f"'{name}' should "
                              f"be '{dst_file.relative_to(dest)}'.")
+        log(f"succeeded in loading html github template to '{dst_file}'.")
         return dst_file
 
 
@@ -45,6 +48,7 @@ def load_latex_eisvogel_template(dest: Path) -> Path:
     :return: the full path of the template
     :rtype: Path
     """
+    log(f"now loading latex eisvogel template to '{dest}'.")
     with TempDir.create() as temp:
         name = "eisvogel.tex"
         repo = Repo.download(
@@ -61,6 +65,7 @@ def load_latex_eisvogel_template(dest: Path) -> Path:
         if name != dst_file.relative_to(dest):
             raise ValueError(f"'{name}' should "
                              f"be '{dst_file.relative_to(dest)}'.")
+        log(f"succeeded in loading latex eisvogel template to '{dst_file}'.")
         return dst_file
 
 
@@ -72,6 +77,7 @@ def load_csl_template(dest: Path) -> List[Path]:
     :return: the full path of the template
     :rtype: List[Path]
     """
+    log(f"now csl template(s) to '{dest}'.")
     paths: Final[List[Path]] = []
 
     for name in ["association-for-computing-machinery"]:
@@ -85,6 +91,7 @@ def load_csl_template(dest: Path) -> List[Path]:
         if name != Path.split_prefix_suffix(dst_file.relative_to(dest))[0]:
             raise ValueError(f"'{name}' should "
                              f"be '{dst_file.relative_to(dest)}'.")
+        log(f"finished loading '{url}' to file '{dst_file}'.")
         paths.append(dst_file)
     return paths
 
@@ -97,20 +104,25 @@ def load_katex(dest: Path) -> Path:
     :return: the paths to the downloaded resources
     :rtype: Path
     """
+    log(f"now loading katex to '{dest}'.")
     name = "katex.zip"
     url = "https://github.com/KaTeX/KaTeX/releases/download/" \
-          "v0.13.13/katex.zip"
+          "v0.13.18/katex.zip"
     _, data = load_binary_from_url(url)
     dst_file = dest.resolve_inside(name)
     with open(dst_file, "wb") as fd:
         fd.write(data)
 
+    log(f"finished loading katex to file '{dst_file}'.")
     return dst_file
 
 
 if __name__ == "__main__":
+    log("begin loading resources.")
     current_dir = Path.directory(dirname(__file__))
+    log(f"current dir is '{current_dir}'.")
     load_katex(current_dir)
     load_html_github_template(current_dir)
     load_csl_template(current_dir)
     load_latex_eisvogel_template(current_dir)
+    log("done loading resources.")

@@ -3,7 +3,6 @@ import os
 import os.path
 import pathlib
 import random
-import shutil
 import struct
 import zlib
 from tempfile import mkstemp
@@ -224,11 +223,18 @@ def find_local_files() -> Tuple[str, ...]:
     package.enforce_dir()
     result: List[Path] = list()
     for file in os.listdir(package):
-        if file.endswith(".py") and ("_" not in file) and \
-                (not file.startswith("test")):
+        if "_" in file:
+            continue
+        if "test" in file:
+            continue
+        if file.endswith(".py"):
             full = os.path.join(package, file)
             if os.path.isfile(full):
                 result.append(Path.file(full))
+    assert len(result) > 0
+    result = [f for f in result if "_" not in f]
+    assert len(result) > 0
+    result = [f for f in result if "test" not in f]
     assert len(result) > 0
     return tuple(result)
 
@@ -246,8 +252,16 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
             raise ValueError(f"Repo {repo} is empty.")
         result: List[str] = list()
         for f in [Path.file(str(f)).relative_to(r.path) for f in res]:
-            if ("_" not in f) and ("/" in f):
+            if "_" in f:
+                continue
+            if "test" in f:
+                continue
+            if "/" in f:
                 result.append(f)
+        assert len(result) > 0
+        result = [f for f in result if "_" not in f]
+        assert len(result) > 0
+        result = [f for f in result if "test" not in f]
         assert len(result) > 0
         return tuple(result)
 
@@ -503,7 +517,10 @@ def generate_example_lang(
                         spath = Path.file(spath)
                         label = spath.replace("/", "_").replace(".", "_")
                         os.close(handle)
-                        shutil.copyfile(Path.file(repofile), spath)
+                        rf = Path.file(repofile)
+                        cde = rf.read_all_str()
+                        spath.write_all(cde.encode("ascii", errors="ignore")
+                                        .decode("ascii"))
                         spath = spath.relative_to(dest)
                         fd.write(f"\n\n\\{bc.CMD_RELATIVE_CODE}{{{label}}}{{")
                         make_text(fd, False, 1)
