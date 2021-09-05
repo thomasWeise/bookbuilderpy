@@ -340,8 +340,13 @@ secPrefix:
 
 reference-section-title: References
 ```
+- Please notice that there is an [issue](https://github.com/lierdakil/pandoc-crossref/issues/329) with chapter names in the pdf output.
+  You can fix this by setting up the chapter and section names *also* in the LaTeX header includes (see below).
+
 - Any other `xxxTitle` allows you to specify a `type`to be used for a `\definition{type}{label}{body}` command.
-- `header-includes`: allows you to insert stuff into the headers of the format. For PDF/LaTeX, it is useful to put something like the stuff below, as it will make the result nicer if you have many code listings:
+- `header-includes`: allows you to insert stuff into the headers of the format.
+  For PDF/LaTeX, it is useful to put something like the stuff below, as it will make the result nicer if you have many code listings:
+
 ```yaml
 header-includes:
 - |
@@ -352,7 +357,15 @@ header-includes:
   \addtolength{\topskip}{0pt plus 10pt}
   \interfootnotelinepenalty=10000
   \raggedbottom
+  \usepackage[nameinlink]{cleveref}
+  \crefname{chapter}{Chapter}{Chapters}
+  \crefname{section}{Section}{Sections}
+  ` ` `
 ```
+(without the spaces between the triple-backticks!)
+
+
+
 
 - Setup for pandoc's crossref: You may wish to include the following text
 ```yaml
@@ -360,6 +373,7 @@ header-includes:
 cref: true
 chapters: true
 linkReferences: true
+nameInLink: true
 listings: false
 codeBlockCaptions: true
 ```
