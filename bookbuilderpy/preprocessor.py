@@ -121,7 +121,7 @@ def preprocess(text: str,
         caption = enforce_non_empty_str(caption.strip())
         if caption[len(caption) - 1] not in [".", "!", "?"]:
             caption = f"{caption}."
-        if userepo is not None:
+        if userepo:
             userepo.path.enforce_contains(file)
             url = userepo.make_url(file.relative_to(userepo.path))
             caption = f"{caption} ([src]({url}))"

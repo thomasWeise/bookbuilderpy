@@ -437,7 +437,7 @@ class Build(AbstractContextManager):
                 break
             test = Path.path(os.path.join(check, ".git"))
             if os.path.isdir(test):
-                self.__repo = Repo.from_local(test)
+                self.__repo = Repo.from_local(check)
                 log(f"build process is based on commit '{self.__repo.commit}'"
                     f" of repo '{self.__repo.url}'.")
                 return

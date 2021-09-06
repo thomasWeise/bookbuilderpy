@@ -146,7 +146,7 @@ From [@tbl:mytable], we can see that...
 The following new commands are added:
 
 - `\rel.input{path}` recursively includes and processes the contents of the file identified by `path`. `path` must be in a sub-folder of the current folder. The deepest folder of the new full path will become the current folder for any (recursive) `\rel.input{path}` invocations in the new file as well as `\rel.code` and `\rel.figure` commands. [Language-specific file resolution](#331-language-specification-and-resolution) will apply.
-- `\relative.code{label}{caption}{path}{lines}{labels}{args}` is used to include code (or portions of code) from a source code file located in the current folder (or any `path` beneath it). [Language-specific file resolution](#331-language-specification-and-resolution) will apply. This command has the following arguments:
+- `\rel.code{label}{caption}{path}{lines}{labels}{args}` is used to include code (or portions of code) from a source code file located in the current folder (or any `path` beneath it). [Language-specific file resolution](#331-language-specification-and-resolution) will apply. This command has the following arguments:
   + `label`: the label of the listing, e.g., `something`. Will automatically be prefixed by `lst:` and can then be referenced in the text, e.g., as `The algorithm is specified in [@lst:something].`. 
   + `caption`: the caption of the listing
   + `path`: the relative path fragment to resolve

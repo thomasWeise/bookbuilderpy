@@ -54,6 +54,9 @@ class Repo:
                              f"'{self.commit}' for repo '{url}'.") from e
         object.__setattr__(self, "date_time",
                            enforce_non_empty_str(date_time))
+        log(f"found repository in path '{self.path}' with commit "
+            f"'{self.commit}' for url '{self.url}' and "
+            f"date '{self.date_time}'.")
 
     @staticmethod
     def download(url: str,
@@ -124,7 +127,7 @@ class Repo:
                 f"Expected datetime.datetime, but got {type(date_raw)} when "
                 f"parsing date string '{date_str}' of repo '{dest}'.")
         date_time: Final[str] = datetime_to_datetime_str(date_raw)
-        log(f"Found commit '{commit}' and date/time '{date_time}' "
+        log(f"found commit '{commit}' and date/time '{date_time}' "
             f"for repo '{dest}'.")
 
         if url is None:
@@ -138,7 +141,11 @@ class Repo:
             url = enforce_non_empty_str(ret.stdout)
             url = enforce_non_empty_str_without_ws(
                 url.strip().split("\n")[0].strip())
-            log(f"Found url '{url}' for repo '{dest}'.")
+            if url.endswith("/.git"):
+                url = enforce_non_empty_str_without_ws(f"{url[:-5]}.git")
+            if url.endswith("/"):
+                url = enforce_non_empty_str_without_ws(url[:-1])
+            log(f"found url '{url}' for repo '{dest}'.")
             if url.startswith("ssh://git@github.com"):
                 url = f"https://{url[10:]}"
 
@@ -157,10 +164,17 @@ class Repo:
         path: Final[str] = pt.relative_to(self.path)
 
         base_url = self.url
-        if base_url.lower().endswith(".git"):
-            base_url = enforce_non_empty_str_without_ws(base_url[:-4])
+        base_url_lower = base_url.lower()
+        if base_url_lower.startswith("ssh://git@github."):
+            base_url = f"https://{enforce_non_empty_str(base_url[10:])}"
+        if base_url_lower.endswith(".git"):
+            base_url = enforce_non_empty_str(base_url[:-4])
 
-        return enforce_url(f"{base_url}/blob/{self.commit}/{path}")
+        if "github.com" in base_url_lower:
+            base_url = f"{base_url}/blob/{self.commit}/{path}"
+        else:
+            base_url = f"{base_url}/{path}"
+        return enforce_url(base_url)
 
     def get_name(self) -> str:
         """
