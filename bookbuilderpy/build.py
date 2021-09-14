@@ -12,7 +12,7 @@ from bookbuilderpy.build_result import File, LangResult
 from bookbuilderpy.compress import compress_xz, compress_zip
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
-from bookbuilderpy.pandoc import has_pandoc, latex, html, epub, azw3
+from bookbuilderpy.pandoc import latex, html, epub, azw3
 from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor import preprocess
@@ -22,7 +22,7 @@ from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
     enforce_non_empty_str_without_ws, lang_to_locale, to_string
 from bookbuilderpy.temp import TempDir
-from bookbuilderpy.versions import get_versions
+from bookbuilderpy.versions import get_versions, has_tool, TOOL_PANDOC
 from bookbuilderpy.website import build_website
 
 
@@ -285,7 +285,7 @@ class Build(AbstractContextManager):
         :param Optional[str] lang_name: the language name
         :param bool has_bibliography: is there a bibliography?
         """
-        if not has_pandoc():
+        if not has_tool(TOOL_PANDOC):
             if self.__fail_without_pandoc:
                 raise ValueError("Pandoc not installed.")
             return

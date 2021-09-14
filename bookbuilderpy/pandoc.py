@@ -3,7 +3,6 @@
 import os.path
 import re
 import subprocess  # nosec
-from shutil import which
 from typing import Optional, Final, List, Callable
 
 import bookbuilderpy.constants as bc
@@ -15,20 +14,7 @@ from bookbuilderpy.resources import ResourceServer
 from bookbuilderpy.strings import enforce_non_empty_str, \
     enforce_non_empty_str_without_ws
 from bookbuilderpy.temp import TempFile
-
-#: The pandoc executable.
-__PANDOC_EXEC: Final[Optional[Path]] = [None if (t is None) else Path.file(t)
-                                        for t in [which("pandoc")]][0]
-
-
-def has_pandoc() -> bool:
-    """
-    Check if pandoc is installed.
-
-    :return: True if pandoc is installed, False otherwise.
-    :rtype: bool
-    """
-    return __PANDOC_EXEC is not None
+from bookbuilderpy.versions import TOOL_PANDOC, has_tool
 
 
 def pandoc(source_file: str,
@@ -72,7 +58,7 @@ def pandoc(source_file: str,
     :return: the Path to the generated output file and it size
     :rtype: File
     """
-    if __PANDOC_EXEC is None:
+    if not has_tool(TOOL_PANDOC):
         raise ValueError("Pandoc is not installed.")
 
     output_file = Path.path(dest_file)
@@ -104,7 +90,7 @@ def pandoc(source_file: str,
                               "implicit_figures",
                               "pipe_tables",
                               "raw_attribute"])
-    cmd: Final[List[str]] = [__PANDOC_EXEC,
+    cmd: Final[List[str]] = [TOOL_PANDOC,
                              f"--from={format_in}",
                              f"--write={format_out}",
                              f"--output={output_file}",
