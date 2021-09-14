@@ -10,6 +10,7 @@ from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
     enforce_non_empty_str, datetime_to_datetime_str, enforce_url
+from bookbuilderpy.versions import TOOL_GIT, has_tool
 
 
 @dataclass(frozen=True, init=False, order=True)
@@ -69,14 +70,16 @@ class Repo:
         :return: the repository information
         :rtype: Repo
         """
+        if not has_tool(TOOL_GIT):
+            raise ValueError(f"No '{TOOL_GIT}' installation found.")
         dest: Final[Path] = Path.path(dest_dir)
         dest.ensure_dir_exists()
         url = enforce_url(url)
         s = f" repository '{url}' to directory '{dest}'"
         log(f"starting to load{s}.")
-        ret = subprocess.run(["git", "-C", dest, "clone", "--depth",  # nosec
-                              "1", url, dest], text=True, check=True,  # nosec
-                             timeout=300)  # nosec
+        ret = subprocess.run([TOOL_GIT, "-C", dest, "clone",  # nosec
+                              "--depth", "1", url, dest], text=True,  # nosec
+                             check=True, timeout=300)  # nosec
         if ret.returncode != 0:
             raise ValueError(f"Error when loading{s}.")
 
@@ -100,7 +103,7 @@ class Repo:
 
         log(f"checking commit information of repo '{dest}'.")
 
-        ret = subprocess.run(["git", "-C", dest, "log",  # nosec
+        ret = subprocess.run([TOOL_GIT, "-C", dest, "log",  # nosec
                               "--no-abbrev-commit"], check=True,  # nosec
                              text=True, stdout=subprocess.PIPE,  # nosec
                              timeout=120)  # nosec
@@ -131,7 +134,7 @@ class Repo:
             f"for repo '{dest}'.")
 
         if url is None:
-            ret = subprocess.run(["git", "-C", dest, "config",  # nosec
+            ret = subprocess.run([TOOL_GIT, "-C", dest, "config",  # nosec
                                   "--get", "remote.origin.url"],  # nosec
                                  check=True, text=True,  # nosec
                                  stdout=subprocess.PIPE, timeout=120)  # nosec
