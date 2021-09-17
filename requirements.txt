@@ -7,6 +7,9 @@ pyyaml >= 5.4.1
 # regex is needed for processing commands as regular expressions
 regex >= 2021.8.21
 
+# selenium is needed for pre-rendering html
+selenium >= 3.141.0
+
 # strip-hints is a tool for removing type hints
 strip-hints >= 0.1.10
 

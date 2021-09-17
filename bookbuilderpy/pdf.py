@@ -5,6 +5,7 @@ from os.path import exists, dirname
 
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
+from bookbuilderpy.versions import TOOL_GHOSTSCRIPT, has_tool
 
 
 def pdf_postprocess(in_file: str,
@@ -24,56 +25,62 @@ def pdf_postprocess(in_file: str,
     if (not overwrite) and exists(output):
         raise ValueError(f"Output file '{output}' already exists.")
 
-    log(f"Post-processing pdf file '{source}' to '{output}'.")
+    if has_tool(TOOL_GHOSTSCRIPT):
+        log(f"Post-processing pdf file '{source}' to '{output}' "
+            f"by applying '{TOOL_GHOSTSCRIPT}'.")
 
-    cmd = ["gs",
-           "-q",
-           "-dPrinted=false",
-           "-dEmbedAllFonts=true",
-           "-dSubsetFonts=true",
-           "-dCompressFonts=true",
-           "-dCompressStreams=true",
-           "-dOptimize=true",
-           "-dUNROLLFORMS",
-           "-dCompatibilityLevel=1.7",
-           "-dLZWEncodePages=true",
-           "-dCompressPages=true",
-           "-dPassThroughJPEGImages=true",
-           "-dPassThroughJPXImages=true",
-           "-dCannotEmbedFontPolicy=/Error",
-           "-dPreserveCopyPage=false",
-           "-dPreserveEPSInfo=false",
-           "-dPreserveHalftoneInfo=false",
-           "-dPreserveOPIComments=false",
-           "-dPreserveOverprintSettings=false",
-           "-dPreserveSeparation=false",
-           "-dPreserveDeviceN=false",
-           "-dMaxBitmap=2147483647",
-           "-dDownsampleMonoImages=false",
-           "-dDownsampleGrayImages=false",
-           "-dDownsampleColorImages=false",
-           "-dDetectDuplicateImages=true",
-           "-dHaveTransparency=true",
-           "-dAutoFilterColorImages=false",
-           "-dAutoFilterGrayImages=false",
-           "-dColorImageFilter=/FlateEncode",
-           "-dGrayImageFilter=/FlateEncode",
-           "-dColorConversionStrategy=/LeaveColorUnchanged",
-           "-dFastWebView=false",
-           "-dNOPAUSE",
-           "-dQUIET",
-           "-dBATCH",
-           "-dSAFER",
-           "-sDEVICE=pdfwrite",
-           "-dAutoRotatePages=/PageByPage",
-           f'-sOutputFile="{output}"',
-           source,
-           '-c "<</NeverEmbed [ ]>> setdistillerparams"']
-    ret = subprocess.run(cmd, check=True, text=True, timeout=600,  # nosec
-                         cwd=Path.directory(dirname(source)))  # nosec
-    if ret.returncode != 0:
-        raise ValueError(
-            f"Error when executing pandoc command '{cmd}'.")
+        cmd = [TOOL_GHOSTSCRIPT,
+               "-q",
+               "-dPrinted=false",
+               "-dEmbedAllFonts=true",
+               "-dSubsetFonts=true",
+               "-dCompressFonts=true",
+               "-dCompressStreams=true",
+               "-dOptimize=true",
+               "-dUNROLLFORMS",
+               "-dCompatibilityLevel=1.7",
+               "-dLZWEncodePages=true",
+               "-dCompressPages=true",
+               "-dPassThroughJPEGImages=true",
+               "-dPassThroughJPXImages=true",
+               "-dCannotEmbedFontPolicy=/Error",
+               "-dPreserveCopyPage=false",
+               "-dPreserveEPSInfo=false",
+               "-dPreserveHalftoneInfo=false",
+               "-dPreserveOPIComments=false",
+               "-dPreserveOverprintSettings=false",
+               "-dPreserveSeparation=false",
+               "-dPreserveDeviceN=false",
+               "-dMaxBitmap=2147483647",
+               "-dDownsampleMonoImages=false",
+               "-dDownsampleGrayImages=false",
+               "-dDownsampleColorImages=false",
+               "-dDetectDuplicateImages=true",
+               "-dHaveTransparency=true",
+               "-dAutoFilterColorImages=false",
+               "-dAutoFilterGrayImages=false",
+               "-dColorImageFilter=/FlateEncode",
+               "-dGrayImageFilter=/FlateEncode",
+               "-dColorConversionStrategy=/LeaveColorUnchanged",
+               "-dFastWebView=false",
+               "-dNOPAUSE",
+               "-dQUIET",
+               "-dBATCH",
+               "-dSAFER",
+               "-sDEVICE=pdfwrite",
+               "-dAutoRotatePages=/PageByPage",
+               f'-sOutputFile="{output}"',
+               source,
+               '-c "<</NeverEmbed [ ]>> setdistillerparams"']
+        ret = subprocess.run(cmd, check=True, text=True, timeout=600,  # nosec
+                             cwd=Path.directory(dirname(source)))  # nosec
+        if ret.returncode != 0:
+            raise ValueError(
+                f"Error when executing pandoc command '{cmd}'.")
+    else:
+        log(f"'{TOOL_GHOSTSCRIPT}' not installed, copying files directly.")
+        Path.copy_file(source, output)
+
     output.enforce_file()
 
     return output
