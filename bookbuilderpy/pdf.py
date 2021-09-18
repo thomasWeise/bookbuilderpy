@@ -24,6 +24,8 @@ def pdf_postprocess(in_file: str,
     output = Path.path(out_file)
     if (not overwrite) and exists(output):
         raise ValueError(f"Output file '{output}' already exists.")
+    if source == output:
+        raise ValueError(f"Input and output file is the same: '{source}'.")
 
     if has_tool(TOOL_GHOSTSCRIPT):
         log(f"Post-processing pdf file '{source}' to '{output}' "

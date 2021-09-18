@@ -20,6 +20,8 @@ TOOL_GHOSTSCRIPT: Final[str] = "gs"
 TOOL_PANDOC: Final[str] = "pandoc"
 #: the name of the pdflatex executable tool
 TOOL_PDFLATEX: Final[str] = "pdflatex"
+#: the name of the selenium tool (we use firefox geckodriver)
+TOOL_SELENIUM: Final[str] = "geckodriver"
 #: the name of the xelatex executable tool
 TOOL_XELATEX: Final[str] = "xelatex"
 #: the name of the xz executable tool
@@ -110,8 +112,8 @@ class __Versions:
         versions.append(f"\nlinux: {_do_call('uname', '-a')[0]}")
 
         for tool in [TOOL_GIT, TOOL_CALIBRE, TOOL_FIREFOX, TOOL_GHOSTSCRIPT,
-                     TOOL_PANDOC, TOOL_PDFLATEX, TOOL_XELATEX, TOOL_XZ,
-                     TOOL_ZIP]:
+                     TOOL_PANDOC, TOOL_PDFLATEX, TOOL_SELENIUM, TOOL_XELATEX,
+                     TOOL_XZ, TOOL_ZIP]:
             has: Tuple[str, bool]
             if tool in self.__has_tool:
                 has = self.__has_tool[tool]

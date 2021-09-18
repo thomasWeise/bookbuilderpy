@@ -152,8 +152,7 @@ def build_website(docs: Iterable[LangResult],
             data.append(f'<ul{bc.WEBSITE_DOWNLOAD_UL_ARG}>')
             locale = "en" if not lang.lang else \
                 lang_to_locale(lang.lang).split("_")[0]
-            suffixes = __SUFFIXES[locale] if locale in __SUFFIXES.keys() \
-                else None
+            suffixes = __SUFFIXES[locale] if locale in __SUFFIXES else None
 
             for res in lang.results:
                 name = os.path.basename(res.path)
