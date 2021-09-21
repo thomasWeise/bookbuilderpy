@@ -236,6 +236,8 @@ def find_local_files() -> Tuple[str, ...]:
     assert len(result) > 0
     result = [f for f in result if "test" not in f]
     assert len(result) > 0
+    result = [f for f in result if "html" not in f]
+    assert len(result) > 0
     return tuple(result)
 
 

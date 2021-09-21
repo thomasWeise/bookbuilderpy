@@ -50,6 +50,16 @@ def copy_pure(path_in: str, path_out: str):
     shutil.copyfile(path_in, path_out)
 
 
+def move_pure(path_in: str, path_out: str):
+    """
+    The method to copy a file.
+
+    :param str path_in: the path to the input file
+    :param str path_out: the path to the output file
+    """
+    shutil.move(path_in, path_out)
+
+
 def _copy_un_gzip(path_in: str, path_out: str):
     """
     The internal method for copying a gzip-compressed file.
@@ -63,11 +73,11 @@ def _copy_un_gzip(path_in: str, path_out: str):
 
 
 #: the UTF-8 encoding
-__UTF8: Final[str] = 'utf-8-sig'
+UTF8: Final[str] = 'utf-8-sig'
 
 #: The list of possible text encodings
 __ENCODINGS: Final[Tuple[Tuple[Tuple[bytes, ...], str], ...]] = \
-    (((codecs.BOM_UTF8,), __UTF8),
+    (((codecs.BOM_UTF8,), UTF8),
      ((codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE,), 'utf-32'),
      ((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE), 'utf-16'))
 
@@ -88,7 +98,7 @@ def _get_text_encoding(filename: str) -> str:
         for bom in boms:
             if header.find(bom) == 0:
                 return encoding
-    return __UTF8
+    return UTF8
 
 
 class Path(str):

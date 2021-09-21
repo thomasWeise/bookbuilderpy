@@ -10,6 +10,7 @@ from bookbuilderpy.build_result import File
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.pdf import pdf_postprocess
+from bookbuilderpy.html import html_postprocess
 from bookbuilderpy.resources import ResourceServer
 from bookbuilderpy.strings import enforce_non_empty_str, \
     enforce_non_empty_str_without_ws
@@ -269,53 +270,63 @@ def html(source_file: str,
     :return: the Path to the generated output file and it size
     :rtype: File
     """
-    f: File
-    with ResourceServer() as serv:
-        f = pandoc(source_file=source_file,
-                   dest_file=dest_file,
-                   format_in=format_in,
-                   format_out=bc.PANDOC_FORMAT_HTML5,
-                   locale=locale,
-                   standalone=standalone,
-                   tabstops=tabstops,
-                   toc_print=toc_print,
-                   toc_depth=toc_depth,
-                   crossref=crossref,
-                   bibliography=bibliography,
-                   template=get_meta(bc.PANDOC_TEMPLATE_HTML5),
-                   csl=get_meta(bc.PANDOC_CSL),
-                   number_sections=number_sections,
-                   resolve_resources=resolve_resources,
-                   args=[f"--katex={serv.get_katex_server()}",
-                         "--ascii", "--html-q-tags",
-                         "--self-contained"])
-    if not bibliography:
-        return f
+    with TempFile.create(suffix=".html") as tmp:
+        inner_file: Path
+        with ResourceServer() as serv:
+            inner_file = pandoc(source_file=source_file,
+                                dest_file=tmp,
+                                format_in=format_in,
+                                format_out=bc.PANDOC_FORMAT_HTML5,
+                                locale=locale,
+                                standalone=standalone,
+                                tabstops=tabstops,
+                                toc_print=toc_print,
+                                toc_depth=toc_depth,
+                                crossref=crossref,
+                                bibliography=bibliography,
+                                template=get_meta(bc.PANDOC_TEMPLATE_HTML5),
+                                csl=get_meta(bc.PANDOC_CSL),
+                                number_sections=number_sections,
+                                resolve_resources=resolve_resources,
+                                overwrite=True,
+                                args=[f"--mathjax={serv.get_mathjax_url()}",
+                                      "--ascii", "--html-q-tags",
+                                      "--self-contained"]).path
+            inner_file.enforce_file()
 
-    # For some reason, the id and the text of each bibliography
-    # item are each put into separate divs of classes for which
-    # no styles are given. Therefore, we convert these divs to
-    # spans and add some vertical spacing.
-    text = enforce_non_empty_str(f.path.read_all_str().strip())
-    end = text.rfind("<div id=\"refs\"")
-    if end <= 0:
-        return f
-    text_1 = text[:end]
-    text_2 = text[end:]
-    del text
+        if bibliography:
 
-    text_2 = re.sub('<div class="csl-left-margin">(.*?)</div>',
-                    '<span class="csl-left-margin">\\1</span>',
-                    text_2, re.MULTILINE)
-    text_2 = re.sub('<div class="csl-right-inline">(.*?)</div>',
-                    '<span class="csl-right-inline">\\1</span>',
-                    text_2, re.MULTILINE)
-    text_2 = text_2.replace(
-        ' class="csl-entry" role="doc-biblioentry">',
-        ' class="csl-entry" role="doc-biblioentry" style="margin-top:0.33em">')
+            # For some reason, the id and the text of each bibliography
+            # item are each put into separate divs of classes for which
+            # no styles are given. Therefore, we convert these divs to
+            # spans and add some vertical spacing.
+            text = enforce_non_empty_str(inner_file.read_all_str().strip())
+            end = text.rfind("<div id=\"refs\"")
+            if end > 0:
+                text_1 = text[:end]
+                text_2 = text[end:]
+                del text
 
-    f.path.write_all([text_1, text_2])
-    return File(f.path)
+                text_2 = re.sub('<div class="csl-left-margin">(.*?)</div>',
+                                '<span class="csl-left-margin">\\1</span>',
+                                text_2, re.MULTILINE)
+                text_2 = re.sub('<div class="csl-right-inline">(.*?)</div>',
+                                '<span class="csl-right-inline">\\1</span>',
+                                text_2, re.MULTILINE)
+                text_2 = text_2.replace(
+                    ' class="csl-entry" role="doc-biblioentry">',
+                    ' class="csl-entry" role="doc-biblioentry" '
+                    'style="margin-top:0.33em">')
+
+                inner_file.write_all([text_1, text_2])
+        endresult = html_postprocess(in_file=inner_file,
+                                     out_file=dest_file,
+                                     flatten_data_uris=True,
+                                     fully_evaluate_html=True,
+                                     purge_scripts=True,
+                                     overwrite=False)
+
+    return File(endresult)
 
 
 def epub(source_file: str,

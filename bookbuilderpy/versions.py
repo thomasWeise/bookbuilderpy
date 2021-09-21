@@ -8,20 +8,20 @@ from typing import Final, List, Dict, Tuple, Optional
 import bookbuilderpy.version as ver
 from bookbuilderpy.logger import log
 
-#: the name of the git executable tool
-TOOL_GIT: Final[str] = "git"
 #: the name of the calibre executable tool
 TOOL_CALIBRE: Final[str] = "calibre"
-#: the name of the firefox executable tool
-TOOL_FIREFOX: Final[str] = "firefox"
+#: the name of the chromedriver executable tool
+TOOL_CHROME_DRIVER: Final[str] = "chromedriver"
+#: the name of the chromium browser executable tool
+TOOL_CHROMIUM: Final[str] = "chromium-browser"
 #: the name of the ghostscript executable tool
 TOOL_GHOSTSCRIPT: Final[str] = "gs"
+#: the name of the git executable tool
+TOOL_GIT: Final[str] = "git"
 #: the name of the pandoc executable tool
 TOOL_PANDOC: Final[str] = "pandoc"
 #: the name of the pdflatex executable tool
 TOOL_PDFLATEX: Final[str] = "pdflatex"
-#: the name of the selenium tool (we use firefox geckodriver)
-TOOL_SELENIUM: Final[str] = "geckodriver"
 #: the name of the xelatex executable tool
 TOOL_XELATEX: Final[str] = "xelatex"
 #: the name of the xz executable tool
@@ -111,9 +111,9 @@ class __Versions:
 
         versions.append(f"\nlinux: {_do_call('uname', '-a')[0]}")
 
-        for tool in [TOOL_GIT, TOOL_CALIBRE, TOOL_FIREFOX, TOOL_GHOSTSCRIPT,
-                     TOOL_PANDOC, TOOL_PDFLATEX, TOOL_SELENIUM, TOOL_XELATEX,
-                     TOOL_XZ, TOOL_ZIP]:
+        for tool in [TOOL_CHROME_DRIVER, TOOL_CHROMIUM, TOOL_CALIBRE,
+                     TOOL_GHOSTSCRIPT, TOOL_GIT, TOOL_PANDOC,
+                     TOOL_PDFLATEX, TOOL_XELATEX, TOOL_XZ, TOOL_ZIP]:
             has: Tuple[str, bool]
             if tool in self.__has_tool:
                 has = self.__has_tool[tool]

@@ -1,35 +1,56 @@
 """An internal web server for serving persistent resources."""
-import os.path
-from functools import partial
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from importlib import resources
 from threading import Thread
-from typing import Final, Optional
-from zipfile import ZipFile
+from typing import Optional
 
-from bookbuilderpy.temp import TempDir, TempFile
 
-#: the katex prefix
-_KATEX: Final[str] = "katex"
+def _get_file(name: str) -> Optional[bytes]:
+    """
+    Get a file from the resource server.
+
+    :param name: the file name
+    :return: the file contents
+    :rtype: Optional[bytes]
+    """
+    if not name:
+        return None
+
+    while name[0] == "/":
+        name = name[1:]
+        if not name:
+            return None
+
+    i = name.rfind("?")
+    if i >= 0:
+        name = name[:i]
+    i = name.rfind("#")
+    if i >= 0:
+        name = name[:i]
+    i = name.rfind("/")
+    if i >= 0:
+        name = name[i + 1:]
+    fn = name.strip()
+    if not name:
+        return None
+
+    pack = str(__package__)
+    if resources.is_resource(package=pack, name=fn):
+        with resources.open_binary(package=pack,
+                                   resource=fn) as stream:
+            return stream.read()
+
+    return None
 
 
 class _SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     """The internal server for obtaining resources."""
 
-    def __init__(self, *args, get_file, **kwargs):
-        """
-        Initialize the request handler.
-
-        :param get_file: the callback to get files
-        """
-        self.__get_file = get_file
-        super().__init__(*args, **kwargs)
-
     # noinspection PyPep8Naming
     def do_GET(self) -> None:
         """Get the resource."""
         # noinspection PyUnresolvedReferences
-        res = self.__get_file(self.path)
+        res = _get_file(self.path)
         if res:
             self.send_response(200)
             self.end_headers()
@@ -45,10 +66,8 @@ class ResourceServer:
     def __init__(self):
         """Initialize the server."""
         self.__httpd = HTTPServer(('localhost', 0),
-                                  partial(_SimpleHTTPRequestHandler,
-                                          get_file=self.get_file))
+                                  _SimpleHTTPRequestHandler)
         self.__thread = Thread(target=self.__serve)
-        self.__katex = None
 
     def __serve(self):
         """Start the server and serve."""
@@ -63,67 +82,14 @@ class ResourceServer:
         """
         return f"http://localhost:{self.__httpd.socket.getsockname()[1]}/"
 
-    def get_katex_server(self) -> str:
+    def get_mathjax_url(self) -> str:
         """
-        Get the katex server address.
+        Get the mathjax url.
 
-        :return: the katex server address
+        :return: the mathjax url
         :rtype: str
         """
-        return f"{self.get_server()}{_KATEX}/"
-
-    def get_file(self, name: str) -> Optional[bytes]:
-        """
-        Get a katex file.
-
-        :param name: the file name
-        :return: the file contents
-        :rtype: Optional[bytes]
-        """
-        if not name:
-            return None
-
-        if name[0] == "/":
-            name = name[1:]
-            if not name:
-                return None
-
-        if name.startswith(_KATEX):
-            if self.__katex is None:
-                self.__katex = TempDir.create()
-                with TempFile.create() as tf:
-                    with resources.open_binary(package=str(__package__),
-                                               resource="katex.zip") as stream:
-                        with open(tf, "wb") as fd:
-                            fd.write(stream.read())
-                    with ZipFile(tf) as zf:
-                        zf.extractall(self.__katex)
-            f = self.__katex.resolve_inside(name)
-            if not os.path.isfile(f):
-                return None
-            with open(f, "rb") as fd:
-                return fd.read()
-
-        i = name.rfind("?")
-        if i >= 0:
-            name = name[:i]
-        i = name.rfind("#")
-        if i >= 0:
-            name = name[:i]
-        i = name.rfind("/")
-        if i >= 0:
-            name = name[i + 1:]
-        fn = name.strip()
-        if not name:
-            return None
-
-        pack = str(__package__)
-        if resources.is_resource(package=pack, name=fn):
-            with resources.open_binary(package=pack,
-                                       resource=fn) as stream:
-                return stream.read()
-
-        return None
+        return f"{self.get_server()}mathjax.js"
 
     def __enter__(self):
         """Start the resource server."""
@@ -136,6 +102,4 @@ class ResourceServer:
         del self.__httpd
         self.__thread.join()
         del self.__thread
-        if self.__katex is not None:
-            self.__katex.__exit__(*args)
         return self

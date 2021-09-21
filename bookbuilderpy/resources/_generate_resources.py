@@ -7,7 +7,7 @@ from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str
 from bookbuilderpy.temp import TempDir
-from bookbuilderpy.url import load_text_from_url, load_binary_from_url
+from bookbuilderpy.url import load_text_from_url
 
 
 def load_html_github_template(dest: Path) -> Path:
@@ -96,24 +96,23 @@ def load_csl_template(dest: Path) -> List[Path]:
     return paths
 
 
-def load_katex(dest: Path) -> Path:
+def load_mathjax(dest: Path) -> Path:
     """
-    Download a full katex installation with all required resources.
+    Download a full the math jax installation.
 
     :param Path dest: the destination
     :return: the paths to the downloaded resources
     :rtype: Path
     """
-    log(f"now loading katex to '{dest}'.")
-    name = "katex.zip"
-    url = "https://github.com/KaTeX/KaTeX/releases/download/" \
-          "v0.13.18/katex.zip"
-    _, data = load_binary_from_url(url)
+    log(f"now loading mathjax svg to '{dest}'.")
+    name = "mathjax.js"
+    url = "https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-svg-full.js"
+    _, data = load_text_from_url(url)
+    data = enforce_non_empty_str(data.strip())
     dst_file = dest.resolve_inside(name)
-    with open(dst_file, "wb") as fd:
-        fd.write(data)
+    dst_file.write_all(data)
 
-    log(f"finished loading katex to file '{dst_file}'.")
+    log(f"finished loading mathjax svg to file '{dst_file}'.")
     return dst_file
 
 
@@ -121,7 +120,7 @@ if __name__ == "__main__":
     log("begin loading resources.")
     current_dir = Path.directory(dirname(__file__))
     log(f"current dir is '{current_dir}'.")
-    load_katex(current_dir)
+    load_mathjax(current_dir)
     load_html_github_template(current_dir)
     load_csl_template(current_dir)
     load_latex_eisvogel_template(current_dir)
