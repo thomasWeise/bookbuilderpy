@@ -10,10 +10,10 @@ from bookbuilderpy.logger import log
 
 #: the name of the calibre executable tool
 TOOL_CALIBRE: Final[str] = "calibre"
-#: the name of the chromedriver executable tool
-TOOL_CHROME_DRIVER: Final[str] = "chromedriver"
-#: the name of the chromium browser executable tool
-TOOL_CHROMIUM: Final[str] = "chromium-browser"
+#: the name of the firefox driver tool
+TOOL_FIREFOX_DRIVER: Final[str] = "geckodriver"
+#: the name of the firefox browser executable tool
+TOOL_FIREFOX: Final[str] = "firefox"
 #: the name of the ghostscript executable tool
 TOOL_GHOSTSCRIPT: Final[str] = "gs"
 #: the name of the git executable tool
@@ -111,7 +111,7 @@ class __Versions:
 
         versions.append(f"\nlinux: {_do_call('uname', '-a')[0]}")
 
-        for tool in [TOOL_CHROME_DRIVER, TOOL_CHROMIUM, TOOL_CALIBRE,
+        for tool in [TOOL_CALIBRE, TOOL_FIREFOX, TOOL_FIREFOX_DRIVER,
                      TOOL_GHOSTSCRIPT, TOOL_GIT, TOOL_PANDOC,
                      TOOL_PDFLATEX, TOOL_XELATEX, TOOL_XZ, TOOL_ZIP]:
             has: Tuple[str, bool]

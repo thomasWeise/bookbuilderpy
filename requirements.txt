@@ -1,6 +1,9 @@
 # for internal markdown conversion when building the website
 markdown >= 3.3.4
 
+# needed to minify html output
+minify_html >= 0.6.8
+
 # we need pyyaml to process the metadata formatted in yaml
 pyyaml >= 5.4.1
 

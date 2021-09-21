@@ -1,8 +1,10 @@
 """Post-process HTML files."""
 import base64
 from os.path import exists
+import os
 from typing import Final, Tuple
 
+import minify_html  # type: ignore
 import regex as reg  # type: ignore
 from selenium import webdriver  # type: ignore
 
@@ -10,7 +12,7 @@ from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path, UTF8, move_pure
 from bookbuilderpy.strings import enforce_non_empty_str
 from bookbuilderpy.temp import TempDir
-from bookbuilderpy.versions import TOOL_CHROMIUM, TOOL_CHROME_DRIVER, has_tool
+from bookbuilderpy.versions import TOOL_FIREFOX, TOOL_FIREFOX_DRIVER, has_tool
 
 #: the regexes for java script
 __REGEXES_URI_JAVASCRIPT: Final[Tuple[reg.Regex, ...]] = tuple(
@@ -20,8 +22,8 @@ __REGEXES_URI_JAVASCRIPT: Final[Tuple[reg.Regex, ...]] = tuple(
         '|[A-Za-z0-9+\\/]{2}={2}))\"(\\s+type="text/javascript")?'
         f'{y}',
         flags=reg.V1 | reg.MULTILINE)
-     for x in ["octet-stream", "javascript"]
-     for y in ["\\s*/>", ">\\s*</script>"]]
+        for x in ["octet-stream", "javascript"]
+        for y in ["\\s*/>", ">\\s*</script>"]]
 )
 
 #: the regexes for css
@@ -33,8 +35,8 @@ __REGEXES_URI_CSS: Final[Tuple[reg.Regex, ...]] = tuple(
         '(\\s+type="text/css")?'
         f'{y}',
         flags=reg.V1 | reg.MULTILINE)
-     for x in ["octet-stream"]
-     for y in ["\\s*/>", ">\\s*</link>"]]
+        for x in ["octet-stream"]
+        for y in ["\\s*/>", ">\\s*</link>"]]
 )
 
 
@@ -108,6 +110,7 @@ def html_postprocess(in_file: str,
                      flatten_data_uris: bool = True,
                      fully_evaluate_html: bool = False,
                      purge_scripts: bool = False,
+                     minify: bool = True,
                      overwrite: bool = False) -> Path:
     """
     Post-process a html file.
@@ -118,13 +121,14 @@ def html_postprocess(in_file: str,
     :param bool fully_evaluate_html: should we use selenium to fully evaluate
         all html and javascript?
     :param bool purge_scripts: should we purge all javascripts from the file?
+    :param bool minify: should we minify the HTML output?
     :param bool overwrite: should the output file be overwritten if it exists?
     :return: the output file
     :rtype: Path
     """
     source = Path.file(in_file)
     output = Path.path(out_file)
-    log(f"Post-processing HTML file from '{source}' to '{output}'.")
+    log(f"post-processing HTML file from '{source}' to '{output}'.")
     if (not overwrite) and exists(output):
         raise ValueError(f"Output file '{output}' already exists.")
     if source == output:
@@ -135,31 +139,35 @@ def html_postprocess(in_file: str,
     text: str = enforce_non_empty_str(source.read_all_str().strip())
 
     with TempDir.create() as temp:
-        if flatten_data_uris:   # flatten data uris
+        if flatten_data_uris:  # flatten data uris
             text_n = enforce_non_empty_str(__unpack_data_urls(text))
             if text_n != text:
                 text = text_n
                 needs_file_out = True
-                log("Flattening the data uris changed the HTML content.")
+                log("flattening the data uris changed the HTML content.")
             else:
-                log("Flattening the data uris did not change the "
+                log("flattening the data uris did not change the "
                     "HTML content.")
             del text_n
 
         if fully_evaluate_html:  # flatten scripts and html
-            if has_tool(TOOL_CHROMIUM) and has_tool(TOOL_CHROME_DRIVER):
-                log(f"Invoking '{TOOL_CHROME_DRIVER}' via selenium to "
-                    "evaluate HTML.")
-                options = webdriver.ChromeOptions()
+            if has_tool(TOOL_FIREFOX_DRIVER) and has_tool(TOOL_FIREFOX):
+                # options = webdriver.ChromeOptions()
+                options = webdriver.FirefoxOptions()
                 options.headless = True
                 options.add_argument("--enable-javascript")
-                browser = webdriver.Chrome(options=options)
+                browser = webdriver.Firefox(options=options,
+                                            service_log_path=os.path.devnull)
+                # .Chrome(options=options)
                 if needs_file_out:
                     current_file = temp.resolve_inside("1.html")
                     current_file.write_all(text)
                     needs_file_out = False
                 current_file.enforce_file()
+                log(f"invoking '{TOOL_FIREFOX_DRIVER}' via selenium on "
+                    f"'{current_file}' to evaluate HTML.")
                 browser.get('file:///' + current_file)
+                browser.implicitly_wait(1)
                 html = browser.page_source
                 browser.quit()
                 html = html.strip()
@@ -168,13 +176,13 @@ def html_postprocess(in_file: str,
                 if html != text:
                     needs_file_out = True
                     text = html
-                    log("HTML evaluation did change something.")
+                    log("html evaluation did change something.")
                 else:
-                    log("HTML evaluation changed nothing.")
+                    log("html evaluation changed nothing.")
                 del html
             else:
-                log(f"Cannot use HTML evaluation, '{TOOL_CHROMIUM}' or '"
-                    f"{TOOL_CHROME_DRIVER}' not present.")
+                log(f"cannot use HTML evaluation, '{TOOL_FIREFOX}' or '"
+                    f"{TOOL_FIREFOX_DRIVER}' not present.")
 
         if purge_scripts:  # purge java script
             ntext = text
@@ -183,19 +191,39 @@ def html_postprocess(in_file: str,
             if ntext != text:
                 needs_file_out = True
                 text = ntext
-                log("Javascript purging changed HTML content.")
+                log("javascript purging changed HTML content.")
             else:
-                log("No javascript found to remove.")
+                log("no javascript found to remove.")
+            del ntext
+
+        if minify:  # minify output
+            ntext = enforce_non_empty_str(minify_html.minify(
+                text, do_not_minify_doctype=True,
+                ensure_spec_compliant_unquoted_attribute_values=True,
+                remove_bangs=True,
+                remove_processing_instructions=True,
+                # keep_closing_tags=True,
+                keep_html_and_head_opening_tags=True,
+                keep_spaces_between_attributes=True,
+                minify_css=True,
+                minify_js=True).strip())
+
+            if ntext != text:
+                needs_file_out = True
+                text = ntext
+                log("html minification has changed the content.")
+            else:
+                log("html minification had no impact")
             del ntext
 
         if needs_file_out:
-            log(f"Writing post-processing result to '{output}'.")
+            log(f"writing post-processing result to '{output}'.")
             output.write_all(text)
         elif current_file == source:
-            log(f"Copying HTML from '{source}' to '{output}'.")
+            log(f"copying HTML from '{source}' to '{output}'.")
             Path.copy_file(source, output)
         else:
-            log(f"Moving HTML from '{current_file}' to '{output}'.")
+            log(f"moving HTML from '{current_file}' to '{output}'.")
             move_pure(current_file, output)
 
     output.enforce_file()
