@@ -29,6 +29,22 @@ def load_html_github_template(dest: Path) -> Path:
         text = text.replace(
             "div.line-block{white-space:pre-line}",
             "div.line-block{line-height:0.85;white-space:pre-line}")
+
+        # remove the useless alert styles
+        remove_start = ".Alert,"
+        idx_1 = text.find(remove_start)
+        if idx_1 > 0:
+            remove_end = ".Warning h6:"
+            idx_2 = text.find(remove_end, idx_1)
+            if idx_2 > idx_1:
+                idx_3 = text.find("}", idx_2)
+                if idx_3 > idx_2:
+                    text = text[:idx_1].strip() + text[(idx_3 + 1):].strip()
+
+        text.replace(',"Apple Color Emoji"', "")
+        text.replace(',"Segoe UI Emoji"', "")
+        text.replace(',"Segoe UI Symbol"', "")
+
         dst_file = dest.resolve_inside(name)
         dst_file.write_all(text)
         Path.copy_file(repo.path.resolve_inside("LICENSE"),
