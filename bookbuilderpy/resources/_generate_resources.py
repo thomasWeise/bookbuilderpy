@@ -98,7 +98,12 @@ def load_csl_template(dest: Path) -> List[Path]:
 
 def load_mathjax(dest: Path) -> Path:
     """
-    Download a full the math jax installation.
+    Download a full the math jax installation for svg conversion.
+
+    For the HTML build, we want to convert all the equations to SVGs,
+    because they will look the same regardless on which device the
+    books are displayed. This also allows us to purge the javascripts
+    after the conversion.
 
     :param Path dest: the destination
     :return: the paths to the downloaded resources

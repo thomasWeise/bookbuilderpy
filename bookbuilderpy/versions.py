@@ -1,8 +1,8 @@
 """Get the versions of all involved libraries and tools."""
 
+import importlib.metadata as ilm
 import platform
 import subprocess  # nosec
-from importlib import import_module
 from typing import Final, List, Dict, Tuple, Optional
 
 import bookbuilderpy.version as ver
@@ -30,6 +30,34 @@ TOOL_XZ: Final[str] = "xz"
 TOOL_ZIP: Final[str] = "zip"
 
 
+def __chkstr(n: str,
+             purge_starts: Tuple[str, ...] =
+             ("copyright", "there is no", "covered by",
+              "the lesser gnu g", "the gnu gen", "for more info",
+              "named copying", "primary author", "currently maintaine",
+              "the author", "latest sourc", "as of above",
+              "encryption notice", "the encryption", "put in the", "and, to",
+              "in both s", "the usa", "administration regulat",
+              "copyright (c)", "this is free", "warranty", "the source ",
+              "testing/gecko", "this program",
+              "you can obt")) -> Optional[str]:
+    """
+    Check whether we should keep a version string.
+
+    :param str n: the original string
+    :param purge_starts: the strings to purge at the start
+    :return: the string, or `None` if it can be purged
+    :rtype: Optional[str]
+    """
+    n = n.strip()
+    if len(n) <= 0:
+        return None
+    nl: Final[str] = n.lower()
+    if any(nl.startswith(d) for d in purge_starts):
+        return None
+    return n
+
+
 def _do_call(tool: str, arg: str) -> Tuple[str, bool]:
     """
     Invoke a sub-process.
@@ -51,8 +79,8 @@ def _do_call(tool: str, arg: str) -> Tuple[str, bool]:
     if ret.returncode != 0:
         return f"failed to invoke {tool}", False
 
-    lines = [a for a in [f.strip() for f in ret.stdout.split("\n")]
-             if len(a) > 0]
+    lines = [a for a in [__chkstr(f) for f in ret.stdout.split("\n")]
+             if a]
     if len(lines) <= 0:
         return f"{tool} query gives empty result", False
     return "\n".join(lines), True
@@ -99,17 +127,10 @@ class __Versions:
              f"python implementation: {platform.python_implementation()}",
              f"bookbuilderpy: {ver.__version__}"]
 
-        for package in [("markdown",),
-                        ("minify_html", "minify_html", "__file__"),
-                        ("yaml", "pyaml"), ("regex",),
-                        ("strip_hints", "strip-hints", "version"),
-                        ("urllib3",), ("yapf",)]:
-            modname = package[0]
-            x = import_module(modname)
-            modname = modname if len(package) < 2 \
-                else f"{modname}/{package[1]}"
-            verattr = "__version__" if len(package) < 3 else package[2]
-            versions.append(f"package {modname}: {getattr(x, verattr)}")
+        for package in ["markdown", "minify_html", "pyyaml", "regex",
+                        "strip-hints", "urllib3", "yapf"]:
+            version = ilm.version(package).strip()
+            versions.append(f"package {package}: {version}")
 
         versions.append(f"\nlinux: {_do_call('uname', '-a')[0]}")
 

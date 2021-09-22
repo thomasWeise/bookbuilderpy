@@ -8,7 +8,7 @@ minify_html >= 0.6.8
 pyyaml >= 5.4.1
 
 # regex is needed for processing commands as regular expressions
-regex >= 2021.8.21
+regex >= 2021.8.28
 
 # selenium is needed for fully evaluating the html pages
 selenium >= 3.141.0

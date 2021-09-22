@@ -7,11 +7,13 @@ import markdown  # type: ignore
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import LangResult, File
+from bookbuilderpy.html import html_postprocess
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
 from bookbuilderpy.strings import file_size, enforce_non_empty_str, \
     lang_to_locale
+from bookbuilderpy.temp import TempFile
 
 #: Explanations of file suffixes.
 __SUFFIXES: Final[Dict[str, Dict[str, str]]] = \
@@ -186,7 +188,16 @@ def build_website(docs: Iterable[LangResult],
                                 func=get_meta,
                                 n=1,
                                 strip_white_space=False))(html)
-    out_file.write_all(html.strip())
+    with TempFile.create(suffix=".html") as temp:
+        temp.write_all(html.strip())
+        out_file = html_postprocess(in_file=temp,
+                                    out_file=out_file,
+                                    flatten_data_uris=True,
+                                    fully_evaluate_html=False,
+                                    purge_scripts=False,
+                                    minify=True,
+                                    overwrite=False)
+
     res = File(out_file)
     log(f"finished building website '{res.path}', size is {res.size}.")
     return res
