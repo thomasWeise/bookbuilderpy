@@ -1,4 +1,4 @@
-
+# a html parser used for minifying html
 beautifulsoup4 >= 4.9.3
 
 # for internal markdown conversion when building the website

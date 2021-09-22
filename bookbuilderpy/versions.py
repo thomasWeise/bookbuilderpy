@@ -127,8 +127,8 @@ class __Versions:
              f"python implementation: {platform.python_implementation()}",
              f"bookbuilderpy: {ver.__version__}"]
 
-        for package in ["markdown", "minify_html", "pyyaml", "regex",
-                        "strip-hints", "urllib3", "yapf"]:
+        for package in ["beautifulsoup4", "markdown", "minify_html", "pyyaml",
+                        "regex", "strip-hints", "urllib3", "yapf"]:
             version = ilm.version(package).strip()
             versions.append(f"package {package}: {version}")
 
