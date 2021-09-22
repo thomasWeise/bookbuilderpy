@@ -196,6 +196,7 @@ def build_website(docs: Iterable[LangResult],
                                     fully_evaluate_html=False,
                                     purge_scripts=False,
                                     minify=True,
+                                    canonicalize_ids=True,
                                     overwrite=False)
 
     res = File(out_file)

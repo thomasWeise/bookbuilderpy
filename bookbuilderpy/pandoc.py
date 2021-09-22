@@ -324,6 +324,8 @@ def html(source_file: str,
                                      flatten_data_uris=True,
                                      fully_evaluate_html=True,
                                      purge_scripts=True,
+                                     minify=True,
+                                     canonicalize_ids=True,
                                      overwrite=False)
 
     return File(endresult)

@@ -2,8 +2,10 @@
 import base64
 import os
 from os.path import exists
-from typing import Final, Tuple
+from typing import Final, List, Tuple, Dict
+import string
 
+import bs4  # type: ignore
 import minify_html  # type: ignore
 import regex as reg  # type: ignore
 from selenium import webdriver  # type: ignore
@@ -52,7 +54,7 @@ def __base64_unpacker(args, start: str, end: str) -> str:
     """
     decoded = base64.b64decode(str(args.groups()[1]).strip()).decode(UTF8)
     res = f'{start}{decoded.strip()}{end}'
-    if len(res) < (args.end() - args.start()):
+    if len(res) <= (args.end() - args.start()):
         return res
     return str(args).strip()
 
@@ -80,7 +82,7 @@ def __base64_unpacker_css(args) -> str:
     return __base64_unpacker(args, '<style type="text/css">', '</style>')
 
 
-def __unpack_data_urls(text: str) -> str:
+def __unpack_data_uris(text: str) -> str:
     """
     Unpack all javascript data urls.
 
@@ -111,6 +113,7 @@ def html_postprocess(in_file: str,
                      fully_evaluate_html: bool = False,
                      purge_scripts: bool = False,
                      minify: bool = True,
+                     canonicalize_ids: bool = True,
                      overwrite: bool = False) -> Path:
     """
     Post-process a html file.
@@ -122,6 +125,7 @@ def html_postprocess(in_file: str,
         all html and javascript?
     :param bool purge_scripts: should we purge all javascripts from the file?
     :param bool minify: should we minify the HTML output?
+    :param bool canonicalize_ids: should we canonicalize the IDs?
     :param bool overwrite: should the output file be overwritten if it exists?
     :return: the output file
     :rtype: Path
@@ -140,7 +144,7 @@ def html_postprocess(in_file: str,
 
     with TempDir.create() as temp:
         if flatten_data_uris:  # flatten data uris
-            text_n = enforce_non_empty_str(__unpack_data_urls(text))
+            text_n = enforce_non_empty_str(__unpack_data_uris(text))
             if text_n != text:
                 text = text_n
                 needs_file_out = True
@@ -197,16 +201,8 @@ def html_postprocess(in_file: str,
             del ntext
 
         if minify:  # minify output
-            ntext = enforce_non_empty_str(minify_html.minify(
-                text, do_not_minify_doctype=True,
-                ensure_spec_compliant_unquoted_attribute_values=True,
-                remove_bangs=True,
-                remove_processing_instructions=True,
-                # keep_closing_tags=True,
-                keep_html_and_head_opening_tags=True,
-                keep_spaces_between_attributes=True,
-                minify_css=True,
-                minify_js=True).strip())
+            ntext = enforce_non_empty_str(__html_crusher(
+                text, canonicalize_ids=canonicalize_ids))
             if ntext != text:
                 needs_file_out = True
                 text = ntext
@@ -227,3 +223,107 @@ def html_postprocess(in_file: str,
 
     output.enforce_file()
     return output
+
+
+def __html_crusher(text: str,
+                   canonicalize_ids: bool = True) -> str:
+    """
+    Crush the html content.
+
+    :param str text: the text coming in
+    :param bool canonicalize_ids: should we canonicalize the IDs?
+    :return: the crushed html text
+    :rtype: str
+    """
+    if canonicalize_ids:
+        parsed: bs4.BeautifulSoup = bs4.BeautifulSoup(text, "html.parser")
+
+        # first, we try to minify the element IDs
+        id_counts: Dict[str, int] = {}
+        # find all IDs
+        for ref in ["id", "name"]:
+            for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
+                if (tag.name.lower() == "meta") and (ref == "name"):
+                    continue
+                id_counts[tag.attrs[ref]] = 0
+        # count the references to them
+        for ref in ["href", "xlink:href"]:
+            for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
+                a = tag.attrs[ref]
+                if a.startswith("#"):
+                    id_counts[a[1:]] += 1
+
+        # purge all unreferenced ids
+        id_list = [(tid, count) for (tid, count) in id_counts.items()
+                   if count > 0]
+        del id_counts
+
+        # create smaller IDs
+        id_list.sort(key=lambda x: x[1])
+        ids: Dict[str, str] = {}
+        cnt: int = 0
+        for idx in id_list:
+            ids[idx[0]] = __int2str(cnt)
+            cnt += 1
+        del id_list, cnt
+
+        # write back the ids
+        for ref in ["id", "name"]:
+            for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
+                if (tag.name.lower() == "meta") and (ref == "name"):
+                    continue
+                tid = tag.attrs[ref]
+                if tid in ids:
+                    tag.attrs[ref] = ids[tid]
+                else:
+                    del tag.attrs[ref]
+
+        # re-link the references
+        for ref in ["href", "xlink:href"]:
+            for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
+                a = tag.attrs[ref]
+                if a.startswith("#"):
+                    tag.attrs[ref] = f"#{ids[a[1:]]}"
+
+        ntext = parsed.__unicode__()
+        if len(ntext) < len(text):
+            text = ntext
+
+    ntext = enforce_non_empty_str(minify_html.minify(
+        text, do_not_minify_doctype=True,
+        ensure_spec_compliant_unquoted_attribute_values=True,
+        remove_bangs=True,
+        remove_processing_instructions=True,
+        # keep_closing_tags=True,
+        keep_html_and_head_opening_tags=True,
+        keep_spaces_between_attributes=True,
+        minify_css=True,
+        minify_js=True).strip())
+    return ntext if len(ntext) < len(text) else text
+
+
+#: the internal start digits that can be used for it to string conversation
+__DIGITS_START = string.ascii_letters
+#: the internal digits that can be used for it to string conversation
+__DIGITS = string.digits + __DIGITS_START + "-_"
+
+
+def __int2str(x: int) -> str:
+    """
+    Convert an integer to a string.
+
+    :param int x: the integer
+    :return: the compact string
+    :rtype: str
+    """
+    if x == 0:
+        return __DIGITS_START[0]
+    digits: List[str] = []
+    use_digits = __DIGITS_START
+    while x:
+        base = len(use_digits)
+        digits.append(__DIGITS[x % base])
+        x = x // base
+        use_digits = __DIGITS
+    digits.reverse()
+    return ''.join(digits)
