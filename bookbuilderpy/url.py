@@ -4,6 +4,7 @@ from typing import Tuple
 
 import urllib3  # type: ignore
 
+from bookbuilderpy.path import UTF8
 from bookbuilderpy.strings import enforce_non_empty_str, \
     enforce_non_empty_str_without_ws
 
@@ -83,4 +84,4 @@ def load_text_from_url(url: str) -> Tuple[str, str]:
     :rtype: Tuple[str, str]
     """
     name, data = load_binary_from_url(url)
-    return name, data.decode("utf-8")
+    return name, data.decode(UTF8)

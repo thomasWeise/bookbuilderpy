@@ -99,8 +99,10 @@ class __Versions:
              f"python implementation: {platform.python_implementation()}",
              f"bookbuilderpy: {ver.__version__}"]
 
-        for package in [("markdown",), ("yaml", "pyaml"),
-                        ("regex",), ("strip_hints", "strip-hints", "version"),
+        for package in [("markdown",),
+                        ("minify_html", "minify_html", "__file__"),
+                        ("yaml", "pyaml"), ("regex",),
+                        ("strip_hints", "strip-hints", "version"),
                         ("urllib3",), ("yapf",)]:
             modname = package[0]
             x = import_module(modname)

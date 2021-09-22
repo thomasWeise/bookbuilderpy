@@ -1,7 +1,7 @@
 """Post-process HTML files."""
 import base64
-from os.path import exists
 import os
+from os.path import exists
 from typing import Final, Tuple
 
 import minify_html  # type: ignore
@@ -207,7 +207,6 @@ def html_postprocess(in_file: str,
                 keep_spaces_between_attributes=True,
                 minify_css=True,
                 minify_js=True).strip())
-
             if ntext != text:
                 needs_file_out = True
                 text = ntext

@@ -119,12 +119,19 @@ def preprocess(text: str,
         plang = "" if plang is None else f" .{plang}"
 
         caption = enforce_non_empty_str(caption.strip())
-        if caption[len(caption) - 1] not in [".", "!", "?"]:
+        spacer = " "
+        end = caption[len(caption) - 1]
+        # Below, we check first whether the text ends in a Chinese punctuation
+        # mark and if it does not, if it ends in a Western one.
+        if end in "\u3001\u3002\u3003\u3009\u300b\u300d\u3011\u3015\u3017" \
+                  "\u3019\u301b\u301e\ufe16\ufe57\uff01\uff1f\uff61\uff64":
+            spacer = ""
+        elif end not in ".;!?)]}\"'\u00a1\u00b7\u00bf\u037e\u0387":
             caption = f"{caption}."
         if userepo:
             userepo.path.enforce_contains(file)
             url = userepo.make_url(file.relative_to(userepo.path))
-            caption = f"{caption} ([src]({url}))"
+            caption = f"{caption}{spacer}([src]({url}))"
 
         return f"Listing: {caption}\n\n" \
                f"```{{#lst:{label}{plang} .numberLines}}\n{code}\n```"
