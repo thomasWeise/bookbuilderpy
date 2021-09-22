@@ -200,9 +200,9 @@ def html_postprocess(in_file: str,
                 log("no javascript found to remove.")
             del ntext
 
-        if minify:  # minify output
+        if minify or canonicalize_ids:  # minify output
             ntext = enforce_non_empty_str(__html_crusher(
-                text, canonicalize_ids=canonicalize_ids))
+                text, canonicalize_ids=canonicalize_ids, minify=True))
             if ntext != text:
                 needs_file_out = True
                 text = ntext
@@ -226,18 +226,46 @@ def html_postprocess(in_file: str,
 
 
 def __html_crusher(text: str,
-                   canonicalize_ids: bool = True) -> str:
+                   canonicalize_ids: bool = True,
+                   minify: bool = True) -> str:
     """
     Crush the html content.
 
     :param str text: the text coming in
     :param bool canonicalize_ids: should we canonicalize the IDs?
+    :param bool minify: should we minify the HTML output?
     :return: the crushed html text
     :rtype: str
     """
-    if canonicalize_ids:
-        parsed: bs4.BeautifulSoup = bs4.BeautifulSoup(text, "html.parser")
+    parsed: bs4.BeautifulSoup = bs4.BeautifulSoup(text, "html.parser")
 
+    # remove the useless mathjax content
+    if minify:
+        for tag in parsed("mjx-assistive-mml"):
+            tag.decompose()
+        for tag in parsed("style"):
+            tagtext = tag.string
+            if ".CtxtMenu_" in tagtext:
+                tag.decompose()
+                continue
+            found = False
+            while True:
+                idx1 = tagtext.find("mjx-assistive-mml")
+                if idx1 < 0:
+                    break
+                idx2 = tagtext.find("{", idx1)
+                if idx2 <= idx1:
+                    break
+                idx3 = tagtext.find("}", idx2)
+                if idx3 <= idx2:
+                    break
+                tagtext = tagtext[:idx1].strip() + \
+                    tagtext[(idx3 + 1):].strip()
+                found = True
+            if found:
+                tag.string = tagtext
+
+    if canonicalize_ids:
         # first, we try to minify the element IDs
         id_counts: Dict[str, int] = {}
         # find all IDs
@@ -285,21 +313,27 @@ def __html_crusher(text: str,
                 if a.startswith("#"):
                     tag.attrs[ref] = f"#{ids[a[1:]]}"
 
-        ntext = parsed.__unicode__()
+    # convert the parsed html back to text and check if it is smaller
+    ntext = parsed.__unicode__()
+    if len(ntext) < len(text):
+        text = ntext
+
+    # apply the final minification step
+    if minify:
+        ntext = enforce_non_empty_str(minify_html.minify(
+            text, do_not_minify_doctype=True,
+            ensure_spec_compliant_unquoted_attribute_values=True,
+            remove_bangs=True,
+            remove_processing_instructions=True,
+            # keep_closing_tags=True,
+            keep_html_and_head_opening_tags=True,
+            keep_spaces_between_attributes=True,
+            minify_css=True,
+            minify_js=True).strip())
         if len(ntext) < len(text):
             text = ntext
 
-    ntext = enforce_non_empty_str(minify_html.minify(
-        text, do_not_minify_doctype=True,
-        ensure_spec_compliant_unquoted_attribute_values=True,
-        remove_bangs=True,
-        remove_processing_instructions=True,
-        # keep_closing_tags=True,
-        keep_html_and_head_opening_tags=True,
-        keep_spaces_between_attributes=True,
-        minify_css=True,
-        minify_js=True).strip())
-    return ntext if len(ntext) < len(text) else text
+    return text
 
 
 #: the internal start digits that can be used for it to string conversation
