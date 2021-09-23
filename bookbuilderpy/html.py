@@ -113,6 +113,7 @@ def html_postprocess(in_file: str,
                      fully_evaluate_html: bool = False,
                      purge_scripts: bool = False,
                      minify: bool = True,
+                     purge_mathjax: bool = True,
                      canonicalize_ids: bool = True,
                      overwrite: bool = False) -> Path:
     """
@@ -125,6 +126,7 @@ def html_postprocess(in_file: str,
         all html and javascript?
     :param bool purge_scripts: should we purge all javascripts from the file?
     :param bool minify: should we minify the HTML output?
+    :param bool purge_mathjax: purge all mathjax stuff?
     :param bool canonicalize_ids: should we canonicalize the IDs?
     :param bool overwrite: should the output file be overwritten if it exists?
     :return: the output file
@@ -202,7 +204,8 @@ def html_postprocess(in_file: str,
 
         if minify or canonicalize_ids:  # minify output
             ntext = enforce_non_empty_str(__html_crusher(
-                text, canonicalize_ids=canonicalize_ids, minify=True))
+                text, canonicalize_ids=canonicalize_ids,
+                purge_mathjax=purge_mathjax, minify=True))
             if ntext != text:
                 needs_file_out = True
                 text = ntext
@@ -227,12 +230,14 @@ def html_postprocess(in_file: str,
 
 def __html_crusher(text: str,
                    canonicalize_ids: bool = True,
+                   purge_mathjax: bool = True,
                    minify: bool = True) -> str:
     """
     Crush the html content.
 
     :param str text: the text coming in
     :param bool canonicalize_ids: should we canonicalize the IDs?
+    :param bool purge_mathjax: purge all mathjax stuff?
     :param bool minify: should we minify the HTML output?
     :return: the crushed html text
     :rtype: str
@@ -240,9 +245,34 @@ def __html_crusher(text: str,
     parsed: bs4.BeautifulSoup = bs4.BeautifulSoup(text, "html.parser")
 
     # remove the useless mathjax content
-    if minify:
+    if purge_mathjax:
+        # delete useless mathml content
         for tag in parsed("mjx-assistive-mml"):
             tag.decompose()
+
+        # delete useless components of tags
+        for tag in parsed("use"):
+            if "data-c" in tag.attrs:
+                del tag.attrs["data-c"]
+        for tag in parsed("g"):
+            if "data-mml-node" in tag.attrs:
+                del tag.attrs["data-mml-node"]
+            if "data-mjx-texclass" in tag.attrs:
+                del tag.attrs["data-mjx-texclass"]
+        for tag in parsed("mjx-container"):
+            if "class" in tag.attrs:
+                clz = " ".join(tag.attrs["class"])
+                clzn = clz.replace(" CtxtMenu_Attached_0", "")\
+                    .replace("CtxtMenu_Attached_0 ", "")\
+                    .replace("  ", " ").strip()
+                if clzn != clz:
+                    tag.attrs["class"] = clzn
+            if "ctxtmenu_counter" in tag.attrs:
+                del tag.attrs["ctxtmenu_counter"]
+            if "tabindex" in tag.attrs:
+                del tag.attrs["tabindex"]
+
+        # purge useless context menu styles
         for tag in parsed("style"):
             tagtext = tag.string
             if ".CtxtMenu_" in tagtext:
@@ -265,6 +295,16 @@ def __html_crusher(text: str,
             if found:
                 tag.string = tagtext
 
+    if minify:
+        # merge all styles
+        styles = parsed("style")
+        if len(styles) > 1:
+            all_styles = "".join(tag.string.strip() for tag in styles)
+            for tag in styles[1:]:
+                tag.decompose()
+            styles[0].string = all_styles
+
+    # replace all ids with shorter ids
     if canonicalize_ids:
         # first, we try to minify the element IDs
         id_counts: Dict[str, int] = {}
@@ -273,13 +313,20 @@ def __html_crusher(text: str,
             for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
                 if (tag.name.lower() == "meta") and (ref == "name"):
                     continue
-                id_counts[tag.attrs[ref]] = 0
+                a = tag.attrs[ref]
+                if a in id_counts:
+                    raise ValueError(f"id '{a}' in '{ref}' appears twice!")
+                id_counts[a] = 0
         # count the references to them
         for ref in ["href", "xlink:href"]:
             for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
                 a = tag.attrs[ref]
                 if a.startswith("#"):
-                    id_counts[a[1:]] += 1
+                    a = a[1:].strip()
+                    if a not in id_counts:
+                        raise ValueError(
+                            f"Found reference to undefined id '{a}'.")
+                    id_counts[a] += 1
 
         # purge all unreferenced ids
         id_list = [(tid, count) for (tid, count) in id_counts.items()
@@ -287,7 +334,7 @@ def __html_crusher(text: str,
         del id_counts
 
         # create smaller IDs
-        id_list.sort(key=lambda x: x[1])
+        id_list.sort(key=lambda x: -x[1])
         ids: Dict[str, str] = {}
         cnt: int = 0
         for idx in id_list:
@@ -311,7 +358,11 @@ def __html_crusher(text: str,
             for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
                 a = tag.attrs[ref]
                 if a.startswith("#"):
-                    tag.attrs[ref] = f"#{ids[a[1:]]}"
+                    a = a[1:].strip()
+                    if a not in ids:
+                        raise ValueError(
+                            f"Found reference to deleted id '{a}'.")
+                    tag.attrs[ref] = f"#{ids[a]}"
 
     # convert the parsed html back to text and check if it is smaller
     ntext = parsed.__unicode__()
@@ -339,7 +390,7 @@ def __html_crusher(text: str,
 #: the internal start digits that can be used for it to string conversation
 __DIGITS_START = string.ascii_letters
 #: the internal digits that can be used for it to string conversation
-__DIGITS = string.digits + __DIGITS_START + "-_"
+__DIGITS = __DIGITS_START + string.digits + "-_"
 
 
 def __int2str(x: int) -> str:
@@ -356,8 +407,7 @@ def __int2str(x: int) -> str:
     use_digits = __DIGITS_START
     while x:
         base = len(use_digits)
-        digits.append(__DIGITS[x % base])
+        digits.append(use_digits[x % base])
         x = x // base
         use_digits = __DIGITS
-    digits.reverse()
     return ''.join(digits)

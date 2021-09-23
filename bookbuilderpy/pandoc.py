@@ -325,6 +325,7 @@ def html(source_file: str,
                                      fully_evaluate_html=True,
                                      purge_scripts=True,
                                      minify=True,
+                                     purge_mathjax=True,
                                      canonicalize_ids=True,
                                      overwrite=False)
 
