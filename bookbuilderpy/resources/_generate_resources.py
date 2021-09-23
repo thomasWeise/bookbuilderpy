@@ -133,6 +133,13 @@ def load_mathjax(dest: Path) -> Path:
     dst_file = dest.resolve_inside(name)
     dst_file.write_all(data)
 
+    name = f"{name}_license"
+    url = "https://raw.githubusercontent.com/mathjax/MathJax/master/LICENSE"
+    _, data = load_text_from_url(url)
+    data = enforce_non_empty_str(data.strip())
+    dst_file = dest.resolve_inside(name)
+    dst_file.write_all(data)
+
     log(f"finished loading mathjax svg to file '{dst_file}'.")
     return dst_file
 

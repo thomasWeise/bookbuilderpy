@@ -40,7 +40,7 @@ def __chkstr(n: str,
               "in both s", "the usa", "administration regulat",
               "copyright (c)", "this is free", "warranty", "the source ",
               "testing/gecko", "this program",
-              "you can obt")) -> Optional[str]:
+              "you can obt", "no lsb mod")) -> Optional[str]:
     """
     Check whether we should keep a version string.
 
@@ -133,6 +133,7 @@ class __Versions:
             versions.append(f"package {package}: {version}")
 
         versions.append(f"\nlinux: {_do_call('uname', '-a')[0]}")
+        versions.append(_do_call("lsb_release", "-a")[0])
 
         for tool in [TOOL_CALIBRE, TOOL_FIREFOX, TOOL_FIREFOX_DRIVER,
                      TOOL_GHOSTSCRIPT, TOOL_GIT, TOOL_PANDOC,
