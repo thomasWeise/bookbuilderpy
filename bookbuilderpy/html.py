@@ -303,6 +303,23 @@ def __html_crusher(text: str,
             for tag in styles[1:]:
                 tag.decompose()
             styles[0].string = all_styles
+        # remove the generator meta data, as it is not needed
+        for tag in parsed("meta"):
+            if "name" in tag.attrs:
+                if tag.attrs["name"] == "generator":
+                    tag.decompose()
+        # try to discover and purge useless references
+        for tag in parsed("span"):
+            if "id" in tag.attrs:
+                tagid = tag.attrs["id"]
+                if tag.contents:
+                    child = tag.contents[0]
+                    if child.name == "a":
+                        if "href" in child.attrs:
+                            ref = child.attrs["href"]
+                            if ref.startswith("#") and (ref[1:] == tagid):
+                                if not (child.contents or child.string):
+                                    del child.attrs["href"]
 
     # replace all ids with shorter ids
     if canonicalize_ids:
