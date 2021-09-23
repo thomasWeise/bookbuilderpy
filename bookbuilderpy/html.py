@@ -1,9 +1,9 @@
 """Post-process HTML files."""
 import base64
 import os
+import string
 from os.path import exists
 from typing import Final, List, Tuple, Dict
-import string
 
 import bs4  # type: ignore
 import minify_html  # type: ignore
@@ -228,6 +228,49 @@ def html_postprocess(in_file: str,
     return output
 
 
+def __inner_minify(parsed: bs4.BeautifulSoup) -> None:
+    """
+    The inner HTML minification routine.
+
+    This routine can be applied before and after ID normalization.
+
+    :param bs4.BeautifulSoup parsed: the tags to process
+    """
+    # try to discover and purge useless references
+    for tag in parsed("span"):
+        if "id" in tag.attrs:
+            tagid = tag.attrs["id"]
+            if tag.contents:
+                child = tag.contents[0]
+                if child.name == "a":
+                    if "href" in child.attrs:
+                        ref = child.attrs["href"]
+                        if ref.startswith("#") and (ref[1:] == tagid):
+                            if not (child.contents or child.string):
+                                del child.attrs["href"]
+
+    # replace tags with their children if they have no attributes
+    # or other contents
+    for name in ["span", "div", "g"]:
+        for tag in reversed(list(parsed(name))):
+            if tag.contents and (len(tag.contents) == 1) and \
+                    (not tag.string):
+                child = tag.contents[0]
+                if child.name == name:
+                    if not tag.attrs:
+                        tag.replace_with(child)
+                        continue
+                    if not child.attrs:
+                        child.attrs = tag.attrs
+                        tag.replace_with(child)
+                        continue
+                    if (list(tag.attrs.keys()) == ["id"]) \
+                            ^ (list(child.attrs.keys()) == ["id"]):
+                        child.attrs.update(tag.attrs)
+                        tag.replace_with(child)
+                        continue
+
+
 def __html_crusher(text: str,
                    canonicalize_ids: bool = True,
                    purge_mathjax: bool = True,
@@ -262,8 +305,8 @@ def __html_crusher(text: str,
         for tag in parsed("mjx-container"):
             if "class" in tag.attrs:
                 clz = " ".join(tag.attrs["class"])
-                clzn = clz.replace(" CtxtMenu_Attached_0", "")\
-                    .replace("CtxtMenu_Attached_0 ", "")\
+                clzn = clz.replace(" CtxtMenu_Attached_0", "") \
+                    .replace("CtxtMenu_Attached_0 ", "") \
                     .replace("  ", " ").strip()
                 if clzn != clz:
                     tag.attrs["class"] = clzn
@@ -308,18 +351,8 @@ def __html_crusher(text: str,
             if "name" in tag.attrs:
                 if tag.attrs["name"] == "generator":
                     tag.decompose()
-        # try to discover and purge useless references
-        for tag in parsed("span"):
-            if "id" in tag.attrs:
-                tagid = tag.attrs["id"]
-                if tag.contents:
-                    child = tag.contents[0]
-                    if child.name == "a":
-                        if "href" in child.attrs:
-                            ref = child.attrs["href"]
-                            if ref.startswith("#") and (ref[1:] == tagid):
-                                if not (child.contents or child.string):
-                                    del child.attrs["href"]
+
+        __inner_minify(parsed)
 
     # replace all ids with shorter ids
     if canonicalize_ids:
@@ -380,6 +413,11 @@ def __html_crusher(text: str,
                         raise ValueError(
                             f"Found reference to deleted id '{a}'.")
                     tag.attrs[ref] = f"#{ids[a]}"
+
+        # Since we have minified IDs, we may have purged useless IDs.
+        # Thus, maybe we can now purge additional tags.
+        if minify:
+            __inner_minify(parsed)
 
     # convert the parsed html back to text and check if it is smaller
     ntext = parsed.__unicode__()
