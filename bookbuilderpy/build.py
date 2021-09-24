@@ -9,7 +9,8 @@ from typing import Final, Optional, Dict, Any, Iterable, List, Tuple
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
-from bookbuilderpy.compress import compress_xz, compress_zip
+from bookbuilderpy.compress import can_xz_compress, can_zip_compress, \
+    compress_xz, compress_zip
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import log
 from bookbuilderpy.pandoc import latex, html, epub, azw3
@@ -320,11 +321,24 @@ class Build(AbstractContextManager):
             resolve_resources=self.__get_resource)
         results.append(epub_res)
         results.append(azw3(epub_res.path))
-        tar_xz = compress_xz(results,
-                             output_dir.resolve_inside(f"{name}.tar.xz"))
-        zipf = compress_zip(results, output_dir.resolve_inside(f"{name}.zip"))
-        results.append(tar_xz)
-        results.append(zipf)
+
+        # now trying to create compressed versions
+        if can_xz_compress():
+            tar_xz = compress_xz(results,
+                                 output_dir.resolve_inside(f"{name}.tar.xz"))
+        else:
+            tar_xz = None
+        if can_zip_compress():
+            zipf = compress_zip(results,
+                                output_dir.resolve_inside(f"{name}.zip"))
+        else:
+            zipf = None
+
+        if tar_xz:
+            results.append(tar_xz)
+        if zipf:
+            results.append(zipf)
+
         log(f"finished pandoc build steps to file '{input_file}' "
             f"with target director '{output_dir}' for lang-id '{lang_id}'"
             f", produced {len(results)} files.")

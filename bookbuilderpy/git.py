@@ -72,6 +72,7 @@ class Repo:
         """
         if not has_tool(TOOL_GIT):
             raise ValueError(f"No '{TOOL_GIT}' installation found.")
+
         dest: Final[Path] = Path.path(dest_dir)
         dest.ensure_dir_exists()
         url = enforce_url(url)
@@ -98,6 +99,9 @@ class Repo:
         :return: the repository information
         :rtype: Repo
         """
+        if not has_tool(TOOL_GIT):
+            raise ValueError(f"No '{TOOL_GIT}' installation found.")
+
         dest: Final[Path] = Path.path(path)
         dest.enforce_dir()
 

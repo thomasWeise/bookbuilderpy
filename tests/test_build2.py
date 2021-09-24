@@ -227,6 +227,8 @@ def find_local_files() -> Tuple[str, ...]:
             continue
         if "test" in file:
             continue
+        if "html" in file:
+            continue
         if file.endswith(".py"):
             full = os.path.join(package, file)
             if os.path.isfile(full):
@@ -258,12 +260,16 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
                 continue
             if "test" in f:
                 continue
+            if "html" in f:
+                continue
             if "/" in f:
                 result.append(f)
         assert len(result) > 0
         result = [f for f in result if "_" not in f]
         assert len(result) > 0
         result = [f for f in result if "test" not in f]
+        assert len(result) > 0
+        result = [f for f in result if "html" not in f]
         assert len(result) > 0
         return tuple(result)
 

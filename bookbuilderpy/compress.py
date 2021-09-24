@@ -8,6 +8,7 @@ from bookbuilderpy.build_result import File
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.temp import TempFile
+from bookbuilderpy.versions import TOOL_TAR, TOOL_ZIP, TOOL_XZ, has_tool
 
 
 def __paths(source: Iterable[Union[Path, File, str]]):
@@ -39,14 +40,32 @@ def __paths(source: Iterable[Union[Path, File, str]]):
     return None, files
 
 
+def can_xz_compress() -> bool:
+    """
+    Check if xz compression is available.
+
+    :return: True if xz compression is available, False otherwise
+    :rtype: bool
+    """
+    return has_tool(TOOL_TAR) and has_tool(TOOL_XZ)
+
+
 def compress_xz(source: Iterable[Union[Path, File, str]],
                 dest: str) -> File:
     """
     Compress a sequence of files to tar.xz.
 
-    :param source: the list of files
-    :param dest: the destination file
+    :param Iterable[Union[Path, File, str]] source: the list of files
+    :param str dest: the destination file
+    :return: the created archive
+    :return: the created archive
+    :rtype: File
     """
+    if not has_tool(TOOL_TAR):
+        raise ValueError(f"tool {TOOL_TAR} not installed.")
+    if not has_tool(TOOL_XZ):
+        raise ValueError(f"tool {TOOL_XZ} not installed.")
+
     base_dir, files = __paths(source)
     log(f"Applying tar.xz compression to {files}.")
 
@@ -61,7 +80,8 @@ def compress_xz(source: Iterable[Union[Path, File, str]],
 
     with TempFile.create() as tf:
         tf.write_all(
-            f'#!/bin/bash\ntar -c "{paths}" | xz -v -9e -c > "{out}"\n')
+            f'#!/bin/bash\n{TOOL_TAR} -c "{paths}" | '
+            f'{TOOL_XZ} -v -9e -c > "{out}"\n')
 
         ret = subprocess.run(["sh", tf], check=True, text=True,  # nosec
                              timeout=360, cwd=base_dir)  # nosec
@@ -71,14 +91,29 @@ def compress_xz(source: Iterable[Union[Path, File, str]],
     return File(out)
 
 
+def can_zip_compress() -> bool:
+    """
+    Check if zip compression is available.
+
+    :return: True if zip compression is available, False otherwise
+    :rtype: bool
+    """
+    return has_tool(TOOL_ZIP)
+
+
 def compress_zip(source: Iterable[Union[Path, File, str]],
                  dest: str) -> File:
     """
     Compress a sequence of files to zip.
 
-    :param source: the list of files
-    :param dest: the destination file
+    :param Iterable[Union[Path, File, str]] source: the list of files
+    :param str dest: the destination file
+    :return: the created archive
+    :rtype: File
     """
+    if not has_tool(TOOL_ZIP):
+        raise ValueError(f"Tool {TOOL_ZIP} not installed.")
+
     base_dir, files = __paths(source)
     log(f"Applying zip compression to {files}.")
 
@@ -92,7 +127,9 @@ def compress_zip(source: Iterable[Union[Path, File, str]],
 
     files.insert(0, out)
     files.insert(0, "-9")
-    files.insert(0, "zip")
+    files.insert(0, "-X")
+    files.insert(0, "-UN=UTF8")
+    files.insert(0, TOOL_ZIP)
 
     ret = subprocess.run(files, check=True, text=True,  # nosec
                          timeout=360, cwd=base_dir)  # nosec

@@ -22,6 +22,8 @@ TOOL_GIT: Final[str] = "git"
 TOOL_PANDOC: Final[str] = "pandoc"
 #: the name of the pdflatex executable tool
 TOOL_PDFLATEX: Final[str] = "pdflatex"
+#: the name of the tar executable tool
+TOOL_TAR: Final[str] = "tar"
 #: the name of the xelatex executable tool
 TOOL_XELATEX: Final[str] = "xelatex"
 #: the name of the xz executable tool
@@ -38,9 +40,9 @@ def __chkstr(n: str,
               "the author", "latest sourc", "as of above",
               "encryption notice", "the encryption", "put in the", "and, to",
               "in both s", "the usa", "administration regulat",
-              "copyright (c)", "this is free", "warranty", "the source ",
-              "testing/gecko", "this program",
-              "you can obt", "no lsb mod")) -> Optional[str]:
+              "this is free", "warranty", "the source ", "testing/gecko",
+              "this program", "license", "you can obt", "written by",
+              "no lsb mod", "(see the b", "bzip2 code ")) -> Optional[str]:
     """
     Check whether we should keep a version string.
 
@@ -52,6 +54,14 @@ def __chkstr(n: str,
     n = n.strip()
     if len(n) <= 0:
         return None
+    n = n.replace("\t", " ")
+    nlen = len(n)
+    while True:
+        n = n.replace("  ", " ")
+        nlen2 = len(n)
+        if nlen2 >= nlen:
+            break
+        nlen = nlen2
     nl: Final[str] = n.lower()
     if any(nl.startswith(d) for d in purge_starts):
         return None
@@ -137,7 +147,8 @@ class __Versions:
 
         for tool in [TOOL_CALIBRE, TOOL_FIREFOX, TOOL_FIREFOX_DRIVER,
                      TOOL_GHOSTSCRIPT, TOOL_GIT, TOOL_PANDOC,
-                     TOOL_PDFLATEX, TOOL_XELATEX, TOOL_XZ, TOOL_ZIP]:
+                     TOOL_PDFLATEX, TOOL_TAR, TOOL_XELATEX, TOOL_XZ,
+                     TOOL_ZIP]:
             has: Tuple[str, bool]
             if tool in self.__has_tool:
                 has = self.__has_tool[tool]
