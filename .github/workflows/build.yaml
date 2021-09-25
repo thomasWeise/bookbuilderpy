@@ -28,3 +28,10 @@ jobs:
       run: |
         pip install git+https://github.com/thomasWeise/bookbuilderpy.git
         python -c "import bookbuilderpy"
+# deploy to github pages
+    - name: deploy
+      uses: JamesIves/github-pages-deploy-action@4.1.4
+      with:
+        branch: gh-pages
+        folder: /home/runner/work/bookbuilderpy/bookbuilderpy/docs/build/
+        single-commit: true

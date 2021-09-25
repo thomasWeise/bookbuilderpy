@@ -1,9 +1,6 @@
 bookbuilderpy: Building Books from Markdown
 ============================================================================================
 
-Indices and tables
-------------------
-
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
@@ -11,11 +8,10 @@ Indices and tables
 .. include:: README.md
    :parser: myst_parser.sphinx_
 
-More Information
-----------------
+8. Modules and Code
+-------------------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Packages and Code:
 
    modules
