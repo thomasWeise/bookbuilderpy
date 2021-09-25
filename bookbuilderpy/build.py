@@ -6,6 +6,7 @@ import sys
 from contextlib import AbstractContextManager, ExitStack
 from os.path import basename
 from typing import Final, Optional, Dict, Any, Iterable, List, Tuple
+import traceback as tb
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
@@ -569,6 +570,7 @@ class Build(AbstractContextManager):
             return res
         except BaseException as be:
             log(f"The build process has FAILED with error '{be}'.")
+            tb.print_exception(type(be), be, be.__traceback__)
             if exit_on_error:
                 sys.exit(1)
             raise be
