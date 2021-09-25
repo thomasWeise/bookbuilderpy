@@ -1,29 +1,30 @@
 [![make build](https://github.com/thomasWeise/bookbuilderpy/actions/workflows/build.yaml/badge.svg)](https://github.com/thomasWeise/bookbuilderpy/actions/workflows/build.yaml)
 
-# bookbuilderpy
+# bookbuilderpy: Building Books from Markdown
 
 A [Python&nbsp;3](https://docs.python.org/3)-based environment for the automated compilation of books from markdown.
 
 1. [Introduction](#1-introduction)
 2. [Installation and Local Use](#2-installation-and-local-use)
 3. [Provided Functionality](#3-provided-functionality)
-   1. [Basic commands provided by `pandoc` and off-the-shelf filters](#31-basic-commands-provided-by-pandoc-and-off-the-shelf-filters)
-   2. [`bookbuilderpy`-specific commands](#32-bookbuilderpy-specific-commands)
-   3. [Metadata](#33-metadata)
-      1. [Language Specification and Resolution](#331-language-specification-and-resolution)
-      2. [Git Repositories](#332-git-repositories)
-      3. [Website Construction](#333-website-construction)
-      4. [Other Metadata](#334-other-metadata)
-   4. [Graphics](#34-graphics)
+    1. [Basic commands provided by `pandoc` and off-the-shelf filters](#31-basic-commands-provided-by-pandoc-and-off-the-shelf-filters)
+    2. [`bookbuilderpy`-specific commands](#32-bookbuilderpy-specific-commands)
+    3. [Metadata](#33-metadata)
+        1. [Language Specification and Resolution](#331-language-specification-and-resolution)
+        2. [Git Repositories](#332-git-repositories)
+        3. [Website Construction](#333-website-construction)
+        4. [Other Metadata](#334-other-metadata)
+    4. [Graphics](#34-graphics)
 4. [GitHub Pipeline](#4-github-pipeline)
-      1. [The Repository](#41-the-repository)
-      2. [The GitHub Action](#42-the-github-action)
+    1. [The Repository](#41-the-repository)
+    2. [The GitHub Action](#42-the-github-action)
 5. [Related Projects and Components](#5-related-projects-and-components)
-      1. [Own Contributed Projects and Components](#51-own-contributed-projects-and-components)
-      2. [Related Projects and Components Used](#52-related-projects-and-components-used)
+    1. [Own Contributed Projects and Components](#51-own-contributed-projects-and-components)
+    2. [Related Projects and Components Used](#52-related-projects-and-components-used)
 6. [License](#6-license)
-      1. [Wandmalfarbe/pandoc-latex-template](#61-wandmalfarbepandoc-latex-template)
-      2. [tajmone/pandoc-goodies HTML Template](#62-tajmonepandoc-goodies-html-template)
+    1. [Wandmalfarbe/pandoc-latex-template](#61-wandmalfarbepandoc-latex-template)
+    2. [tajmone/pandoc-goodies HTML Template](#62-tajmonepandoc-goodies-html-template)
+    3. [MathJax](#63-mathjax)
 7. [Contact](#7-contact)
 
 ## 1. Introduction
@@ -596,7 +597,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-6.3 MathJax
+### 6.3. MathJax
 
 [MathJax](https://www.mathjax.org/) is under the [Apache License, Version 2.0.](https://github.com/mathjax/MathJax/blob/master/LICENSE).
 

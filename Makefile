@@ -75,6 +75,7 @@ create_documentation: static_analysis test
     echo "Done creating HTML documentation, cleaning up documentation temp files." && \
     mv docs/source/index.rst docs/source/index.tmp && \
     rm -rf docs/source/*.rst && \
+    rm -rf docs/source/*.md && \
     mv docs/source/index.tmp docs/source/index.rst && \
     echo "Done creating the documentation."
 

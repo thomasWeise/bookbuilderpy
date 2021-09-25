@@ -9,6 +9,8 @@ wheel >= 0.37.0
 
 # sphinx is needed for generating the documentation.
 sphinx >= 4.1.2
+# myst-parser is needed for including README.md into the documentation
+myst-parser >= 0.15.2
 
 # static code analysis tools
 bandit >= 1.7.0
@@ -19,5 +21,3 @@ pyflakes >= 2.3.1
 pylint >= 2.10.2
 pyroma >= 3.2
 
-# yaml is used only in tests and examples and therefore not strictly needed.
-pyyaml >= 5.4.1
