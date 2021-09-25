@@ -469,6 +469,7 @@ After that, the files in this folder will be deployed to the branch `gh-pages`, 
 Let's say your username was `thomasWeise` and your book repository was `bookbuilderpy-mwe`.
 To make this website visible, go to your GitHub project's [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe), click `Settings`, then go to `Pages`, then under `Source` choose `gh-pages` and click `Save`.
 A few minutes afterwards, your book's website will appear as <https://thomasweise.github.io/bookbuilderpy-mwe>.
+(It may also be that you may need to make one more commit to the repository to trigger this.)
 Done.
 Whenever you commit to your book sources, the book will be compiled and the website is updated.
 Nothing else needed.
