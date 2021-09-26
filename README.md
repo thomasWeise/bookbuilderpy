@@ -452,6 +452,7 @@ jobs:
       run: |
         mkdir -p /tmp/result
         docker run -v $(pwd):/input/:ro -v /tmp/result/:/output/ thomasweise/docker-bookbuilderpy book.md
+        touch /tmp/result/.nojekyll
 
     - name: deploy
       uses: JamesIves/github-pages-deploy-action@4.1.4
@@ -464,6 +465,7 @@ jobs:
 This will toggle the build whenever you commit to the branch `main`.
 It will then first check out the book sources.
 Then it will create the temporary folder `/tmp/result` and use the docker container to build the book to this folder.
+The `touch /tmp/result/.nojekyll` just adds a file to that folder telling GitHub pages that the files in there do not need to be processed any further and can be served as-is.
 After that, the files in this folder will be deployed to the branch `gh-pages`, which will become the website for your book.
 
 Let's say your username was `thomasWeise` and your book repository was `bookbuilderpy-mwe`.
