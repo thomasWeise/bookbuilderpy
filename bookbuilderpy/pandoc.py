@@ -3,6 +3,7 @@
 import os.path
 import re
 import subprocess  # nosec
+import sys
 from typing import Optional, Final, List, Callable
 
 import bookbuilderpy.constants as bc
@@ -149,6 +150,7 @@ def pandoc(source_file: str,
         cmd.append(f"-V lang={locale.replace('_', '-')}")
 
     ret = subprocess.run(cmd, check=True, text=True, timeout=600,  # nosec
+                         stdout=sys.stdout, stderr=sys.stderr,  # nosec
                          cwd=input_dir)  # nosec
     if ret.returncode != 0:
         raise ValueError(

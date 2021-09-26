@@ -1,6 +1,7 @@
 """Post-process PDF files."""
 
 import subprocess  # nosec
+import sys
 from os.path import exists, dirname
 
 from bookbuilderpy.logger import log
@@ -75,6 +76,7 @@ def pdf_postprocess(in_file: str,
                source,
                '-c "<</NeverEmbed [ ]>> setdistillerparams"']
         ret = subprocess.run(cmd, check=True, text=True, timeout=600,  # nosec
+                             stdout=sys.stdout, stderr=sys.stderr,  # nosec
                              cwd=Path.directory(dirname(source)))  # nosec
         if ret.returncode != 0:
             raise ValueError(

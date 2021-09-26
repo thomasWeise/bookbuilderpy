@@ -41,9 +41,11 @@ def load_html_github_template(dest: Path) -> Path:
                 if idx_3 > idx_2:
                     text = text[:idx_1].strip() + text[(idx_3 + 1):].strip()
 
-        text.replace(',"Apple Color Emoji"', "")
-        text.replace(',"Segoe UI Emoji"', "")
-        text.replace(',"Segoe UI Symbol"', "")
+        text = text.replace(',"Apple Color Emoji"', "")
+        text = text.replace(',"Segoe UI Emoji"', "")
+        text = text.replace(',"Segoe UI Symbol"', "")
+        text = text.replace('div.line-block{line-height:0.85;',
+                            'div.line-block{')
 
         dst_file = dest.resolve_inside(name)
         dst_file.write_all(text)

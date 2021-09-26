@@ -2,6 +2,7 @@
 import datetime
 import re
 import subprocess  # nosec
+import sys
 from dataclasses import dataclass
 from typing import Final
 from typing import Optional
@@ -80,6 +81,7 @@ class Repo:
         log(f"starting to load{s}.")
         ret = subprocess.run([TOOL_GIT, "-C", dest, "clone",  # nosec
                               "--depth", "1", url, dest], text=True,  # nosec
+                             stdout=sys.stdout, stderr=sys.stderr,  # nosec
                              check=True, timeout=300)  # nosec
         if ret.returncode != 0:
             raise ValueError(f"Error when loading{s}.")
