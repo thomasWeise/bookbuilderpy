@@ -12,24 +12,30 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 # first set up python
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
 # then execute the actual build process
-    - name: Execute the make Build
+    - name: execute the make Build
       run: make
 # the remove mopitpy
-    - name: Purge local bookbuilderpy installation
+    - name: purge local bookbuilderpy installation
       run: |
         pip uninstall -y bookbuilderpy
 # and attempt to install it again from github
-    - name: Install bookbuilderpy from github
+    - name: install bookbuilderpy from github
       run: |
         pip install git+https://github.com/thomasWeise/bookbuilderpy.git
         python -c "import bookbuilderpy"
+# fix urls in documentation
+    - name: fix documentation urls
+      run: |
+        find /home/runner/work/bookbuilderpy/bookbuilderpy/docs/build/ \( -type d -name .git -prune \) -o -type f -name "*.html" -print0 | xargs -0 sed -i 's/ href=\"_static\// href=\"\/bookbuilderpy\/_static\//g'
+        find /home/runner/work/bookbuilderpy/bookbuilderpy/docs/build/ \( -type d -name .git -prune \) -o -type f -name "*.html" -print0 | xargs -0 sed -i 's/ src=\"_static\// src=\"\/bookbuilderpy\/_static\//g'
+        touch /home/runner/work/bookbuilderpy/bookbuilderpy/docs/build/.nojekyll
 # deploy to github pages
-    - name: deploy
+    - name: deploy documentation
       uses: JamesIves/github-pages-deploy-action@4.1.4
       with:
         branch: gh-pages
