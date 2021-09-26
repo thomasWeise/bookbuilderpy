@@ -569,8 +569,11 @@ class Build(AbstractContextManager):
                     "any results.")
             return res
         except BaseException as be:
-            log(f"The build process has FAILED with error '{be}'.")
-            tb.print_exception(type(be), be, be.__traceback__)
+            exinfo = "  ".join(tb.format_exception(etype=type(be),
+                                                   value=be,
+                                                   tb=be.__traceback__))
+            log(f"The build process has FAILED with error '{be}':"
+                f"\n  {exinfo}")
             if exit_on_error:
                 sys.exit(1)
             raise be
