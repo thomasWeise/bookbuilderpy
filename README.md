@@ -6,7 +6,10 @@ A [Python&nbsp;3](https://docs.python.org/3)-based environment for the automated
 
 1. [Introduction](#1-introduction)
 2. [Installation and Local Use](#2-installation-and-local-use)
-3. [Provided Functionality](#3-provided-functionality)
+   1. [Local Installation and Use](#21-local-installation-and-use)
+   2. [Using the Docker Image](#22-using-the-docker-image)
+   3. [Examples](#23-examples)
+4. [Provided Functionality](#3-provided-functionality)
     1. [Basic commands provided by `pandoc` and off-the-shelf filters](#31-basic-commands-provided-by-pandoc-and-off-the-shelf-filters)
     2. [`bookbuilderpy`-specific commands](#32-bookbuilderpy-specific-commands)
     3. [Metadata](#33-metadata)
@@ -15,17 +18,17 @@ A [Python&nbsp;3](https://docs.python.org/3)-based environment for the automated
         3. [Website Construction](#333-website-construction)
         4. [Other Metadata](#334-other-metadata)
     4. [Graphics](#34-graphics)
-4. [GitHub Pipeline](#4-github-pipeline)
+5. [GitHub Pipeline](#4-github-pipeline)
     1. [The Repository](#41-the-repository)
     2. [The GitHub Action](#42-the-github-action)
-5. [Related Projects and Components](#5-related-projects-and-components)
+6. [Related Projects and Components](#5-related-projects-and-components)
     1. [Own Contributed Projects and Components](#51-own-contributed-projects-and-components)
     2. [Related Projects and Components Used](#52-related-projects-and-components-used)
-6. [License](#6-license)
+7. [License](#6-license)
     1. [Wandmalfarbe/pandoc-latex-template](#61-wandmalfarbepandoc-latex-template)
     2. [tajmone/pandoc-goodies HTML Template](#62-tajmonepandoc-goodies-html-template)
     3. [MathJax](#63-mathjax)
-7. [Contact](#7-contact)
+8. [Contact](#7-contact)
 
 ## 1. Introduction
 
@@ -38,15 +41,17 @@ The goal of this package is to provide you with a pipeline that can:
   - automatically generate a website that lists all produced files so that you can copy everything to a web folder and offer your work for download without any further hassle.
 
 This [Python&nbsp;3](https://docs.python.org/3) package requires that [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
-Additionally, you should have installed  [Firefox](https://www.mozilla.org/en-US/firefox/new/), the [Firefox geckodriver](https://github.com/mozilla/geckodriver), and [`ghostscript`](http://ghostscript.com/).
+Additionally, you should have installed [git](http://en.wikipedia.org/wiki/Git), [Firefox](https://www.mozilla.org/en-US/firefox/new/), the [Firefox geckodriver](https://github.com/mozilla/geckodriver), and [ghostscript](http://ghostscript.com/).
 Most likely, this package will only work under [Linux](https://www.linux.org) &ndash; at least I did not test it under Windows.
 All commands and examples in the following require [Linux](https://www.linux.org).
 
 ## 2. Installation and Local Use
 
 The following examples are for [Ubuntu](https://ubuntu.com) [Linux](https://www.linux.org).
-Under other flavors, they may work differently and different commands may be required.
+Under other Linux flavors, they may work differently and different commands may be required.
 Execute the examples at your own risk.
+
+### 2.1. Local Installation and Use
 
 You can easily install this package and its required packages using [`pip`](https://pypi.org/project/pip/) by doing
 
@@ -55,6 +60,9 @@ pip install git+https://github.com/thomasWeise/bookbuilderpy.git
 ```
 
 If you want the full tool chain, though, you also need  [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) and run all of it on a Linux system.
+
+### 2.2. Using the Docker Image
+
 So it might be easier to just use the [docker container](http://hub.docker.com/r/thomasweise/docker-bookbuilderpy/) that comes with everything pre-installed.
 You can then run it as:
 
@@ -71,7 +79,11 @@ Here, it is assumed that
 - `BOOK_ROOT_MD_FILE` is the root file of your book, say `book.md` (in which case, the full path of `book.md` would be `/home/my/book/sources/book.md`). Notice that you can specify only a single file, but this file can reference other files in sub-directories of `INPUT_DIR` by using commands such as  `\rel.input` (see [below](#32-bookbuilderpy-specific-commands)).
 - `OUTPUT_DIR` is the output directory where the compiled files should be placed, e.g., `/home/my/book/compiled/`. This is where the resulting files will be placed.
 
-If you want to try the above, you can clone the "minimal working example" repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe) and run the process to see what it does as follows **execute the code below at your own risk**:
+### 2.3. Examples
+
+If you are a learning-by-doing person, you can clone the "minimal working example" repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe).
+This repository contains a book template showcasing many of the important commands and features of the system.
+You can do that cloning under [Ubuntu](https://ubuntu.com) Linux and run the build process on this repository with docker as follows, **but execute the code below at your own risk!**
 
 ```shell
 mkdir example
@@ -91,6 +103,8 @@ You can now peek into the `result` folder.
 It will contain a file `index.html`, which is the automatically generated (bare minimum) book website, from which you can access all other generated files.
 
 Notice that you can also automate your whole book building *and publishing* process using our [GitHub Pipeline](#4-github-pipeline) later discussed in [Section&nbsp;4](#4-github-pipeline).
+Another example for the use of this pipeline is our book [Optimization Algorithms](https://thomasWeise.github.io/oa).
+The source code of this book is in the GitHub repository [thomasWeise/oa](https://github.com/thomasWeise/oa).
 
 ## 3. Provided Functionality
 
