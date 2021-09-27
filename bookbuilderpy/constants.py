@@ -90,7 +90,7 @@ META_REPO_URL: Final[str] = "url"
 META_LANGS: Final[str] = "langs"
 #: the language id
 META_LANG_ID: Final[str] = META_REPO_ID
-#: the language namehe
+#: the language name
 META_LANG_NAME: Final[str] = "name"
 #: The name of the current language.
 META_CUR_LANG_NAME: Final[str] = f"{META_LANG}.{META_LANG_NAME}"

@@ -155,7 +155,7 @@ class Build(AbstractContextManager):
                         f"Cannot access {key} if build is not based on repo.")
                 return None
             if key == bc.META_REPO_INFO_URL:
-                return self.__repo.url
+                return self.__repo.get_base_url()
             if key == bc.META_REPO_INFO_DATE:
                 return self.__repo.date_time
             if key == bc.META_REPO_INFO_COMMIT:

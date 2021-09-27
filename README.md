@@ -182,7 +182,7 @@ The following new commands are added:
   + `year`: the year when the book building process was started,
   + `lang`: the current [language](#331-language-specification-and-resolution) id, or `en` if none is specified
   + `locale`: the locale inferred from the current language id
-  + `name`: the current language name, or `English` if none is specified (this is a bit a dodgy property name, but for now I will stick with it&hellip;)
+  + `lang.name`: the current language name, or `English` if none is specified
   + `repo.name`: if it was detected that the build process is applied to a git repository checkout, then this is the repository name, e.g., `thomasweise/bookbuilderpy`; otherwise querying this property will fail the build process.
   + `repo.url`:  if it was detected that the build process is applied to a git repository check out, then this is the repository url, such as `https://github.com/thomasweise/bookbuilderpy`; otherwise querying this property will fail the build process.
   + `repo.commit`:  if it was detected that the build process is applied to a git repository checkout, then this is the commit id of the checkout; otherwise querying this property will fail the build process.

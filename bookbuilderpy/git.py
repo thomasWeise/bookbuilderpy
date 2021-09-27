@@ -160,6 +160,21 @@ class Repo:
 
         return Repo(dest, url, commit, date_time)
 
+    def get_base_url(self) -> str:
+        """
+        Get the base url of this repository.
+
+        :return: the base url of this repository
+        :rtype: str
+        """
+        base_url = self.url
+        base_url_lower = base_url.lower()
+        if base_url_lower.startswith("ssh://git@github."):
+            base_url = f"https://{enforce_non_empty_str(base_url[10:])}"
+        if base_url_lower.endswith(".git"):
+            base_url = enforce_non_empty_str(base_url[:-4])
+        return enforce_url(base_url)
+
     def make_url(self, relative_path: str) -> str:
         """
         Make a url relative to this repository.
@@ -172,14 +187,9 @@ class Repo:
         pt.ensure_file_exist()
         path: Final[str] = pt.relative_to(self.path)
 
-        base_url = self.url
-        base_url_lower = base_url.lower()
-        if base_url_lower.startswith("ssh://git@github."):
-            base_url = f"https://{enforce_non_empty_str(base_url[10:])}"
-        if base_url_lower.endswith(".git"):
-            base_url = enforce_non_empty_str(base_url[:-4])
+        base_url = self.get_base_url()
 
-        if "github.com" in base_url_lower:
+        if "github.com" in base_url.lower():
             base_url = f"{base_url}/blob/{self.commit}/{path}"
         else:
             base_url = f"{base_url}/{path}"

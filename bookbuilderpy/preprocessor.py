@@ -39,7 +39,7 @@ def preprocess(text: str,
     def __get_repo(repo_id, info_id) -> str:
         gitrepo: Final[Repo] = get_repo(repo_id)
         if info_id == bc.META_REPO_INFO_URL:
-            return gitrepo.url
+            return gitrepo.get_base_url()
         if info_id == bc.META_REPO_INFO_DATE:
             return gitrepo.date_time
         if info_id == bc.META_REPO_INFO_COMMIT:

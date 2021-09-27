@@ -46,6 +46,17 @@ def load_html_github_template(dest: Path) -> Path:
         text = text.replace(',"Segoe UI Symbol"', "")
         text = text.replace('div.line-block{line-height:0.85;',
                             'div.line-block{')
+        start1 = text.find(".markdown-body p,")
+        if start1 > 0:
+            start2 = text.find("{", start1)
+            if start2 > start1:
+                end1 = text.find("}", start1)
+                if end1 > start2:
+                    replacer = "margin-top:0;"
+                    found = text.find(replacer, start2)
+                    if start2 < found < end1:
+                        text = f"{text[:found]}margin-top:16px;" \
+                               f"{text[found+len(replacer):]}"
 
         dst_file = dest.resolve_inside(name)
         dst_file.write_all(text)
