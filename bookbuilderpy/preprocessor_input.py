@@ -49,7 +49,7 @@ def __load_input(input_file: str,
                                     func=__relative_input,
                                     n=1,
                                     strip_white_space=True,
-                                    wrap_in_newlines=1)
+                                    wrap_in_newlines=2)
 
     def __relative_code(_label: str,
                         _caption: str,
