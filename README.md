@@ -60,24 +60,24 @@ And if your student use hand-held devices or mobile phones, maybe you want to ha
 This means you have at least three or four compile chains to get the right output and probably will run into problems with the conversations, too.
 With our tool suite, all of this can be fully automated.
 
-Especially, in the field of computer science, teaching material may also include code snippets.
+Especially, in the field of computer science, teaching material may also include [code snippets](#32-bookbuilderpy-specific-commands).
 If you just write the code snippets into the book text, you will probably commit errors and produce examples that your students cannot execute.
 I am a fan of unit testing of code and of providing examples and software that the students can really look at and use and execute.
 What I want is to have one or multiple GitHub repositories with my example codes.
 This would allow to have unit testing and full-blown builds for the example codes.
 Then, in my book's text, I just want to reference (pieces of) files from these repositories and the book build chain should copy them into the book.
-With our tool suite, this can be done.
+With our tool suite, [this can be done](#332-git-repositories).
 
 Actually, maybe I want to write the whole book on GitHub directly.
 The "full" realization of the idea of our tool chain is that also the book text itself would be located in a GitHub repository.
-You can write the text there.
+You can write the text there, just as we did in our [examples given later](#23-examples).
 Whenever you commit a set of changes, the book will be compiled to the formats mentioned above and automatically uploaded to the book's website.
 There, it is ready for download for your students and always in the most up-to-date version.
 If you do this, then you could also collaboratively work on a book, i.e., multiple authors could work on the text and commit to the same repository.
 Additionally, students could submit an "issue" to the repository if they find that something is unclear or discover an error.
 
 This is the way we want to use our tool chain (although you can also run it just locally on your own computer).
-Additionally, our tool chain supports writing the book in multiple languages in parallel.
+Additionally, our tool chain supports writing the book in [multiple languages](#331-language-specification-and-resolution) in parallel.
 But more about this later.
 
 ## 2. Installation and Local Use
@@ -121,7 +121,9 @@ Here, it is assumed that
 
 If you are a learning-by-doing person, you can clone the "minimal working example" repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe).
 This repository contains a book template showcasing many of the important commands and features of the system.
-You can do that cloning under [Ubuntu](https://ubuntu.com) Linux and run the build process on this repository with docker as follows, **but execute the code below at your own risk!**
+It is automatically compiled and published on each commit.
+The website, which then is re-generated automatically each time, is <https://thomasWeise.github.io/bookbuilderpy-mwe>
+You can run the example under [Ubuntu](https://ubuntu.com) Linux by cloning the repository executing the build process on this repository with docker as follows, **but execute the code below at your own risk!**
 
 ```shell
 mkdir example
