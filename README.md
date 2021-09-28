@@ -40,10 +40,45 @@ The goal of this package is to provide you with a pipeline that can:
   - allow the book to be written in multiple languages, and finally
   - automatically generate a website that lists all produced files so that you can copy everything to a web folder and offer your work for download without any further hassle.
 
-This [Python&nbsp;3](https://docs.python.org/3) package requires that [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
-Additionally, you should have installed [git](http://en.wikipedia.org/wiki/Git), [Firefox](https://www.mozilla.org/en-US/firefox/new/), the [Firefox geckodriver](https://github.com/mozilla/geckodriver), and [ghostscript](http://ghostscript.com/).
-Most likely, this package will only work under [Linux](https://www.linux.org) &ndash; at least I did not test it under Windows.
-All commands and examples in the following require [Linux](https://www.linux.org).
+Let us say you are a university or college lecturer or a high school teacher.
+You want to write a lecture script or a book as teaching material for your students. 
+What do you need to do?
+
+Well, you need to write the book in some form or another, maybe in [LaTeX](https://www.latex-project.org) or with some other [editor](https://www.libreoffice.org/discover/writer).
+But usually your students would not want to read it like that, instead need to "compile" it to another format.
+OK, so you write the book and compile it to, say, [pdf](https://www.iso.org/standard/75839.html).
+Then you need to deliver the book, i.e., upload it to some website so that your students can access it.
+Thus, everytime you want to improve or change your book, you have to run the process `change the text -> compile the text -> upload the result`.
+The last two steps have nothing to do with actually writing the book, they just eat away your productive time.
+With our tool suite, they can be fully automated.
+
+But let us continue.
+We said above you want to compile to [pdf](https://www.iso.org/standard/75839.html).
+This format is maybe nice for printing, but maybe not so much for reading the book in a browser.
+For this, you would want to have [html](https://www.w3.org/TR/html5/).
+And if your student use hand-held devices or mobile phones, maybe you want to have your book also in [a format](https://www.w3.org/publishing/epub32/) suitable for that.
+This means you have at least three or four compile chains to get the right output and probably will run into problems with the conversations, too.
+With our tool suite, all of this can be fully automated.
+
+Especially, in the field of computer science, teaching material may also include code snippets.
+If you just write the code snippets into the book text, you will probably commit errors and produce examples that your students cannot execute.
+I am a fan of unit testing of code and of providing examples and software that the students can really look at and use and execute.
+What I want is to have one or multiple GitHub repositories with my example codes.
+This would allow to have unit testing and full-blown builds for the example codes.
+Then, in my book's text, I just want to reference (pieces of) files from these repositories and the book build chain should copy them into the book.
+With our tool suite, this can be done.
+
+Actually, maybe I want to write the whole book on GitHub directly.
+The "full" realization of the idea of our tool chain is that also the book text itself would be located in a GitHub repository.
+You can write the text there.
+Whenever you commit a set of changes, the book will be compiled to the formats mentioned above and automatically uploaded to the book's website.
+There, it is ready for download for your students and always in the most up-to-date version.
+If you do this, then you could also collaboratively work on a book, i.e., multiple authors could work on the text and commit to the same repository.
+Additionally, students could submit an "issue" to the repository if they find that something is unclear or discover an error.
+
+This is the way we want to use our tool chain (although you can also run it just locally on your own computer).
+Additionally, our tool chain supports writing the book in multiple languages in parallel.
+But more about this later.
 
 ## 2. Installation and Local Use
 
@@ -59,7 +94,10 @@ You can easily install this package and its required packages using [`pip`](http
 pip install git+https://github.com/thomasWeise/bookbuilderpy.git
 ```
 
-If you want the full tool chain, though, you also need  [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) and run all of it on a Linux system.
+If you want the full tool chain, though, you also need [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
+Additionally, you should have installed [git](http://en.wikipedia.org/wiki/Git), [Firefox](https://www.mozilla.org/en-US/firefox/new/), the [Firefox geckodriver](https://github.com/mozilla/geckodriver), and [ghostscript](http://ghostscript.com/).
+Most likely, this package will only work under [Linux](https://www.linux.org) &ndash; at least I did not test it under Windows.
+All commands and examples in the following require [Linux](https://www.linux.org).
 
 ### 2.2. Using the Docker Image
 
