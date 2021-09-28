@@ -122,7 +122,7 @@ Here, it is assumed that
 If you are a learning-by-doing person, you can clone the "minimal working example" repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe).
 This repository contains a book template showcasing many of the important commands and features of the system.
 It is automatically compiled and published on each commit.
-The website, which then is re-generated automatically each time, is <https://thomasWeise.github.io/bookbuilderpy-mwe>
+The website, which then is re-generated automatically each time, is <https://thomasweise.github.io/bookbuilderpy-mwe>
 You can run the example under [Ubuntu](https://ubuntu.com) Linux by cloning the repository executing the build process on this repository with docker as follows, **but execute the code below at your own risk!**
 
 ```shell
@@ -143,7 +143,7 @@ You can now peek into the `result` folder.
 It will contain a file `index.html`, which is the automatically generated (bare minimum) book website, from which you can access all other generated files.
 
 Notice that you can also automate your whole book building *and publishing* process using our [GitHub Pipeline](#4-github-pipeline) later discussed in [Section&nbsp;4](#4-github-pipeline).
-Another example for the use of this pipeline is our book [Optimization Algorithms](https://thomasWeise.github.io/oa).
+Another example for the use of this pipeline is our book [Optimization Algorithms](https://thomasweise.github.io/oa).
 The source code of this book is in the GitHub repository [thomasWeise/oa](https://github.com/thomasWeise/oa).
 
 ## 3. Provided Functionality
