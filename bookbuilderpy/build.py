@@ -3,10 +3,10 @@
 import datetime
 import os
 import sys
+import traceback as tb
 from contextlib import AbstractContextManager, ExitStack
 from os.path import basename
 from typing import Final, Optional, Dict, Any, Iterable, List, Tuple
-import traceback as tb
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult

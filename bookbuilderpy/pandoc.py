@@ -1,20 +1,19 @@
 """A routine for invoking pandoc."""
 
 import os.path
-import re
 import subprocess  # nosec
 import sys
 from typing import Optional, Final, List, Callable
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File
+from bookbuilderpy.html import html_postprocess
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.pdf import pdf_postprocess
-from bookbuilderpy.html import html_postprocess
 from bookbuilderpy.resources import ResourceServer
 from bookbuilderpy.strings import enforce_non_empty_str, \
-    enforce_non_empty_str_without_ws
+    enforce_non_empty_str_without_ws, regex_sub
 from bookbuilderpy.temp import TempFile
 from bookbuilderpy.versions import TOOL_PANDOC, has_tool
 
@@ -309,12 +308,18 @@ def html(source_file: str,
                 text_2 = text[end:]
                 del text
 
-                text_2 = re.sub('<div class="csl-left-margin">(.*?)</div>',
-                                '<span class="csl-left-margin">\\1</span>',
-                                text_2, re.MULTILINE)
-                text_2 = re.sub('<div class="csl-right-inline">(.*?)</div>',
-                                '<span class="csl-right-inline">\\1</span>',
-                                text_2, re.MULTILINE)
+                text_2 = regex_sub(
+                    '\\s*<div\\s+class="\\s*csl-left-margin\\s*"\\s*>'
+                    '\\s*(.*?)\\s*</div>\\s*',
+                    '<span class="csl-left-margin">\\1</span>&nbsp;',
+                    text_2)
+
+                text_2 = regex_sub(
+                    '\\s*<div\\s+class="\\s*csl-right-inline\\s*"\\s*>'
+                    '\\s*(.*?)\\s*</div>\\s*',
+                    '<span class="csl-right-inline">\\1</span>',
+                    text_2)
+
                 text_2 = text_2.replace(
                     ' class="csl-entry" role="doc-biblioentry">',
                     ' class="csl-entry" role="doc-biblioentry" '

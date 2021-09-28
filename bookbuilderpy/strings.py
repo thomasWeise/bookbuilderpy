@@ -1,5 +1,6 @@
 """Some utility methods for string processing."""
 import datetime
+import re
 import string
 from typing import Iterable, List, Union, Tuple, Final, Dict, Optional
 from urllib.parse import urlparse
@@ -262,3 +263,22 @@ def to_string(obj,
         return merge.join(seq)
 
     return str(obj).strip()
+
+
+def regex_sub(search: str,
+              replace: str,
+              inside: str) -> str:
+    """
+    Replace all occurrences of 'search' in 'inside' with 'replace'.
+
+    :param str search: the regular expression to search
+    :param str replace: the regular expression to replace it with
+    :param str inside: the string in which to search/replace
+    :return: the new string after the recursive replace
+    :rtype: str
+    """
+    while True:
+        text = re.sub(search, replace, inside, re.MULTILINE)
+        if text == inside:
+            return inside
+        inside = text
