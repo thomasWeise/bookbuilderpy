@@ -1,4 +1,4 @@
-"""The base class with the information of a build."""
+"""The logger function."""
 
 import datetime
 
@@ -9,4 +9,4 @@ def log(message: str) -> None:
 
     :param str message: the message
     """
-    print(f"{datetime.datetime.now()}: {message}")
+    print(f"{datetime.datetime.now()}: {message}", flush=True)

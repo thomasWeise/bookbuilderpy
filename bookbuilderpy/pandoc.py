@@ -1,8 +1,6 @@
 """A routine for invoking pandoc."""
 
 import os.path
-import subprocess  # nosec
-import sys
 from typing import Optional, Final, List, Callable
 
 import bookbuilderpy.constants as bc
@@ -12,6 +10,7 @@ from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.pdf import pdf_postprocess
 from bookbuilderpy.resources import ResourceServer
+from bookbuilderpy.shell import shell
 from bookbuilderpy.strings import enforce_non_empty_str, \
     enforce_non_empty_str_without_ws, regex_sub
 from bookbuilderpy.temp import TempFile
@@ -148,12 +147,7 @@ def pandoc(source_file: str,
         locale = enforce_non_empty_str_without_ws(locale)
         cmd.append(f"-V lang={locale.replace('_', '-')}")
 
-    ret = subprocess.run(cmd, check=True, text=True, timeout=600,  # nosec
-                         stdout=sys.stdout, stderr=sys.stderr,  # nosec
-                         cwd=input_dir)  # nosec
-    if ret.returncode != 0:
-        raise ValueError(
-            f"Error when executing pandoc command '{cmd}'.")
+    shell(cmd, timeout=600, cwd=input_dir)
 
     if template_file:
         os.remove(template_file)
@@ -162,8 +156,8 @@ def pandoc(source_file: str,
 
     res = File(output_file)
 
-    log(f"finished applying pandoc call '{cmd}', got output file "
-        f"'{res.path}' of size '{res.size}'.")
+    log(f"finished applying pandoc, got output file "
+        f"'{res.path}' of size {res.size} bytes.")
     return res
 
 
@@ -404,10 +398,6 @@ def azw3(epub_file: str) -> File:
     filename, _ = Path.split_prefix_suffix(os.path.basename(input_file))
     dest_file = Path.resolve_inside(input_dir, f"{filename}.azw3")
     cmd = ["ebook-convert", input_file, dest_file, "--embed-all-fonts"]
-    ret = subprocess.run(cmd, check=True, text=True, timeout=360,  # nosec
-                         cwd=input_dir)  # nosec
-    if ret.returncode != 0:
-        raise ValueError(
-            f"Error when executing calibre command '{cmd}'.")
+    shell(cmd, timeout=360, cwd=input_dir)
 
     return File(dest_file)

@@ -1,14 +1,13 @@
 """Tools for interacting with git."""
 import datetime
 import re
-import subprocess  # nosec
-import sys
 from dataclasses import dataclass
 from typing import Final
 from typing import Optional
 
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
+from bookbuilderpy.shell import shell
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
     enforce_non_empty_str, datetime_to_datetime_str, enforce_url
 from bookbuilderpy.versions import TOOL_GIT, has_tool
@@ -78,14 +77,10 @@ class Repo:
         dest.ensure_dir_exists()
         url = enforce_url(url)
         s = f" repository '{url}' to directory '{dest}'"
-        log(f"starting to load{s}.")
-        ret = subprocess.run([TOOL_GIT, "-C", dest, "clone",  # nosec
-                              "--depth", "1", url, dest], text=True,  # nosec
-                             stdout=sys.stdout, stderr=sys.stderr,  # nosec
-                             check=True, timeout=300)  # nosec
-        if ret.returncode != 0:
-            raise ValueError(f"Error when loading{s}.")
-
+        log(f"starting to load{s} via '{TOOL_GIT}'.")
+        shell([TOOL_GIT, "-C", dest, "clone",
+               "--depth", "1", url, dest], timeout=300,
+              cwd=dest)
         log(f"successfully finished loading{s}.")
 
         return Repo.from_local(path=dest, url=url)
@@ -107,16 +102,10 @@ class Repo:
         dest: Final[Path] = Path.path(path)
         dest.enforce_dir()
 
-        log(f"checking commit information of repo '{dest}'.")
-
-        ret = subprocess.run([TOOL_GIT, "-C", dest, "log",  # nosec
-                              "--no-abbrev-commit"], check=True,  # nosec
-                             text=True, stdout=subprocess.PIPE,  # nosec
-                             timeout=120)  # nosec
-        if ret.returncode != 0:
-            raise ValueError(
-                f"Error when loading commit information for '{dest}'.")
-        stdout: str = enforce_non_empty_str(ret.stdout)
+        log(f"checking commit information of repo '{dest}' via '{TOOL_GIT}'.")
+        stdout: str = enforce_non_empty_str(shell(
+            [TOOL_GIT, "-C", dest, "log", "--no-abbrev-commit"], timeout=120,
+            cwd=dest, wants_stdout=True))
 
         match = re.search("^\\s*commit\\s+(.+?)\\s+", stdout,
                           flags=re.MULTILINE)
@@ -140,14 +129,10 @@ class Repo:
             f"for repo '{dest}'.")
 
         if url is None:
-            ret = subprocess.run([TOOL_GIT, "-C", dest, "config",  # nosec
-                                  "--get", "remote.origin.url"],  # nosec
-                                 check=True, text=True,  # nosec
-                                 stdout=subprocess.PIPE, timeout=120)  # nosec
-            if ret.returncode != 0:
-                raise ValueError(
-                    f"Error when loading origin url information of '{dest}'.")
-            url = enforce_non_empty_str(ret.stdout)
+            log(f"applying '{TOOL_GIT}' to get url information.")
+            url = enforce_non_empty_str(shell(
+                [TOOL_GIT, "-C", dest, "config", "--get", "remote.origin.url"],
+                timeout=120, cwd=dest, wants_stdout=True))
             url = enforce_non_empty_str_without_ws(
                 url.strip().split("\n")[0].strip())
             if url.endswith("/.git"):

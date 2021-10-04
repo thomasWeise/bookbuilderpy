@@ -1,12 +1,12 @@
 """Routines for compressing lists of files."""
 
 import os.path
-import subprocess  # nosec
 from typing import Union, Iterable, List
 
 from bookbuilderpy.build_result import File
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
+from bookbuilderpy.shell import shell
 from bookbuilderpy.temp import TempFile
 from bookbuilderpy.versions import TOOL_TAR, TOOL_ZIP, TOOL_XZ, has_tool
 
@@ -82,12 +82,8 @@ def compress_xz(source: Iterable[Union[Path, File, str]],
         tf.write_all(
             f'#!/bin/bash\n{TOOL_TAR} -c "{paths}" | '
             f'{TOOL_XZ} -v -9e -c > "{out}"\n')
+        shell(["sh", tf], timeout=360, cwd=base_dir)
 
-        ret = subprocess.run(["sh", tf], check=True, text=True,  # nosec
-                             timeout=360, cwd=base_dir)  # nosec
-
-    if ret.returncode != 0:
-        raise ValueError("Error when executing tar.xz compressor.")
     return File(out)
 
 
@@ -131,9 +127,5 @@ def compress_zip(source: Iterable[Union[Path, File, str]],
     files.insert(0, "-UN=UTF8")
     files.insert(0, TOOL_ZIP)
 
-    ret = subprocess.run(files, check=True, text=True,  # nosec
-                         timeout=360, cwd=base_dir)  # nosec
-
-    if ret.returncode != 0:
-        raise ValueError("Error when executing zip compressor.")
+    shell(files, timeout=360, cwd=base_dir)  # nosec
     return File(out)

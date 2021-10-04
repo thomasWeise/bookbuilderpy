@@ -1,4 +1,4 @@
-"""The state of a build."""
+"""The build process: The main class of the book building tool chain."""
 
 import datetime
 import os
@@ -563,17 +563,23 @@ class Build(AbstractContextManager):
             with Build(input_file, output_dir, True) as bd:
                 bd.build()
                 res = tuple(bd.__results)
+            sys.stdout.flush()
+            sys.stderr.flush()
             if len(res) <= 0:
                 raise ValueError(
                     f"Build '{input_file}' -> '{output_dir}' did not produce "
                     "any results.")
             return res
         except BaseException as be:
+            sys.stdout.flush()
+            sys.stderr.flush()
             exinfo = "  ".join(tb.format_exception(etype=type(be),
                                                    value=be,
                                                    tb=be.__traceback__))
             log(f"The build process has FAILED with error '{be}':"
                 f"\n  {exinfo}")
+            sys.stdout.flush()
+            sys.stderr.flush()
             if exit_on_error:
                 sys.exit(1)
             raise be

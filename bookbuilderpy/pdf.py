@@ -1,11 +1,10 @@
 """Post-process PDF files."""
 
-import subprocess  # nosec
-import sys
 from os.path import exists, dirname
 
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
+from bookbuilderpy.shell import shell
 from bookbuilderpy.versions import TOOL_GHOSTSCRIPT, has_tool
 
 
@@ -75,12 +74,7 @@ def pdf_postprocess(in_file: str,
                f'-sOutputFile="{output}"',
                source,
                '-c "<</NeverEmbed [ ]>> setdistillerparams"']
-        ret = subprocess.run(cmd, check=True, text=True, timeout=600,  # nosec
-                             stdout=sys.stdout, stderr=sys.stderr,  # nosec
-                             cwd=Path.directory(dirname(source)))  # nosec
-        if ret.returncode != 0:
-            raise ValueError(
-                f"Error when executing pandoc command '{cmd}'.")
+        shell(cmd, timeout=600, cwd=dirname(source))
     else:
         log(f"'{TOOL_GHOSTSCRIPT}' not installed, copying files directly.")
         Path.copy_file(source, output)
