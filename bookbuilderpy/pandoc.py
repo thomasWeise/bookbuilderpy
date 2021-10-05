@@ -1,7 +1,7 @@
 """A routine for invoking pandoc."""
 
 import os.path
-from typing import Optional, Final, List, Callable
+from typing import Optional, Final, List, Callable, Dict
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File
@@ -15,6 +15,37 @@ from bookbuilderpy.strings import enforce_non_empty_str, \
     enforce_non_empty_str_without_ws, regex_sub
 from bookbuilderpy.temp import TempFile
 from bookbuilderpy.versions import TOOL_PANDOC, has_tool
+
+
+#: The meanings of the pandoc exit codes.
+__EXIT_CODES: Dict[int, str] = {
+    3: "PandocFailOnWarningError",
+    4: "PandocAppError",
+    5: "PandocTemplateError",
+    6: "PandocOptionError",
+    21: "PandocUnknownReaderError",
+    22: "PandocUnknownWriterError",
+    23: "PandocUnsupportedExtensionError",
+    24: "PandocCiteprocError",
+    31: "PandocEpubSubdirectoryError",
+    43: "PandocPDFError",
+    44: "PandocXMLError",
+    47: "PandocPDFProgramNotFoundError",
+    61: "PandocHttpError",
+    62: "PandocShouldNeverHappenError",
+    63: "PandocSomeError",
+    64: "PandocParseError",
+    65: "PandocParsecError",
+    66: "PandocMakePDFError",
+    67: "PandocSyntaxMapError",
+    83: "PandocFilterError",
+    91: "PandocMacroLoop",
+    92: "PandocUTF8DecodingError",
+    93: "PandocIpynbDecodingError",
+    94: "PandocUnsupportedCharsetError",
+    97: "PandocCouldNotFindDataFileError",
+    99: "PandocResourceNotFound"
+}
 
 
 def pandoc(source_file: str,
@@ -147,7 +178,7 @@ def pandoc(source_file: str,
         locale = enforce_non_empty_str_without_ws(locale)
         cmd.append(f"-V lang={locale.replace('_', '-')}")
 
-    shell(cmd, timeout=600, cwd=input_dir)
+    shell(cmd, timeout=600, cwd=input_dir, exit_code_to_str=__EXIT_CODES)
 
     if template_file:
         os.remove(template_file)

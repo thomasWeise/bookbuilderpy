@@ -1,7 +1,7 @@
 """The tool for invoking shell commands."""
 
 import subprocess  # nosec
-from typing import Union, Iterable, Optional
+from typing import Union, Iterable, Optional, Dict
 
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
@@ -10,7 +10,8 @@ from bookbuilderpy.path import Path
 def shell(command: Union[str, Iterable[str]],
           timeout: int = 3600,
           cwd: Optional[str] = None,
-          wants_stdout: bool = False) -> Optional[str]:
+          wants_stdout: bool = False,
+          exit_code_to_str: Optional[Dict[int, str]] = None) -> Optional[str]:
     """
     Execute a text-based command on the shell.
 
@@ -25,6 +26,8 @@ def shell(command: Union[str, Iterable[str]],
     :param Optional[str] cwd: the directory to run inside
     :param bool wants_stdout: if True, the stdout is returned,
         if False, None is returned
+    :param Optional[Dict[int, str]] exit_code_to_str: an optional map
+        converting erroneous exit codes to strings
     """
     if timeout < 0:
         raise ValueError(f"Timeout must be positive, but is {timeout}.")
@@ -55,6 +58,11 @@ def shell(command: Union[str, Iterable[str]],
 
     logging = [f"finished executing {execstr}.",
                f"obtained return value {ret.returncode}."]
+
+    if (ret.returncode != 0) and exit_code_to_str:
+        ec: Optional[str] = exit_code_to_str.get(ret.returncode, None)
+        if ec:
+            logging.append(f"meaning of return value: {ec}")
 
     stdout = ret.stdout
     if stdout:
