@@ -19,7 +19,7 @@ jobs:
 # then execute the actual build process
     - name: execute the make Build
       run: make
-# the remove mopitpy
+# the remove bookbuilderpy
     - name: purge local bookbuilderpy installation
       run: |
         pip uninstall -y bookbuilderpy

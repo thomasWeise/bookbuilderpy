@@ -10,4 +10,4 @@ def test_resources():
             for s in ["association-for-computing-machinery.csl",
                       "eisvogel.tex",
                       "GitHub.html5"]:
-                load_resource(s, src, dst).ensure_file_exist()
+                load_resource(s, src, dst).ensure_file_exists()

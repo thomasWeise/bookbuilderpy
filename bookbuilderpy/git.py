@@ -169,7 +169,7 @@ class Repo:
         :rtype: str
         """
         pt: Final[Path] = self.path.resolve_inside(relative_path)
-        pt.ensure_file_exist()
+        pt.ensure_file_exists()
         path: Final[str] = pt.relative_to(self.path)
 
         base_url = self.get_base_url()

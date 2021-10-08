@@ -216,7 +216,7 @@ class Path(str):
         self.enforce_contains(opath)
         return opath
 
-    def ensure_file_exist(self) -> bool:
+    def ensure_file_exists(self) -> bool:
         """
         Atomically ensure that the file exists and create it otherwise.
 
@@ -241,6 +241,17 @@ class Path(str):
         os.makedirs(name=self, exist_ok=True)
         self.enforce_dir()
 
+    def __open_for_read(self) -> io.TextIOWrapper:
+        """
+        Open this file for reading.
+
+        :return: the file open for reading
+        :rtype: io.TextIOWrapper
+        """
+        return cast(io.TextIOWrapper, io.open(
+            self, mode="rt", encoding=_get_text_encoding(self),
+            errors="strict"))
+
     def read_all_list(self) -> List[str]:
         """
         Read all the lines in a file.
@@ -249,7 +260,7 @@ class Path(str):
         :rtype: List[str]
         """
         self.enforce_file()
-        with io.open(self, "rt", encoding=_get_text_encoding(self)) as reader:
+        with self.__open_for_read() as reader:
             ret = reader.readlines()
         if not isinstance(ret, List):
             raise TypeError("List of strings expected, but "
@@ -266,7 +277,7 @@ class Path(str):
         :rtype: str
         """
         self.enforce_file()
-        with io.open(self, "rt", encoding=_get_text_encoding(self)) as reader:
+        with self.__open_for_read() as reader:
             ret = reader.read()
         if not isinstance(ret, str):
             raise TypeError("String expected, but "
@@ -275,17 +286,27 @@ class Path(str):
             raise ValueError(f"File '{self}' contains no text.")
         return ret
 
+    def __open_for_write(self) -> io.TextIOWrapper:
+        """
+        Open the file for writing.
+
+        :return: the text io wrapper for writing
+        :rtype: io.TextIOWrapper
+        """
+        return cast(io.TextIOWrapper, io.open(
+            self, mode="wt", encoding="utf-8", errors="strict"))
+
     def write_all(self, contents: Union[str, Iterable[str]]) -> None:
         """
         Read all the lines in a file.
 
         :param Iterable[str] contents: the contents to write
         """
-        self.ensure_file_exist()
+        self.ensure_file_exists()
         if not isinstance(contents, (str, Iterable)):
             raise TypeError(
                 f"Excepted str or Iterable, got {type(contents)}.")
-        with io.open(self, "wt", encoding="utf-8") as writer:
+        with self.__open_for_write() as writer:
             all_text = contents if isinstance(contents, str) \
                 else "\n".join(contents)
             if len(all_text) <= 0:
