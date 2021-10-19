@@ -271,11 +271,21 @@ def format_python(code: Iterable[str],
 
 
 def preprocess_python(code: List[str],
-                      lines: Optional[List[int]],
-                      labels: Optional[List[str]],
-                      args: Set[str]) -> str:
-    """
+                      lines: Optional[List[int]] = None,
+                      labels: Optional[List[str]] = None,
+                      args: Optional[Set[str]] = None) -> str:
+    r"""
     Preprocess Python code.
+
+    First, we select all lines of the code we want to keep.
+    If labels are defined, then lines can be kept as ranges or as single
+    lines.
+    Otherwise, all lines are selected in this step.
+
+    Then, if line numbers are provided, we selected the lines based on the
+    line numbers from the lines we have preserved.
+
+    Finally, the Python formatter is applied.
 
     :param List[str] code: the code loaded from a file
     :param Optional[List[int]] lines: the lines to keep, or None if we
@@ -283,9 +293,16 @@ def preprocess_python(code: List[str],
     :param Optional[List[str]] labels: a list of labels marking start and end
         of code snippets to include
     :param Set[str] args: the arguments for the code formatter
+
+    >>> pc = ["def a():", "    b=c", "    return x"]
+    >>> preprocess_python(pc)
+    'def a():\n    b=c\n    return x\n'
+    >>> pc = ["# start x", "def a():", " b=c # -x", "    return x", "# end x"]
+    >>> preprocess_python(pc, labels=["x"])
+    'def a():\n    return x\n'
     """
     keep_lines: List[str]
-    if labels is None:
+    if not labels:
         keep_lines = code
     else:
         keep_lines = []
@@ -293,27 +310,47 @@ def preprocess_python(code: List[str],
             label = label.strip()
             start_label = f"# start {label}"
             end_label = f"# end {label}"
+            inc_label = f"# +{label}"
+            exc_label = f"# -{label}"
             inside: bool = False
             found: bool = True
-            for cl in code:
-                cls = cl.strip()
-                if inside:
-                    if cls == end_label:
+
+            for cl in code:  # iterate over all code lines
+                cls = cl.strip()  # ignore white space when processing labels
+                if inside:  # we are in a selected section
+                    if cls == end_label:  # end of selected section
                         inside = False
+                    elif cls.endswith(exc_label):
+                        continue  # exclude single line
                     else:
-                        keep_lines.append(cl)
-                        found = True
-                else:
-                    inside = (cls == start_label)
+                        keep_lines.append(cl.rstrip())  # keep line
+                        found = True  # we got a line
+                elif cls == start_label:
+                    inside = True  # found the beginning of a selected range
+                elif cls.endswith(inc_label):  # single line to include
+                    keep_lines.append(cl[:len(cl) - len(inc_label)].rstrip())
+                    found = True
+
             if not found:
-                raise ValueError(f"Did not find label {label}.")
-    if lines is not None:
+                raise ValueError(
+                    f"Did not find any line to include for label {label}.")
+
+    if lines:  # select the lines we want to keep
         keep_lines = [keep_lines[i] for i in lines]
+
     if len(keep_lines) <= 0:
-        raise ValueError("Empty code?")
-    strip_docstrings: bool = "doc" not in args
-    strip_comments: bool = "comments" not in args
-    strip_hints: bool = "hints" not in args
+        raise ValueError(
+            f"Empty code after applying labels {labels} and lines {lines}.?")
+
+    # set up arguments
+    strip_docstrings: bool = True
+    strip_comments: bool = True
+    strip_hints: bool = True
+    if args:
+        strip_docstrings = "doc" not in args
+        strip_comments = "comments" not in args
+        strip_hints = "hints" not in args
+
     return lines_to_str(format_python(keep_lines,
                                       strip_docstrings=strip_docstrings,
                                       strip_comments=strip_comments,
