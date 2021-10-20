@@ -63,6 +63,8 @@ def __base64_unpacker_js(args) -> str:
     """
     Convert the base64 encoded javascript to normal text.
 
+    This does not seem to work?
+
     :param args: the arguments
     :return: the text
     :rtype: str
@@ -74,6 +76,8 @@ def __base64_unpacker_js(args) -> str:
 def __base64_unpacker_css(args) -> str:
     """
     Convert the base64 encoded css to normal text.
+
+    This does not seem to work?
 
     :param args: the arguments
     :return: the text

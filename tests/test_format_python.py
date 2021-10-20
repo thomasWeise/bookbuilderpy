@@ -2,7 +2,8 @@
 
 from typing import Tuple
 
-from bookbuilderpy.format_python import format_python, preprocess_python
+from bookbuilderpy.format_python import format_python, preprocess_python, \
+    select_lines
 
 
 # noinspection PyPackageRequirements
@@ -74,6 +75,9 @@ def test_format_python_1():
          "    return f\"hc_{name}\" if (len(name) > 0) else \"hc\"")
     assert ret == t
 
+    ret2 = preprocess_python(s)
+    assert ret2 == ("\n".join(t) + "\n")
+
 
 def test_format_python_2():
     code = ["# start book",
@@ -99,3 +103,197 @@ def test_format_python_2():
     result = preprocess_python(code, labels=["book"])
 
     assert result == merged
+
+
+def test_format_python_3():
+    code = ["a = 5",
+            "# start x",
+            "b = 7",
+            "# end x",
+            "c = 8",
+            "# start x",
+            "d = 9",
+            "# end x",
+            "e = 10"]
+    expected = ["b = 7",
+                "d = 9"]
+    merged = "\n".join(expected) + "\n"
+    result = preprocess_python(code, labels=["x"])
+    assert result == merged
+
+
+def test_format_python_4():
+    code = ["# start y",
+            "def cyber():",
+            "    #: this is a comment",
+            "    a = 1",
+            "    # end y",
+            "    b = 2"]
+    expected = ["def cyber():",
+                "    a = 1"]
+    merged = "\n".join(expected) + "\n"
+    result = preprocess_python(code, labels=["y"])
+    assert result == merged
+
+
+def test_format_python_5():
+    code = ["# start y",
+            "def cyber():",
+            '    """',
+            "    This method does cyber",
+            '    """',
+            "    #: this is a comment",
+            "    a = 1",
+            "    # end y",
+            "    b = 2"]
+    expected = ["def cyber():",
+                "    a = 1"]
+    merged = "\n".join(expected) + "\n"
+    result = preprocess_python(code, labels=["y"])
+    assert result == merged
+
+
+def test_format_python_6():
+    code = ["b = 2",
+            "# start y",
+            "c = 3",
+            "# end y",
+            "d = 4",
+            "# start y",
+            "# this is a comment",
+            "e = 5",
+            "# end y",
+            "f = 6"]
+    expected = ["c = 3",
+                "e = 5"]
+    merged = "\n".join(expected) + "\n"
+    result = preprocess_python(code, labels=["y"])
+    assert result == merged
+
+
+def test_format_python_7():
+    code = ["# start y",
+            "def cyber():",
+            '    """',
+            "    This method does cyber",
+            '    """',
+            "    #: this is a comment",
+            "    a = 1",
+            "    # end y",
+            "    b = 2",
+            "    # start y",
+            "    c = 3",
+            "    # end y",
+            "    d = 4",
+            "    # start y",
+            "    # this is a comment",
+            "    e = 5",
+            "    # end y",
+            "    f = 6"]
+    expected = ["def cyber():",
+                "    a = 1",
+                "    c = 3",
+                "    e = 5"]
+    merged = "\n".join(expected) + "\n"
+    result = preprocess_python(code, labels=["y"])
+    assert result == merged
+
+
+def test_format_python_8():
+    code = ["def cyber():",
+            '    """',
+            "    This method does cyber",
+            '    """',
+            "    #: this is a comment",
+            "    a = 1",
+            "    b = 2"]
+    expected = ["def cyber():",
+                "    a = 1",
+                "    b = 2"]
+    merged = "\n".join(expected) + "\n"
+    result = preprocess_python(code)
+    assert result == merged
+
+
+def test_select_lines_4():
+    code = ["# start y",
+            "def cyber():",
+            "    #: this is a comment",
+            "    a = 1",
+            "    # end y",
+            "    b = 2"]
+    expected = ["def cyber():",
+                "    #: this is a comment",
+                "    a = 1"]
+    result = select_lines(code, labels=["y"])
+    assert result == expected
+
+
+def test_select_lines_5():
+    code = ["# start y",
+            "def cyber():",
+            '    """',
+            "    This method does cyber",
+            '    """',
+            "    #: this is a comment",
+            "    a = 1",
+            "    # end y",
+            "    b = 2"]
+    expected = ["def cyber():",
+                '    """',
+                "    This method does cyber",
+                '    """',
+                "    #: this is a comment",
+                "    a = 1"]
+    result = select_lines(code, labels=["y"])
+    assert result == expected
+
+
+def test_select_lines_6():
+    code = ["b = 2",
+            "# start y",
+            "c = 3",
+            "# end y",
+            "d = 4",
+            "# start y",
+            "# this is a comment",
+            "e = 5",
+            "# end y",
+            "f = 6"]
+    expected = ["c = 3",
+                "# this is a comment",
+                "e = 5"]
+    result = select_lines(code, labels=["y"])
+    assert result == expected
+
+
+def test_select_lines_7():
+    code = ["# start y",
+            "def cyber():",
+            '    """',
+            "    This method does cyber",
+            '    """',
+            "    #: this is a comment",
+            "    a = 1",
+            "    # end y",
+            "    b = 2",
+            "    # start y",
+            "    c = 3",
+            "    # end y",
+            "    d = 4",
+            "    # start y",
+            "    # this is a comment",
+            "    e = 5",
+            "    # end y",
+            "    f = 6"]
+    expected = ["def cyber():",
+                '    """',
+                "    This method does cyber",
+                '    """',
+                "    #: this is a comment",
+                "    a = 1",
+                "    c = 3",
+                "    # this is a comment",
+                "    e = 5"]
+    result = select_lines(code, labels=["y"])
+    assert result == expected
