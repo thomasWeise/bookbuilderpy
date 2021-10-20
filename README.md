@@ -420,6 +420,29 @@ header-includes:
 ```
 (without the spaces between the triple-backticks!)
 
+For Chinese versions of your book using our default template ([Wandmalfarben/Eisvogel](#61-wandmalfarbepandoc-latex-template))), you may instead want to use the following `header-includes` in order to work-around the a [minor issue](https://github.com/Wandmalfarbe/pandoc-latex-template/issues/256) with the template.   
+
+```yaml
+header-includes:
+- |
+  ```{=latex}
+  \usepackage[section,above,below]{placeins}%                 1
+  \let\Oldsubsection\subsection%                              2
+  \renewcommand{\subsection}{\FloatBarrier\Oldsubsection}%    3
+  \addtolength{\topskip}{0pt plus 10pt}%                      4
+  \interfootnotelinepenalty=10000%                            5
+  \raggedbottom%                                              6
+  \AtBeginDocument{%                                        7
+  \crefname{chapter}{章}{章}%                                  8
+  \crefname{section}{节}{节}%                                 9
+  \addto\captionsenglish{\renewcommand{\figurename}{图}}%    10
+  \addto\captionsenglish{\renewcommand{\tablename}{表}}%     11
+  }%                                                        12
+  ```
+```
+(without the spaces between the triple-backticks!)
+
+
 - Setup for pandoc's crossref: You may wish to include the following text
 ```yaml
 # pandoc-crossref setup

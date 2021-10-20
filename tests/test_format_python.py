@@ -2,7 +2,7 @@
 
 from typing import Tuple
 
-from bookbuilderpy.format_python import format_python
+from bookbuilderpy.format_python import format_python, preprocess_python
 
 
 # noinspection PyPackageRequirements
@@ -73,3 +73,29 @@ def test_format_python_1():
          "    name = super().get_name()",
          "    return f\"hc_{name}\" if (len(name) > 0) else \"hc\"")
     assert ret == t
+
+
+def test_format_python_2():
+    code = ["# start book",
+            "def test_func() -> None:",
+            "    a = 12",
+            "    b = 13 # -book",
+            "    # end book",
+            "    c = 23",
+            "    # start book",
+            "    d = 64",
+            "    e = 128",
+            "    # end book",
+            "    f = 11",
+            "    g = 23  # +book",
+            "    h = 24",
+            "    return a + b"]
+    expected = ["def test_func():",
+                "    a = 12",
+                "    d = 64",
+                "    e = 128",
+                "    g = 23"]
+    merged = "\n".join(expected) + "\n"
+    result = preprocess_python(code, labels=["book"])
+
+    assert result == merged
