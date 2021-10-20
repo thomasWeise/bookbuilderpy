@@ -6,6 +6,8 @@ import tokenize
 from typing import Iterable, Tuple, Sequence, Generator, Set, Optional, \
     List, Union
 
+
+import regex as reg
 import strip_hints as sh  # type: ignore
 import yapf  # type: ignore
 
@@ -138,6 +140,11 @@ def __strip_hints(code: str) -> str:
     return sh.strip_string_to_string(code, strip_nl=True, to_empty=True)
 
 
+#: the regexes for java script
+__REGEX_STRIP_LINE_COMMENT: reg.Regex = reg.compile(
+    f'\\n\\s*#.*?\\n', flags=reg.V1 | reg.MULTILINE)
+
+
 def __strip_docstrings_and_comments(code: str,
                                     strip_docstrings: bool = True,
                                     strip_comments: bool = True) -> str:
@@ -156,7 +163,14 @@ def __strip_docstrings_and_comments(code: str,
     'a = 5\n'
     >>> __strip_docstrings_and_comments('def b():\n  \"\"\"bla!\"\"\"', True)
     'def b():\n  '
+    >>> __strip_docstrings_and_comments('# 1\na = 5\n# 2\nb = 6\n')
+    'a = 5\nb = 6\n'
     """
+    # First, we strip line comments that are hard to catch correctly with
+    # the tokenization approach later.
+    code = reg.sub(__REGEX_STRIP_LINE_COMMENT, '\n', code)
+
+    # Now we strip the doc strings and remaining comments.
     prev_toktype = token.INDENT
     last_lineno = -1
     last_col = 0
@@ -270,12 +284,11 @@ def format_python(code: Iterable[str],
     return shortest
 
 
-def preprocess_python(code: List[str],
-                      lines: Optional[List[int]] = None,
-                      labels: Optional[List[str]] = None,
-                      args: Optional[Set[str]] = None) -> str:
+def select_lines(code: List[str],
+                 lines: Optional[List[int]] = None,
+                 labels: Optional[List[str]] = None) -> List[str]:
     r"""
-    Preprocess Python code.
+    Select lines based on labels and line indices.
 
     First, we select all lines of the code we want to keep.
     If labels are defined, then lines can be kept as ranges or as single
@@ -285,14 +298,13 @@ def preprocess_python(code: List[str],
     Then, if line numbers are provided, we selected the lines based on the
     line numbers from the lines we have preserved.
 
-    Finally, the Python formatter is applied.
-
     :param List[str] code: the code loaded from a file
     :param Optional[List[int]] lines: the lines to keep, or None if we
         keep all
     :param Optional[List[str]] labels: a list of labels marking start and end
         of code snippets to include
-    :param Set[str] args: the arguments for the code formatter
+    :return: the list of selected lines
+    :rtype: List[str]
 
     >>> pc = ["def a():", "    b=c", "    return x"]
     >>> preprocess_python(pc)
@@ -341,6 +353,37 @@ def preprocess_python(code: List[str],
     if len(keep_lines) <= 0:
         raise ValueError(
             f"Empty code after applying labels {labels} and lines {lines}.?")
+
+    return keep_lines
+
+
+def preprocess_python(code: List[str],
+                      lines: Optional[List[int]] = None,
+                      labels: Optional[List[str]] = None,
+                      args: Optional[Set[str]] = None) -> str:
+    r"""
+    Preprocess Python code.
+
+    First, we select all lines of the code we want to keep.
+    If labels are defined, then lines can be kept as ranges or as single
+    lines.
+    Otherwise, all lines are selected in this step.
+
+    Then, if line numbers are provided, we selected the lines based on the
+    line numbers from the lines we have preserved.
+
+    Finally, the Python formatter is applied.
+
+    :param List[str] code: the code loaded from a file
+    :param Optional[List[int]] lines: the lines to keep, or None if we
+        keep all
+    :param Optional[List[str]] labels: a list of labels marking start and end
+        of code snippets to include
+    :param Set[str] args: the arguments for the code formatter
+    :return: the formatted code string
+    :rtype: str
+    """
+    keep_lines = select_lines(code=code, labels=labels, lines=lines)
 
     # set up arguments
     strip_docstrings: bool = True
