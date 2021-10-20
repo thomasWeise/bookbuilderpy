@@ -438,7 +438,7 @@ header-includes:
   \addto\captionsenglish{\renewcommand{\figurename}{图}}%    10
   \addto\captionsenglish{\renewcommand{\tablename}{表}}%     11
   }%                                                        12
-  ```
+  ` ` `
 ```
 (without the spaces between the triple-backticks!)
 
