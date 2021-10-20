@@ -404,25 +404,33 @@ reference-section-title: References
   For PDF/LaTeX, it is useful to put something like the stuff below, as it will make the result nicer if you have many code listings:
 
 ```yaml
+# line 1..3: hold floating objects in the same section and sub-section
+# line 4..6: prevent ugly broken footnotes
+# line 7..9: fix section and chapter names
 header-includes:
 - |
   ```{=latex}
-  \usepackage[section,above,below]{placeins}
-  \let\Oldsubsection\subsection
-  \renewcommand{\subsection}{\FloatBarrier\Oldsubsection}
-  \addtolength{\topskip}{0pt plus 10pt}
-  \interfootnotelinepenalty=10000
-  \raggedbottom
-  \usepackage[nameinlink]{cleveref}
-  \crefname{chapter}{Chapter}{Chapters}
-  \crefname{section}{Section}{Sections}
+  \usepackage[section,above,below]{placeins}%               1
+  \let\Oldsubsection\subsection%                            2
+  \renewcommand{\subsection}{\FloatBarrier\Oldsubsection}%  2
+  \addtolength{\topskip}{0pt plus 10pt}%                    4
+  \interfootnotelinepenalty=10000%                          5
+  \raggedbottom%                                            6
+  \usepackage[nameinlink]{cleveref}%                        7
+  \crefname{chapter}{Chapter}{Chapters}%                    8
+  \crefname{section}{Section}{Sections}%                    9
   ` ` `
 ```
 (without the spaces between the triple-backticks!)
+In the two `\crefname` commands at the end, you can put the singular and plural forms of the names for chapters and sections in your language of choice. 
 
-For Chinese versions of your book using our default template ([Wandmalfarben/Eisvogel](#61-wandmalfarbepandoc-latex-template))), you may instead want to use the following `header-includes` in order to work-around the a [minor issue](https://github.com/Wandmalfarbe/pandoc-latex-template/issues/256) with the template.   
+For Chinese versions of your book using our default template ([Wandmalfarben/Eisvogel](#61-wandmalfarbepandoc-latex-template)), you may instead want to use the following `header-includes` in order to work-around the a [minor issue](https://github.com/Wandmalfarbe/pandoc-latex-template/issues/256) with the template.   
 
 ```yaml
+# line 1..3: hold floating objects in the same section and sub-section
+# line 4..6: prevent ugly broken footnotes
+# line 7..9: fix section and chapter names
+# line 10..12: fix bug https://github.com/Wandmalfarbe/pandoc-latex-template/issues/256
 header-includes:
 - |
   ```{=latex}
