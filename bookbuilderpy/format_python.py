@@ -3,16 +3,16 @@ import io
 import sys
 import token
 import tokenize
-from typing import Iterable, Tuple, Sequence, Generator, Set, Optional, \
-    List, Union
+from typing import Iterable, Tuple, Set, Optional, \
+    List
 
-
-import regex as reg
+import regex as reg  # type: ignore
 import strip_hints as sh  # type: ignore
 import yapf  # type: ignore
 
+from bookbuilderpy.source_tools import select_lines, format_empty_lines, \
+    strip_common_whitespace_prefix
 from bookbuilderpy.strings import str_to_lines, lines_to_str
-from bookbuilderpy.source_tools import select_lines
 
 
 def __no_empty_after(line: str) -> bool:
@@ -24,23 +24,19 @@ def __no_empty_after(line: str) -> bool:
     :rtype: str
     >>> __no_empty_after("def ")
     True
-    >>> __no_empty_after("  def ")
-    True
-    >>> __no_empty_after(" import ")
+    >>> __no_empty_after("import ")
     True
     >>> __no_empty_after("from ")
     True
     >>> __no_empty_after("def")
     False
-    >>> __no_empty_after(" import")
+    >>> __no_empty_after("import")
     False
     >>> __no_empty_after("from")
     False
     """
-    lstr = line.lstrip()
-    return lstr.startswith("def ") or \
-        lstr.startswith("import ") or \
-        lstr.startswith("from ")
+    return line.startswith("def ") or line.startswith("import ") \
+        or line.startswith("from ")
 
 
 def __empty_before(line: str) -> bool:
@@ -52,15 +48,14 @@ def __empty_before(line: str) -> bool:
     :rtype: str
     >>> __empty_before("def")
     False
-    >>> __empty_before(" def ")
+    >>> __empty_before("def ")
     True
-    >>> __empty_before(" class")
+    >>> __empty_before("class")
     False
-    >>> __empty_before(" class ")
+    >>> __empty_before("class ")
     True
     """
-    lstr = line.lstrip()
-    return lstr.startswith("def ") or lstr.startswith("class ")
+    return line.startswith("def ") or line.startswith("class ")
 
 
 def __force_no_empty_after(line: str) -> bool:
@@ -70,45 +65,10 @@ def __force_no_empty_after(line: str) -> bool:
     :param line: the line
     :return: a boolean value
     :rtype: str
-    >>> __force_no_empty_after("  @")
+    >>> __force_no_empty_after("@")
     True
     """
-    lstr = line.lstrip()
-    return lstr.startswith("@")
-
-
-def __strip_double_empty(lines: Iterable[str]) -> Generator:
-    """
-    A generator that strips any consecutive empty lines.
-
-    :param Iterable[str] lines: the original line iterable
-    :return: the generation
-    :rtype: str
-    >>> list(__strip_double_empty(["a", "", "", "b", "def a",
-    ...                            "  c", "", "class b", "", "",
-    ...                            "@xx", "", "def c"]))
-    ['a', '', 'b', '', 'def a', '  c', '', 'class b', '', '@xx', 'def c']
-    """
-    printed_empty = had_empty_or_equivalent = True
-    force_no_empty = False
-    for line in lines:
-        line = line.rstrip()
-
-        if len(line) > 0:
-            if __empty_before(line) and (not printed_empty) \
-                    and (not force_no_empty):
-                yield ""
-            had_empty_or_equivalent = __no_empty_after(line)
-            force_no_empty = __force_no_empty_after(line)
-            yield line
-            printed_empty = False
-            continue
-
-        if had_empty_or_equivalent or force_no_empty:
-            continue
-
-        printed_empty = had_empty_or_equivalent = True
-        yield ""
+    return line.startswith("@")
 
 
 def __format_lines(code: str) -> str:
@@ -143,7 +103,7 @@ def __strip_hints(code: str) -> str:
 
 #: the regexes for java script
 __REGEX_STRIP_LINE_COMMENT: reg.Regex = reg.compile(
-    f'\\n\\s*#.*?\\n', flags=reg.V1 | reg.MULTILINE)
+    '\\n[ \\t]*?#.*?\\n', flags=reg.V1 | reg.MULTILINE)
 
 
 def __strip_docstrings_and_comments(code: str,
@@ -194,44 +154,23 @@ def __strip_docstrings_and_comments(code: str,
                 prev_toktype = toktype
                 last_col = ecol
                 last_lineno = elineno
-        return output.getvalue()
 
+        result = output.getvalue()
+        # remove leading newlines
+        while result:
+            if result[0] == "\n":
+                result = result[1:]
+                continue
+            return result
 
-def __strip_common_whitespace_prefix(lines: Sequence[str]) -> str:
-    r"""
-    Strip a common whitespace prefix from a list of strings and merge them.
-
-    :param Sequence[str] lines: the lines
-    :return: the merged, whitespace-stripped lines
-    :rtype: str
-
-    >>> __strip_common_whitespace_prefix([" a", "  b"])
-    'a\n b\n'
-    >>> __strip_common_whitespace_prefix(["  a", "  b"])
-    'a\nb\n'
-    >>> __strip_common_whitespace_prefix([" a", "  b", "c"])
-    ' a\n  b\nc\n'
-    >>> __strip_common_whitespace_prefix(["  a", "  b", "    c"])
-    'a\nb\n  c\n'
-    """
-    prefix_len = sys.maxsize
-    for line in lines:
-        ll = len(line)
-        if ll <= 0:
-            continue
-        for k in range(min(ll, prefix_len)):
-            if line[k] != " ":
-                prefix_len = k
-                break
-    if prefix_len > 0:
-        lines = [line[prefix_len:] for line in lines]
-    return lines_to_str(lines)
+        raise ValueError(f"code {code} becomes empty after docstring "
+                         "and comment stripping!")
 
 
 def format_python(code: Iterable[str],
                   strip_docstrings: bool = True,
                   strip_comments: bool = True,
-                  strip_hints: bool = True) -> Tuple[str, ...]:
+                  strip_hints: bool = True) -> List[str]:
     """
     Format a python code fragment.
 
@@ -240,7 +179,7 @@ def format_python(code: Iterable[str],
     :param bool strip_comments: should we delete comments?
     :param bool strip_hints: should we delete type hints?
     :return: the formatted code
-    :rtype: Tuple[str, ...]
+    :rtype: List[str]
     """
     if not isinstance(code, Iterable):
         raise TypeError(f"code must be Iterable, but is {type(code)}.")
@@ -254,36 +193,51 @@ def format_python(code: Iterable[str],
         raise TypeError(
             f"strip_hints must be bool, but is {type(strip_hints)}.")
 
-    old_len: int = sys.maxsize
-    shortest: Tuple[str, ...] = tuple(code)
-    rcode: Union[List[str], Tuple[str, ...]] = shortest
+    old_len: Tuple[int, int] = sys.maxsize, sys.maxsize
+
+    shortest: List[str] = list(code)
+    rcode: List[str] = shortest
     while True:
-        rcode = tuple(__strip_double_empty(lines=rcode))
+        rcode = strip_common_whitespace_prefix(format_empty_lines(
+            lines=rcode,
+            empty_before=__empty_before,
+            no_empty_after=__no_empty_after,
+            force_no_empty_after=__force_no_empty_after,
+            max_consecutive_empty_lines=1))
         if len(rcode) <= 0:
             raise ValueError("Code becomes empty.")
-        while rcode[-1].strip() in ("", "\n"):
-            rcode = rcode[:-1]
-            if len(rcode) <= 0:
-                raise ValueError("Code becomes empty.")
-        text: str = __strip_common_whitespace_prefix(rcode)
-        new_len: int = len(text)
+
+        text = lines_to_str(rcode)
+        new_len: Tuple[int, int] = text.count("\n"), len(text)
         if old_len <= new_len:
             break
         shortest = rcode
         old_len = new_len
-        text = __format_lines(text)
-        text = __strip_docstrings_and_comments(
-            text, strip_docstrings=strip_docstrings,
-            strip_comments=strip_comments)
-        if strip_hints:
-            text = __strip_hints(text)
-        rcode = str_to_lines(text)
 
-    if (len(shortest) <= 0) or (old_len <= 0):
+        text = __format_lines(text)
+        ntext = text
+        if strip_docstrings or strip_comments:
+            ntext = __strip_docstrings_and_comments(
+                text, strip_docstrings=strip_docstrings,
+                strip_comments=strip_comments)
+        if strip_hints:
+            ntext = __strip_hints(ntext)
+        if ntext != text:
+            text = __format_lines(ntext)
+        del ntext
+
+        new_len = text.count("\n"), len(text)
+        if old_len <= new_len:
+            break
+
+        rcode = str_to_lines(text)
+        shortest = rcode
+        old_len = new_len
+
+    if (len(shortest) <= 0) or (old_len[0] <= 0):
         raise ValueError(f"Text cannot become {shortest}.")
 
     return shortest
-
 
 
 def preprocess_python(code: List[str],

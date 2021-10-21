@@ -1,6 +1,7 @@
 """In this file, we put some shared tools for rendering source codes."""
 
 from typing import Optional, List, Iterable, Set, Callable
+import sys
 
 
 def select_lines(code: Iterable[str],
@@ -60,7 +61,8 @@ def select_lines(code: Iterable[str],
     label_str: Optional[List[str]] = None
     if labels is not None:
         if not isinstance(labels, Iterable):
-            raise TypeError(f"labels must be Iterable[str], but is {type(code)}.")
+            raise TypeError(
+                f"labels must be Iterable[str], but is {type(code)}.")
         label_lst = list(labels)
         label_str = list({label.strip() for label in label_lst})
         if len(label_lst) != len(label_str):
@@ -227,6 +229,28 @@ def format_empty_lines(lines: Iterable[str],
         consecutive empty lines
     :return: the generation
     :rtype: str
+
+    >>> code = ["", "a", "", "b", "", "", "c", "", "", "", "d", "e", ""]
+    >>> format_empty_lines(code, max_consecutive_empty_lines=3)
+    ['a', '', 'b', '', '', 'c', '', '', '', 'd', 'e']
+    >>> format_empty_lines(code, max_consecutive_empty_lines=2)
+    ['a', '', 'b', '', '', 'c', '', '', 'd', 'e']
+    >>> format_empty_lines(code, max_consecutive_empty_lines=1)
+    ['a', '', 'b', '', 'c', '', 'd', 'e']
+    >>> format_empty_lines(code, max_consecutive_empty_lines=0)
+    ['a', 'b', 'c', 'd', 'e']
+    >>> format_empty_lines(code, max_consecutive_empty_lines=2,
+    ...                    no_empty_after=lambda s: s == "b")
+    ['a', '', 'b', 'c', '', '', 'd', 'e']
+    >>> format_empty_lines(code, max_consecutive_empty_lines=2,
+    ...                    no_empty_after=lambda s: s == "b",
+    ...                    empty_before=lambda s: s == "e")
+    ['a', '', 'b', 'c', '', '', 'd', '', 'e']
+    >>> format_empty_lines(code, max_consecutive_empty_lines=2,
+    ...                    no_empty_after=lambda s: s == "b",
+    ...                    empty_before=lambda s: s == "e",
+    ...                    force_no_empty_after=lambda s: s == "d")
+    ['a', '', 'b', 'c', '', '', 'd', 'e']
     """
     if not isinstance(max_consecutive_empty_lines, int):
         raise TypeError("max_consecutive_empty_lines must be int but is "
@@ -245,32 +269,66 @@ def format_empty_lines(lines: Iterable[str],
                         f"but is {type(force_no_empty_after)}.")
 
     result: List[str] = []
-    printed_empty: int = max_consecutive_empty_lines + 1
-    had_empty_or_equivalent = True
+    print_empty: int = 0
+    no_empty = True
     force_no_empty = True
     for line in lines:
         line = line.rstrip()
+        ltr = line.lstrip()
 
         if line:
-            if (not force_no_empty) and (printed_empty == 0) and \
-                    empty_before(line):
-                result.append("")
-            had_empty_or_equivalent = no_empty_after(line)
-            force_no_empty = force_no_empty_after(line)
+            if (not force_no_empty) \
+                    and (empty_before(ltr)
+                         or ((print_empty > 0)
+                             and (max_consecutive_empty_lines > 0))):
+                result.extend([""] * max(1, min(print_empty,
+                                                max_consecutive_empty_lines)))
+            no_empty = no_empty_after(ltr)
+            force_no_empty = force_no_empty_after(ltr)
             result.append(line)
-            printed_empty = 0
+            print_empty = 0
             continue
 
-        if force_no_empty:
-            continue
-        if had_empty_or_equivalent and \
-                (printed_empty >= max_consecutive_empty_lines):
+        if force_no_empty or no_empty:
             continue
 
-        printed_empty += 1
-        had_empty_or_equivalent = True
-        result.append("")
+        print_empty += 1
 
     if not result:
         raise ValueError("No lines of text found.")
     return result
+
+
+def strip_common_whitespace_prefix(lines: Iterable[str]) -> List[str]:
+    r"""
+    Strip a common whitespace prefix from a list of strings and merge them.
+
+    :param Iterable[str] lines: the lines
+    :return: the code with the white space prefix stripped
+    :rtype: List[str]
+
+    >>> strip_common_whitespace_prefix([" a", "  b"])
+    ['a', ' b']
+    >>> strip_common_whitespace_prefix([" a", " b"])
+    ['a', 'b']
+    >>> strip_common_whitespace_prefix(["  a", "  b"])
+    ['a', 'b']
+    >>> strip_common_whitespace_prefix(["  a", "  b", "c"])
+    ['  a', '  b', 'c']
+    >>> strip_common_whitespace_prefix([" a", "  b", "c"])
+    [' a', '  b', 'c']
+    >>> strip_common_whitespace_prefix(["  a", "  b", "    c"])
+    ['a', 'b', '  c']
+    """
+    prefix_len = sys.maxsize
+    for line in lines:
+        ll = len(line)
+        if ll <= 0:
+            continue
+        for k in range(min(ll, prefix_len)):
+            if line[k] != " ":
+                prefix_len = k
+                break
+    if prefix_len > 0:
+        return [line[prefix_len:] for line in lines]
+    return list(lines)

@@ -1,9 +1,8 @@
 """Test the interaction with the file system."""
 
-from typing import Tuple
+from typing import List
 
-from bookbuilderpy.format_python import format_python, preprocess_python, \
-    select_lines
+from bookbuilderpy.format_python import format_python, preprocess_python
 
 
 # noinspection PyPackageRequirements
@@ -48,9 +47,9 @@ def test_format_python_1():
          "        name: Final[str] = super().get_name()",
          "        return f\"hc_{name}\" if (len(name) > 0) else \"hc\""]
     ret = format_python(s)
-    assert isinstance(ret, Tuple)
+    assert isinstance(ret, List)
 
-    t = ("def solve(self, process):",
+    t = ["def solve(self, process):",
          "    best_x = process.create()",
          "    new_x = process.create()",
          "    random = process.get_random()",
@@ -72,14 +71,14 @@ def test_format_python_1():
          "@staticmethod",
          "def get_name(self):",
          "    name = super().get_name()",
-         "    return f\"hc_{name}\" if (len(name) > 0) else \"hc\"")
+         "    return f\"hc_{name}\" if (len(name) > 0) else \"hc\""]
     assert ret == t
 
     ret2 = preprocess_python(s)
     assert ret2 == ("\n".join(t) + "\n")
 
 
-def test_format_python_2():
+def test_preprocess_python_1():
     code = ["# start book",
             "def test_func() -> None:",
             "    a = 12",
@@ -105,7 +104,7 @@ def test_format_python_2():
     assert result == merged
 
 
-def test_format_python_3():
+def test_preprocess_python_2():
     code = ["a = 5",
             "# start x",
             "b = 7",
@@ -122,7 +121,7 @@ def test_format_python_3():
     assert result == merged
 
 
-def test_format_python_4():
+def test_preprocess_python_3():
     code = ["# start y",
             "def cyber():",
             "    #: this is a comment",
@@ -136,7 +135,7 @@ def test_format_python_4():
     assert result == merged
 
 
-def test_format_python_5():
+def test_preprocess_python_4():
     code = ["# start y",
             "def cyber():",
             '    """',
@@ -153,7 +152,7 @@ def test_format_python_5():
     assert result == merged
 
 
-def test_format_python_6():
+def test_preprocess_python_5():
     code = ["b = 2",
             "# start y",
             "c = 3",
@@ -171,7 +170,7 @@ def test_format_python_6():
     assert result == merged
 
 
-def test_format_python_7():
+def test_preprocess_python_6():
     code = ["# start y",
             "def cyber():",
             '    """',
@@ -199,7 +198,7 @@ def test_format_python_7():
     assert result == merged
 
 
-def test_format_python_8():
+def test_preprocess_python_7():
     code = ["def cyber():",
             '    """',
             "    This method does cyber",

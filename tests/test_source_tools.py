@@ -1,7 +1,6 @@
 """Test the interaction with the file system."""
 
-from bookbuilderpy.source_tools import select_lines
-
+from bookbuilderpy.source_tools import select_lines, format_empty_lines
 
 # noinspection PyPackageRequirements
 
@@ -105,3 +104,27 @@ def test_select_lines_5():
                 "e = 9"]
     result = select_lines(code, labels=["x", "y"])
     assert result == expected
+
+
+def test_format_empty_lines():
+    code = ["", "a", "", "b", "", "", "c", "", "", "", "d", "e", ""]
+    assert format_empty_lines(code, max_consecutive_empty_lines=3) == \
+           ["a", "", "b", "", "", "c", "", "", "", "d", "e"]
+    assert format_empty_lines(code, max_consecutive_empty_lines=2) == \
+           ["a", "", "b", "", "", "c", "", "", "d", "e"]
+    assert format_empty_lines(code, max_consecutive_empty_lines=1) == \
+           ["a", "", "b", "", "c", "", "d", "e"]
+    assert format_empty_lines(code, max_consecutive_empty_lines=0) == \
+           ["a", "b", "c", "d", "e"]
+    assert format_empty_lines(code, max_consecutive_empty_lines=2,
+                              no_empty_after=lambda s: s == "b") == \
+           ["a", "", "b", "c", "", "", "d", "e"]
+    assert format_empty_lines(code, max_consecutive_empty_lines=2,
+                              no_empty_after=lambda s: s == "b",
+                              empty_before=lambda s: s == "e") == \
+           ["a", "", "b", "c", "", "", "d", "", "e"]
+    assert format_empty_lines(code, max_consecutive_empty_lines=2,
+                              no_empty_after=lambda s: s == "b",
+                              empty_before=lambda s: s == "e",
+                              force_no_empty_after=lambda s: s == "d") == \
+           ["a", "", "b", "c", "", "", "d", "e"]
