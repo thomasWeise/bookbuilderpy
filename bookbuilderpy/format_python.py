@@ -12,6 +12,7 @@ import strip_hints as sh  # type: ignore
 import yapf  # type: ignore
 
 from bookbuilderpy.strings import str_to_lines, lines_to_str
+from bookbuilderpy.source_tools import select_lines
 
 
 def __no_empty_after(line: str) -> bool:
@@ -283,78 +284,6 @@ def format_python(code: Iterable[str],
 
     return shortest
 
-
-def select_lines(code: List[str],
-                 lines: Optional[List[int]] = None,
-                 labels: Optional[List[str]] = None) -> List[str]:
-    r"""
-    Select lines based on labels and line indices.
-
-    First, we select all lines of the code we want to keep.
-    If labels are defined, then lines can be kept as ranges or as single
-    lines.
-    Otherwise, all lines are selected in this step.
-
-    Then, if line numbers are provided, we selected the lines based on the
-    line numbers from the lines we have preserved.
-
-    :param List[str] code: the code loaded from a file
-    :param Optional[List[int]] lines: the lines to keep, or None if we
-        keep all
-    :param Optional[List[str]] labels: a list of labels marking start and end
-        of code snippets to include
-    :return: the list of selected lines
-    :rtype: List[str]
-
-    >>> pc = ["def a():", "    b=c", "    return x"]
-    >>> preprocess_python(pc)
-    'def a():\n    b=c\n    return x\n'
-    >>> pc = ["# start x", "def a():", " b=c # -x", "    return x", "# end x"]
-    >>> preprocess_python(pc, labels=["x"])
-    'def a():\n    return x\n'
-    """
-    keep_lines: List[str]
-    if not labels:
-        keep_lines = code
-    else:
-        keep_lines = []
-        for label in labels:
-            label = label.strip()
-            start_label = f"# start {label}"
-            end_label = f"# end {label}"
-            inc_label = f"# +{label}"
-            exc_label = f"# -{label}"
-            inside: bool = False
-            found: bool = True
-
-            for cl in code:  # iterate over all code lines
-                cls = cl.strip()  # ignore white space when processing labels
-                if inside:  # we are in a selected section
-                    if cls == end_label:  # end of selected section
-                        inside = False
-                    elif cls.endswith(exc_label):
-                        continue  # exclude single line
-                    else:
-                        keep_lines.append(cl.rstrip())  # keep line
-                        found = True  # we got a line
-                elif cls == start_label:
-                    inside = True  # found the beginning of a selected range
-                elif cls.endswith(inc_label):  # single line to include
-                    keep_lines.append(cl[:len(cl) - len(inc_label)].rstrip())
-                    found = True
-
-            if not found:
-                raise ValueError(
-                    f"Did not find any line to include for label {label}.")
-
-    if lines:  # select the lines we want to keep
-        keep_lines = [keep_lines[i] for i in lines]
-
-    if len(keep_lines) <= 0:
-        raise ValueError(
-            f"Empty code after applying labels {labels} and lines {lines}.?")
-
-    return keep_lines
 
 
 def preprocess_python(code: List[str],
