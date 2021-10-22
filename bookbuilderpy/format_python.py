@@ -71,6 +71,13 @@ def __force_no_empty_after(line: str) -> bool:
     return line.startswith("@")
 
 
+#: the internal style for formatting Python code
+__YAPF_STYLE = yapf.style.CreatePEP8Style()
+__YAPF_STYLE["SPLIT_BEFORE_NAMED_ASSIGNS"] = False
+__YAPF_STYLE["COLUMN_LIMIT"] = 60
+__YAPF_STYLE["ARITHMETIC_PRECEDENCE_INDICATION"] = True
+
+
 def __format_lines(code: str) -> str:
     r"""
     Format Python code lines.
@@ -84,7 +91,7 @@ def __format_lines(code: str) -> str:
     >>> __format_lines("\n\n   \nclass b:\n   def bb(self):      x  =3/a()")
     'class b:\n    def bb(self):\n        x = 3 / a()\n'
     """
-    return yapf.yapf_api.FormatCode(code)[0]
+    return yapf.yapf_api.FormatCode(code, style_config=__YAPF_STYLE)[0]
 
 
 def __strip_hints(code: str) -> str:
@@ -101,7 +108,7 @@ def __strip_hints(code: str) -> str:
     return sh.strip_string_to_string(code, strip_nl=True, to_empty=True)
 
 
-#: the regexes for java script
+#: the regexes stripping comments that occupy a complete line
 __REGEX_STRIP_LINE_COMMENT: reg.Regex = reg.compile(
     '\\n[ \\t]*?#.*?\\n', flags=reg.V1 | reg.MULTILINE)
 
@@ -129,7 +136,11 @@ def __strip_docstrings_and_comments(code: str,
     """
     # First, we strip line comments that are hard to catch correctly with
     # the tokenization approach later.
-    code = reg.sub(__REGEX_STRIP_LINE_COMMENT, '\n', code)
+    code2 = None
+    while code2 != code:
+        code2 = code
+        code = reg.sub(__REGEX_STRIP_LINE_COMMENT, '\n', code)
+    del code2
 
     # Now we strip the doc strings and remaining comments.
     prev_toktype = token.INDENT
@@ -156,15 +167,16 @@ def __strip_docstrings_and_comments(code: str,
                 last_lineno = elineno
 
         result = output.getvalue()
-        # remove leading newlines
-        while result:
-            if result[0] == "\n":
-                result = result[1:]
-                continue
-            return result
 
-        raise ValueError(f"code {code} becomes empty after docstring "
-                         "and comment stripping!")
+    # remove leading newlines
+    while result:
+        if result[0] == "\n":
+            result = result[1:]
+            continue
+        return result
+
+    raise ValueError(f"code {code} becomes empty after docstring "
+                     "and comment stripping!")
 
 
 def format_python(code: Iterable[str],
@@ -197,6 +209,7 @@ def format_python(code: Iterable[str],
 
     shortest: List[str] = list(code)
     rcode: List[str] = shortest
+    not_first_run: bool = False
     while True:
         rcode = strip_common_whitespace_prefix(format_empty_lines(
             lines=rcode,
@@ -209,7 +222,7 @@ def format_python(code: Iterable[str],
 
         text = lines_to_str(rcode)
         new_len: Tuple[int, int] = text.count("\n"), len(text)
-        if old_len <= new_len:
+        if not_first_run and (old_len <= new_len):
             break
         shortest = rcode
         old_len = new_len
@@ -227,12 +240,13 @@ def format_python(code: Iterable[str],
         del ntext
 
         new_len = text.count("\n"), len(text)
-        if old_len <= new_len:
+        if not_first_run and (old_len <= new_len):
             break
 
         rcode = str_to_lines(text)
         shortest = rcode
         old_len = new_len
+        not_first_run = True
 
     if (len(shortest) <= 0) or (old_len[0] <= 0):
         raise ValueError(f"Text cannot become {shortest}.")

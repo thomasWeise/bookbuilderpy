@@ -12,7 +12,8 @@ def test_load_code_1():
     assert len(result) > 0
     nl = "\n"
     res: List[str] = [s.rstrip() for s in result.split(nl)]
-    assert len(res) == 5
+    assert len(res) >= 5  # the original length is 5
+    assert len(res) <= 6  # but a line break may be inserted
     assert res[0] == "def test_load_code_1():"
     assert res[-1] == ""
     assert res[-2] == \
@@ -28,7 +29,8 @@ def test_load_code_2():
     assert len(result) > 0
     nl = "\n"
     res: List[str] = [s.rstrip() for s in result.split(nl)]
-    assert len(res) == 5
+    assert len(res) >= 5  # the original length is 5
+    assert len(res) <= 6  # but a line break may be inserted
     assert res[0] == "def test_load_code_2():"
     assert res[-1] == ""
     assert res[-2] == \
@@ -45,7 +47,8 @@ def test_load_code_3():
     assert len(result) > 0
     nl = "\n"
     res: List[str] = [s.rstrip() for s in result.split(nl)]
-    assert len(res) == 5
+    assert len(res) >= 5  # the original length is 5
+    assert len(res) <= 6  # but a line break may be inserted
     assert res[0] == "def test_load_code_3():"
     assert res[-1] == ""
     assert res[-2] == \
