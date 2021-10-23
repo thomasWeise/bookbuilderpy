@@ -202,7 +202,9 @@ From [@tbl:mytable], we can see that...
 The following new commands are added:
 
 - `\rel.input{path}` recursively includes and processes the contents of the file identified by `path`. `path` must be in a sub-folder of the current folder. The deepest folder of the new full path will become the current folder for any (recursive) `\rel.input{path}` invocations in the new file as well as `\rel.code` and `\rel.figure` commands. [Language-specific file resolution](#331-language-specification-and-resolution) will apply.
-- `\rel.code{label}{caption}{path}{lines}{labels}{args}` is used to include code (or portions of code) from a source code file located in the current folder (or any `path` beneath it). [Language-specific file resolution](#331-language-specification-and-resolution) will apply. This command has the following arguments:
+- `\rel.code{label}{caption}{path}{lines}{labels}{args}` is used to include code (or portions of code) from a source code file located in the current folder (or any `path` beneath it).
+  [Language-specific file resolution](#331-language-specification-and-resolution) will apply.
+  This command has the following arguments:
   + `label`: the label of the listing, e.g., `something`. Will automatically be prefixed by `lst:` and can then be referenced in the text, e.g., as `The algorithm is specified in [@lst:something].`. 
   + `caption`: the caption of the listing
   + `path`: the relative path fragment to resolve
@@ -212,13 +214,17 @@ The following new commands are added:
     - For Python, we automatically strip type hints, docstrings, and comments from the code and also re-format the code. The re-formatting ensures that lines are no longer than 70 characters, which is necessary to make the listings in PDFs to look nicely.
       With `doc` you keep the docstrings, with `comments` you keep the comments, with `hints` you keep the type hints.
       If you specify `format`, then the code is not reformatted at all (which automatically preserves docstrings, type hints, and comments, except for the code selection labels.)
-- `\git.code{repo}{label}{caption}{path}{lines}{labels}{args}` works the same as `\relative.code`, but uses code from the specified git repository instead (see [Metadata](#332-git-repositories)). [Language-specific file resolution](#331-language-specification-and-resolution) does *not* apply.
-- `\rel.figure{label}{caption}{path}{args}` includes a figure into the book. [Language-specific file resolution](#331-language-specification-and-resolution) will apply. This command has the following arguments:
+- `\git.code{repo}{label}{caption}{path}{lines}{labels}{args}` works the same as `\relative.code`, but uses code from the specified git repository instead (see [Metadata](#332-git-repositories)).
+  [Language-specific file resolution](#331-language-specification-and-resolution) does *not* apply, however, you may specify repositories differently for each language in the metadata.
+- `\rel.figure{label}{caption}{path}{args}` includes a figure into the book. [Language-specific file resolution](#331-language-specification-and-resolution) will apply.
+  This command has the following arguments:
   + `label`: the label of the figure, e.g., `something`. It will be automatically prefixed by `fig:` can then be referenced in the text, e.g., as `As illustrated in [@fig:something], ...`.
   + `caption`: the caption of the figure
   + `path`: the relative path fragment to resolve
   + `args`: other arguments, e.g., `width=XX%` for making the figure having a width corresponding to `XX%` of the available with.
-- `\definition{type}{label}{body}` creates a definition of the given type (where the metadata must somewhere specify `typeTitle`) that can be referenced via `\def.ref{label}` anywhere in the text. The body containing the actual definition of the definition is `body`. For example `\definition{def}{bla}{A *definition* is a text about something.}` with `defTitle: Definition` in the metadata would generate something like `**Definition 1**: A *definition* is a text about something.` and `\def.ref{bla}` would then become `Definition 1` (but as clickable hyperlink).
+- `\definition{type}{label}{body}` creates a definition of the given type (where the metadata must somewhere specify `typeTitle`) that can be referenced via `\def.ref{label}` anywhere in the text.
+  The body containing the actual definition of the definition is `body`.
+  For example `\definition{def}{bla}{A *definition* is a text about something.}` with `defTitle: Definition` in the metadata would generate something like `**Definition 1**: A *definition* is a text about something.` and `\def.ref{bla}` would then become `Definition 1` (but as clickable hyperlink).
 - `\meta{key}` any metadata string you specify in your [metadata](#33-metadata), including `title`, `author`, etc., with the following additional keys:
   + `time`: the ISO date and time when the book building process was started,
   + `date`: the ISO date when the book building process was started,
