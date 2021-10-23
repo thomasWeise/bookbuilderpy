@@ -251,8 +251,112 @@ class Instance(Component):
 """
 
 
+bex1 = """
+class Instance(Component):
+    \"\"\"An instance of the Job Shop Scheduling Problem.\"\"\"
+    def __init__(self, name: str, machines: int, jobs: int,
+                 matrix: np.ndarray,
+                 makespan_lower_bound: Optional[int] = None) -> None:
+        \"\"\"
+        Create an instance of the Job Shop Scheduling Problem.
+
+        :param str name: the name of the instance
+        \"\"\"
+        #: The name of this JSSP instance.
+        self.name: Final[str] = logging.sanitize_name(name)
+        self.machines: Final[int] = machines
+        self.jobs: Final[int] = jobs
+        self.matrix: Final[np.ndarray] = matrix
+        self.makespan_lower_bound: Final[int] = makespan_lower_bound
+"""
+
+
 def test_preprocess_python_8():
     code = be.splitlines()
+    result = preprocess_python(code, labels=["book"],
+                               args={"comments", "doc", "hints"})
+    exp = bex1.strip() + "\n"
+    assert result == exp
+
+
+bex2 = """
+class Instance(Component):
+    def __init__(self, name: str, machines: int, jobs: int,
+                 matrix: np.ndarray,
+                 makespan_lower_bound: Optional[int] = None) -> None:
+        #: The name of this JSSP instance.
+        self.name: Final[str] = logging.sanitize_name(name)
+        self.machines: Final[int] = machines
+        self.jobs: Final[int] = jobs
+        self.matrix: Final[np.ndarray] = matrix
+        self.makespan_lower_bound: Final[int] = makespan_lower_bound
+"""
+
+
+def test_preprocess_python_9():
+    code = be.splitlines()
+    result = preprocess_python(code, labels=["book"],
+                               args={"comments", "hints"})
+    exp = bex2.strip() + "\n"
+    assert result == exp
+
+
+bex3 = """
+class Instance(Component):
+    def __init__(self, name: str, machines: int, jobs: int,
+                 matrix: np.ndarray,
+                 makespan_lower_bound: Optional[int] = None) -> None:
+        self.name: Final[str] = logging.sanitize_name(name)
+        self.machines: Final[int] = machines
+        self.jobs: Final[int] = jobs
+        self.matrix: Final[np.ndarray] = matrix
+        self.makespan_lower_bound: Final[int] = makespan_lower_bound
+"""
+
+
+def test_preprocess_python_10():
+    code = be.splitlines()
+    result = preprocess_python(code, labels=["book"],
+                               args={"hints"})
+    exp = bex3.strip() + "\n"
+    assert result == exp
+
+
+bex4 = """
+class Instance(Component):
+    def __init__(self, name, machines, jobs, matrix,
+                 makespan_lower_bound=None):
+        #: The name of this JSSP instance.
+        self.name = logging.sanitize_name(name)
+        self.machines = machines
+        self.jobs = jobs
+        self.matrix = matrix
+        self.makespan_lower_bound = makespan_lower_bound
+"""
+
+
+def test_preprocess_python_11():
+    code = be.splitlines()
+    result = preprocess_python(code, labels=["book"],
+                               args={"comments"})
+    exp = bex4.strip() + "\n"
+    assert result == exp
+
+
+bex5 = """
+class Instance(Component):
+    def __init__(self, name, machines, jobs, matrix,
+                 makespan_lower_bound=None):
+        self.name = logging.sanitize_name(name)
+        self.machines = machines
+        self.jobs = jobs
+        self.matrix = matrix
+        self.makespan_lower_bound = makespan_lower_bound
+"""
+
+
+def test_preprocess_python_12():
+    code = be.splitlines()
     result = preprocess_python(code, labels=["book"])
-    assert result is not None
-    assert result.count("\n") == 9
+    exp = bex5.strip() + "\n"
+    assert result == exp

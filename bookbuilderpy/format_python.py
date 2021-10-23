@@ -73,9 +73,12 @@ def __force_no_empty_after(line: str) -> bool:
 
 #: the internal style for formatting Python code
 __YAPF_STYLE = yapf.style.CreatePEP8Style()
-__YAPF_STYLE["SPLIT_BEFORE_NAMED_ASSIGNS"] = False
-__YAPF_STYLE["COLUMN_LIMIT"] = 70
 __YAPF_STYLE["ARITHMETIC_PRECEDENCE_INDICATION"] = True
+__YAPF_STYLE["BLANK_LINES_AROUND_TOP_LEVEL_DEFINITION"] = 1
+__YAPF_STYLE["COALESCE_BRACKETS"] = True
+__YAPF_STYLE["COLUMN_LIMIT"] = 70
+__YAPF_STYLE["EACH_DICT_ENTRY_ON_SEPARATE_LINE"] = False
+__YAPF_STYLE["SPLIT_BEFORE_NAMED_ASSIGNS"] = False
 
 
 def __format_lines(code: str) -> str:
@@ -87,14 +90,21 @@ def __format_lines(code: str) -> str:
     :rtype: str
 
     >>> __format_lines("\ndef a():\n   return 7-   45\n\n")
-    'def a():\n    return 7 - 45\n'
+    'def a():\n    return 7 - 45'
     >>> __format_lines("\n\n   \nclass b:\n   def bb(self):      x  =3/a()")
-    'class b:\n    def bb(self):\n        x = 3 / a()\n'
+    'class b:\n    def bb(self):\n        x = 3 / a()'
     """
-    return yapf.yapf_api.FormatCode(code, style_config=__YAPF_STYLE)[0]
+    return yapf.yapf_api.FormatCode(code,
+                                    style_config=__YAPF_STYLE)[0].rstrip()
 
 
-def __strip_hints(code: str) -> str:
+#: the regexes stripping comments that occupy a complete line
+__REGEX_STRIP_LINE_COMMENT: reg.Regex = reg.compile(
+    '\\n[ \\t]*?#.*?\\n', flags=reg.V1 | reg.MULTILINE)
+
+
+def __strip_hints(code: str,
+                  strip_comments: bool = False) -> str:
     r"""
     Strip all type hints from the given code string.
 
@@ -103,14 +113,36 @@ def __strip_hints(code: str) -> str:
     :rtype: str
     >>> __format_lines(__strip_hints(
     ...     "a: int = 7\ndef b(c: int) -> List[int]:\n    return [4]"))
-    'a = 7\n\n\ndef b(c):\n    return [4]\n'
+    'a = 7\n\ndef b(c):\n    return [4]'
     """
-    return sh.strip_string_to_string(code, strip_nl=True, to_empty=True)
+    new_text: str = sh.strip_string_to_string(code,
+                                              strip_nl=True,
+                                              to_empty=True)
 
+    # If we have single lines with type hints only, the above will turn
+    # them into line comments. We need to get rid of those.
 
-#: the regexes stripping comments that occupy a complete line
-__REGEX_STRIP_LINE_COMMENT: reg.Regex = reg.compile(
-    '\\n[ \\t]*?#.*?\\n', flags=reg.V1 | reg.MULTILINE)
+    if strip_comments:
+        # In the ideal case, we want to strip all comments anyway.
+        # Then we do not need to bother with anything complex and can
+        # directly use a regular expression getting rid of them.
+        new_text2 = None
+        while new_text2 != new_text:
+            new_text2 = new_text
+            new_text = reg.sub(__REGEX_STRIP_LINE_COMMENT, '\n', new_text)
+        return new_text
+
+    # If we should preserve normal comments, all we can do is trying to
+    # find these "new" comments in a very pedestrian fashion.
+    orig_lines: List[str] = code.splitlines()
+    new_lines: List[str] = new_text.splitlines()
+    for i in range(min(len(orig_lines), len(new_lines)) - 1, -1, -1):
+        t1: str = orig_lines[i].strip()
+        t2: str = new_lines[i].strip()
+        if t2.startswith("#") and (not t1.startswith("#")) \
+                and t2.endswith(t1):
+            del new_lines[i]
+    return lines_to_str(new_lines, trailing_newline=False)
 
 
 def __strip_docstrings_and_comments(code: str,
@@ -136,20 +168,23 @@ def __strip_docstrings_and_comments(code: str,
     """
     # First, we strip line comments that are hard to catch correctly with
     # the tokenization approach later.
-    code2 = None
-    while code2 != code:
-        code2 = code
-        code = reg.sub(__REGEX_STRIP_LINE_COMMENT, '\n', code)
-    del code2
+    if strip_comments:
+        code2 = None
+        while code2 != code:
+            code2 = code
+            code = reg.sub(__REGEX_STRIP_LINE_COMMENT, '\n', code)
+        del code2
 
     # Now we strip the doc strings and remaining comments.
-    prev_toktype = token.INDENT
-    last_lineno = -1
-    last_col = 0
+    prev_toktype: int = token.INDENT
+    last_lineno: int = -1
+    last_col: int = 0
+    eat_newline: int = 0
     with io.StringIO() as output:
         with io.StringIO(code) as reader:
-            tokgen = tokenize.generate_tokens(reader.readline)
-            for toktype, ttext, (slineno, scol), (elineno, ecol), _ in tokgen:
+            for toktype, ttext, (slineno, scol), (elineno, ecol), _ in \
+                    tokenize.generate_tokens(reader.readline):
+                eat_newline -= 1
                 if slineno > last_lineno:
                     last_col = 0
                 if scol > last_col:
@@ -158,9 +193,14 @@ def __strip_docstrings_and_comments(code: str,
                         (prev_toktype in (token.INDENT, token.NEWLINE)):
                     if strip_docstrings:
                         ttext = ""
+                        eat_newline = 1
                 elif toktype == tokenize.COMMENT:
                     if strip_comments:
                         ttext = ""
+                elif toktype == tokenize.NEWLINE:
+                    if eat_newline >= 0:
+                        ttext = ""
+                        elineno += 1
                 output.write(ttext)
                 prev_toktype = toktype
                 last_col = ecol
@@ -232,13 +272,15 @@ def format_python(code: Iterable[str],
         if strip_docstrings or strip_comments:
             ntext = __strip_docstrings_and_comments(
                 text, strip_docstrings=strip_docstrings,
-                strip_comments=strip_comments)
+                strip_comments=strip_comments).rstrip()
         if strip_hints:
-            ntext = __strip_hints(ntext)
+            ntext = __strip_hints(ntext,
+                                  strip_comments=strip_comments)
         if ntext != text:
             text = __format_lines(ntext)
         del ntext
 
+        text = text.rstrip()
         new_len = text.count("\n"), len(text)
         if not_first_run and (old_len <= new_len):
             break
@@ -297,5 +339,6 @@ def preprocess_python(code: List[str],
         return lines_to_str(format_python(keep_lines,
                                           strip_docstrings=strip_docstrings,
                                           strip_comments=strip_comments,
-                                          strip_hints=strip_hints))
-    return lines_to_str(keep_lines)
+                                          strip_hints=strip_hints),
+                            trailing_newline=True)
+    return lines_to_str(keep_lines, trailing_newline=True)

@@ -22,25 +22,32 @@ def str_to_lines(text: str) -> List[str]:
     return text.split("\n")
 
 
-def lines_to_str(lines: Iterable[str]) -> str:
+def lines_to_str(lines: Iterable[str],
+                 trailing_newline: bool = True) -> str:
     r"""
-    Convert an iterable of strings to a single string (no trailing newline).
+    Convert an iterable of strings to a single string.
 
     :param Iterable[str] lines: the lines
+    :param bool trailing_newline: should the re be a newline at the end?
     :return: the single string
     :rtype: str
 
-    >>> lines_to_str(["a", "b", "", "c", ""])
+    >>> lines_to_str(["a", "b", "", "c", ""], trailing_newline=True)
     'a\nb\n\nc\n'
-    >>> lines_to_str(["a", "b", "", "c"])
+    >>> lines_to_str(["a", "b", "", "c"], trailing_newline=True)
     'a\nb\n\nc\n'
+    >>> lines_to_str(["a", "b", "", "c"], trailing_newline=False)
+    'a\nb\n\nc'
+    >>> lines_to_str(["a", "b", "", "c", ""], trailing_newline=False)
+    'a\nb\n\nc'
     """
     if not isinstance(lines, Iterable):
         raise TypeError(f"lines must be str, but is {type(lines)}.")
-    res = "\n".join(lines)
-    if res.endswith("\n"):
-        return res
-    return res + "\n"
+
+    res = "\n".join(lines).rstrip()
+    if trailing_newline:
+        return res + "\n"
+    return res
 
 
 def enforce_non_empty_str(text: str) -> str:

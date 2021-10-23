@@ -128,3 +128,67 @@ def test_format_empty_lines():
                               empty_before=lambda s: s == "e",
                               force_no_empty_after=lambda s: s == "d") == \
            ["a", "", "b", "c", "", "", "d", "e"]
+
+
+be = """
+\"\"\"Here we provide a representation for JSSP instances.\"\"\"
+from importlib import resources
+from typing import Final, List, Tuple, Optional
+
+# start book
+class Instance(Component):
+    \"\"\"An instance of the Job Shop Scheduling Problem.\"\"\"
+
+    def __init__(self, name: str, machines: int, jobs: int,
+                 matrix: np.ndarray,
+                 makespan_lower_bound: Optional[int] = None) -> None:
+        \"\"\"
+        Create an instance of the Job Shop Scheduling Problem.
+
+        :param str name: the name of the instance
+        \"\"\"
+        #: The name of this JSSP instance.
+        self.name: Final[str] = logging.sanitize_name(name)
+        # end book
+
+        if name != self.name:
+            raise ValueError(f"Name '{name}' is not a valid name.")
+
+        self.machines: Final[int] = machines  # +book
+
+        #: The number of jobs in this JSSP instance.
+        self.jobs: Final[int] = jobs  # +book
+
+        #: consecutive sequence, i.e., 2*machine numbers.
+        self.matrix: Final[np.ndarray] = matrix  # +book
+
+        #: The lower bound of the makespan for the JSSP instance.
+        self.makespan_lower_bound: Final[int] = makespan_lower_bound  # +book
+"""
+
+bex = """
+class Instance(Component):
+    \"\"\"An instance of the Job Shop Scheduling Problem.\"\"\"
+
+    def __init__(self, name: str, machines: int, jobs: int,
+                 matrix: np.ndarray,
+                 makespan_lower_bound: Optional[int] = None) -> None:
+        \"\"\"
+        Create an instance of the Job Shop Scheduling Problem.
+
+        :param str name: the name of the instance
+        \"\"\"
+        #: The name of this JSSP instance.
+        self.name: Final[str] = logging.sanitize_name(name)
+        self.machines: Final[int] = machines
+        self.jobs: Final[int] = jobs
+        self.matrix: Final[np.ndarray] = matrix
+        self.makespan_lower_bound: Final[int] = makespan_lower_bound
+"""
+
+
+def test_select_lines_6():
+    code = be.splitlines()
+    result = select_lines(code, labels=["book"])
+    exp = bex.strip().splitlines()
+    assert result == exp
