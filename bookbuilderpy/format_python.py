@@ -74,7 +74,7 @@ def __force_no_empty_after(line: str) -> bool:
 #: the internal style for formatting Python code
 __YAPF_STYLE = yapf.style.CreatePEP8Style()
 __YAPF_STYLE["SPLIT_BEFORE_NAMED_ASSIGNS"] = False
-__YAPF_STYLE["COLUMN_LIMIT"] = 60
+__YAPF_STYLE["COLUMN_LIMIT"] = 70
 __YAPF_STYLE["ARITHMETIC_PRECEDENCE_INDICATION"] = True
 
 
@@ -286,12 +286,16 @@ def preprocess_python(code: List[str],
     strip_docstrings: bool = True
     strip_comments: bool = True
     strip_hints: bool = True
+    do_format: bool = True
     if args:
+        do_format = "format" not in args
         strip_docstrings = "doc" not in args
         strip_comments = "comments" not in args
         strip_hints = "hints" not in args
 
-    return lines_to_str(format_python(keep_lines,
-                                      strip_docstrings=strip_docstrings,
-                                      strip_comments=strip_comments,
-                                      strip_hints=strip_hints))
+    if do_format:
+        return lines_to_str(format_python(keep_lines,
+                                          strip_docstrings=strip_docstrings,
+                                          strip_comments=strip_comments,
+                                          strip_hints=strip_hints))
+    return lines_to_str(keep_lines)

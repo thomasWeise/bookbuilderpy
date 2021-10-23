@@ -208,7 +208,10 @@ The following new commands are added:
   + `path`: the relative path fragment to resolve
   + `lines`: the lines of the code to keep in the form `1-3,6`, or empty to keep all
   + `labels`: the labels for selecting code pieces, or empty to keep all. For instance, specifying `a,b` will keep all code between line comments `start a` and `end a` and `start b` and `end b`. By ending a line outside the selected range with line comment `+a` (where `a` is again a label name), it will be included. If it is inside the selected range and ends with line comment `-a`, it is excluded.
-  + args: any additional, language-specific arguments to pass to the code renderer. For python, we automatically strip type hints, docstrings, and comments from the code and also re-format the code. With `doc` you keep the docstrings, with `comments` you keep the comments, with `hints` you keep the type hints.
+  + args: any additional, language-specific arguments to pass to the code renderer, as comma-separated strings.
+    - For Python, we automatically strip type hints, docstrings, and comments from the code and also re-format the code. The re-formatting ensures that lines are no longer than 70 characters, which is necessary to make the listings in PDFs to look nicely.
+      With `doc` you keep the docstrings, with `comments` you keep the comments, with `hints` you keep the type hints.
+      If you specify `format`, then the code is not reformatted at all (which automatically preserves docstrings, type hints, and comments, except for the code selection labels.)
 - `\git.code{repo}{label}{caption}{path}{lines}{labels}{args}` works the same as `\relative.code`, but uses code from the specified git repository instead (see [Metadata](#332-git-repositories)). [Language-specific file resolution](#331-language-specification-and-resolution) does *not* apply.
 - `\rel.figure{label}{caption}{path}{args}` includes a figure into the book. [Language-specific file resolution](#331-language-specification-and-resolution) will apply. This command has the following arguments:
   + `label`: the label of the figure, e.g., `something`. It will be automatically prefixed by `fig:` can then be referenced in the text, e.g., as `As illustrated in [@fig:something], ...`.
