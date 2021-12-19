@@ -22,6 +22,8 @@ TOOL_GIT: Final[str] = "git"
 TOOL_PANDOC: Final[str] = "pandoc"
 #: the name of the pdflatex executable tool
 TOOL_PDFLATEX: Final[str] = "pdflatex"
+#: the name of the rsvg-convert executable tool
+TOOL_RSVG_CONVERT: Final[str] = "rsvg-convert"
 #: the name of the tar executable tool
 TOOL_TAR: Final[str] = "tar"
 #: the name of the xelatex executable tool
@@ -147,8 +149,8 @@ class __Versions:
 
         for tool in [TOOL_CALIBRE, TOOL_FIREFOX, TOOL_FIREFOX_DRIVER,
                      TOOL_GHOSTSCRIPT, TOOL_GIT, TOOL_PANDOC,
-                     TOOL_PDFLATEX, TOOL_TAR, TOOL_XELATEX, TOOL_XZ,
-                     TOOL_ZIP]:
+                     TOOL_PDFLATEX, TOOL_RSVG_CONVERT, TOOL_TAR,
+                     TOOL_XELATEX, TOOL_XZ, TOOL_ZIP]:
             has: Tuple[str, bool]
             if tool in self.__has_tool:
                 has = self.__has_tool[tool]
