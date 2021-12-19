@@ -1,26 +1,26 @@
 # a html parser used for minifying html
-beautifulsoup4 >= 4.9.3
+beautifulsoup4 >= 4.10.0
 
 # for internal markdown conversion when building the website
-markdown >= 3.3.4
+markdown >= 3.3.6
 
 # needed to minify html output
-minify_html >= 0.6.8
+minify_html >= 0.8.0
 
 # we need pyyaml to process the metadata formatted in yaml
-pyyaml >= 5.4.1
+pyyaml >= 6.0
 
 # regex is needed for processing commands as regular expressions
-regex >= 2021.8.28
+regex >= 2021.11.10
 
 # selenium is needed for fully evaluating the html pages
-selenium >= 3.141.0
+selenium >= 4.1.0
 
 # strip-hints is a tool for removing type hints
 strip-hints >= 0.1.10
 
 # urllib3 is needed to generate the resources
-urllib3 >= 1.26.6
+urllib3 >= 1.26.7
 
 # yapf is a python code formatter
 yapf >= 0.31.0
