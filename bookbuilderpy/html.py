@@ -365,11 +365,15 @@ def __html_crusher(text: str,
         # find all IDs
         for ref in ["id", "name"]:
             for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
+                a = tag.attrs[ref]
+                if len(a) <= 0:
+                    del tag.attrs[ref]
+                    continue
                 if (tag.name.lower() == "meta") and (ref == "name"):
                     continue
-                a = tag.attrs[ref]
                 if a in id_counts:
-                    raise ValueError(f"id '{a}' in '{ref}' appears twice!")
+                    raise ValueError(
+                        f"id '{a}' in '{ref}' of tag '{tag}' appears twice!")
                 id_counts[a] = 0
         # count the references to them
         for ref in ["href", "xlink:href"]:
@@ -378,8 +382,8 @@ def __html_crusher(text: str,
                 if a.startswith("#"):
                     a = a[1:].strip()
                     if a not in id_counts:
-                        raise ValueError(
-                            f"Found reference to undefined id '{a}'.")
+                        raise ValueError("Found reference to undefined id "
+                                         f"'{a}' of tag '{tag}'.")
                     id_counts[a] += 1
 
         # purge all unreferenced ids
