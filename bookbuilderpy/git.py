@@ -2,6 +2,8 @@
 import datetime
 import re
 from dataclasses import dataclass
+from shutil import rmtree
+from subprocess import TimeoutExpired  # nosec
 from typing import Final
 from typing import Optional
 
@@ -78,9 +80,24 @@ class Repo:
         url = enforce_url(url)
         s = f" repository '{url}' to directory '{dest}'"
         log(f"starting to load{s} via '{TOOL_GIT}'.")
-        shell([TOOL_GIT, "-C", dest, "clone",
-               "--depth", "1", url, dest], timeout=300,
-              cwd=dest)
+        try:
+            shell([TOOL_GIT, "-C", dest, "clone",
+                   "--depth", "1", url, dest], timeout=300,
+                  cwd=dest)
+        except TimeoutExpired as error:
+            if url.startswith("https://github.com"):
+                url2 = enforce_url(f"ssh://git@{url[8:]}")
+                log(f"timeout when loading url '{url}', so we try "
+                    f"'{url2}' instead, but first delete '{dest}'.")
+                rmtree(dest, ignore_errors=True, onerror=None)
+                dest.ensure_dir_exists()
+                log(f"'{dest}' deleted and created, now re-trying cloning.")
+                shell([TOOL_GIT, "-C", dest, "clone",
+                      "--depth", "1", url2, dest], timeout=300,
+                      cwd=dest)
+            else:
+                log(f"timeout when loading url '{url}'.")
+                raise error
         log(f"successfully finished loading{s}.")
 
         return Repo.from_local(path=dest, url=url)
