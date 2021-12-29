@@ -162,13 +162,11 @@ def html_postprocess(in_file: str,
 
         if fully_evaluate_html:  # flatten scripts and html
             if has_tool(TOOL_FIREFOX_DRIVER) and has_tool(TOOL_FIREFOX):
-                # options = webdriver.ChromeOptions()
                 options = webdriver.FirefoxOptions()
                 options.headless = True
                 options.add_argument("--enable-javascript")
                 browser = webdriver.Firefox(options=options,
                                             service_log_path=os.path.devnull)
-                # .Chrome(options=options)
                 if needs_file_out:
                     current_file = temp.resolve_inside("1.html")
                     current_file.write_all(text)
@@ -181,6 +179,8 @@ def html_postprocess(in_file: str,
                 html = browser.page_source
                 browser.quit()
                 html = html.strip()
+                if not html:
+                    raise ValueError("Browser returned empty html.")
                 if not html.startswith("<!"):
                     html = "<!DOCTYPE HTML>" + html
                 if html != text:
@@ -195,9 +195,55 @@ def html_postprocess(in_file: str,
                     f"{TOOL_FIREFOX_DRIVER}' not present.")
 
         if purge_scripts:  # purge java script
+            # first, we attempt a pure string-based replace
             ntext = text
+            f11: Final[str] = "<script>"
+            f12: Final[str] = '<script type="text/javascript">'
+            f2: Final[str] = "</script>"
+            f3: Final[str] = "<script"
+            start: int = 0
+            while True:
+                i1: int = ntext.find(f11, start)
+                i2: int = ntext.find(f12, start)
+                if i1 < 0:
+                    i = i2
+                    ff = f12
+                elif i2 < 0:
+                    i = i1
+                    ff = f11
+                elif i1 < i2:
+                    i = i1
+                    ff = f11
+                else:
+                    i = i2
+                    ff = f12
+                if i < start:
+                    break
+
+                j: int = ntext.find(f2, i + len(ff))
+                if j <= i:
+                    break
+                j += len(f2)
+                # it might happen, that we do not delete the whole script
+                # if we do not search for the *longest* possible
+                # <script>...</script> sequences
+                while True:
+                    k: int = ntext.find(f2, j)
+                    if k < j:
+                        break
+                    k2 = ntext.find(f3, j)
+                    if (k2 < j) or (k2 > k):
+                        j = k + len(f2)
+                    else:
+                        break
+                ntext = ntext[:i].strip() + ntext[j:].strip()
+                start = i
+
+            # now we also try the regular-expression based replace
             for regex in __REGEXES_JAVASCRIPT:
-                ntext = reg.sub(regex, "", ntext)
+                # ntext = reg.sub(regex, "", ntext).strip()
+                log(f"{regex} -- {len(reg.findall(regex, ntext))}")
+            # finished purging scripts
             if ntext != text:
                 needs_file_out = True
                 text = ntext
