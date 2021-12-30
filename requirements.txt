@@ -23,4 +23,4 @@ strip-hints >= 0.1.10
 urllib3 >= 1.26.7
 
 # yapf is a python code formatter
-yapf >= 0.31.0
+yapf >= 0.32.0
