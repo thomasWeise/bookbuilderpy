@@ -101,16 +101,6 @@ def __unpack_data_uris(text: str) -> str:
     return text
 
 
-#: the regular expressions for purging java scripts
-__REGEXES_JAVASCRIPT: Tuple[reg.Regex, reg.Regex, reg.Regex] = \
-    reg.compile("<script\\s+.*?>.*?</script>",
-                flags=reg.V1 | reg.MULTILINE | reg.IGNORECASE), \
-    reg.compile("<script\\s*>.*?</script>",
-                flags=reg.V1 | reg.MULTILINE | reg.IGNORECASE), \
-    reg.compile("<script\\s+.*?\\s*/>",
-                flags=reg.V1 | reg.MULTILINE | reg.IGNORECASE)
-
-
 def html_postprocess(in_file: str,
                      out_file: str,
                      flatten_data_uris: bool = True,
@@ -194,68 +184,12 @@ def html_postprocess(in_file: str,
                 log(f"cannot use HTML evaluation, '{TOOL_FIREFOX}' or '"
                     f"{TOOL_FIREFOX_DRIVER}' not present.")
 
-        if purge_scripts:  # purge java script
-            # first, we attempt a pure string-based replace
-            ntext = text
-            f11: Final[str] = "<script>"
-            f12: Final[str] = '<script type="text/javascript">'
-            f2: Final[str] = "</script>"
-            f3: Final[str] = "<script"
-            start: int = 0
-            while True:
-                i1: int = ntext.find(f11, start)
-                i2: int = ntext.find(f12, start)
-                if i1 < 0:
-                    i = i2
-                    ff = f12
-                elif i2 < 0:
-                    i = i1
-                    ff = f11
-                elif i1 < i2:
-                    i = i1
-                    ff = f11
-                else:
-                    i = i2
-                    ff = f12
-                if i < start:
-                    break
-
-                j: int = ntext.find(f2, i + len(ff))
-                if j <= i:
-                    break
-                j += len(f2)
-                # it might happen, that we do not delete the whole script
-                # if we do not search for the *longest* possible
-                # <script>...</script> sequences
-                while True:
-                    k: int = ntext.find(f2, j)
-                    if k < j:
-                        break
-                    k2 = ntext.find(f3, j)
-                    if (k2 < j) or (k2 > k):
-                        j = k + len(f2)
-                    else:
-                        break
-                ntext = ntext[:i].strip() + ntext[j:].strip()
-                start = i
-
-            # now we also try the regular-expression based replace
-            for regex in __REGEXES_JAVASCRIPT:
-                # ntext = reg.sub(regex, "", ntext).strip()
-                log(f"{regex} -- {len(reg.findall(regex, ntext))}")
-            # finished purging scripts
-            if ntext != text:
-                needs_file_out = True
-                text = ntext
-                log("javascript purging changed HTML content.")
-            else:
-                log("no javascript found to remove.")
-            del ntext
-
-        if minify or canonicalize_ids:  # minify output
+        if minify or canonicalize_ids or purge_scripts:  # minify output
             ntext = enforce_non_empty_str(__html_crusher(
                 text, canonicalize_ids=canonicalize_ids,
-                purge_mathjax=purge_mathjax, minify=True))
+                purge_mathjax=purge_mathjax,
+                minify=minify,
+                purge_scripts=purge_scripts))
             if ntext != text:
                 needs_file_out = True
                 text = ntext
@@ -324,7 +258,8 @@ def __inner_minify(parsed: bs4.BeautifulSoup) -> None:
 def __html_crusher(text: str,
                    canonicalize_ids: bool = True,
                    purge_mathjax: bool = True,
-                   minify: bool = True) -> str:
+                   minify: bool = True,
+                   purge_scripts: bool = False) -> str:
     """
     Crush the html content.
 
@@ -332,6 +267,7 @@ def __html_crusher(text: str,
     :param bool canonicalize_ids: should we canonicalize the IDs?
     :param bool purge_mathjax: purge all mathjax stuff?
     :param bool minify: should we minify the HTML output?
+    :param bool purge_scripts: should we purge all javascripts?
     :return: the crushed html text
     :rtype: str
     """
@@ -387,6 +323,11 @@ def __html_crusher(text: str,
                 found = True
             if found:
                 tag.string = tagtext
+
+    # purge all scripts
+    if purge_scripts:
+        for tag in parsed("script"):
+            tag.decompose()
 
     if minify:
         # merge all styles
