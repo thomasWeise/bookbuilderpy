@@ -278,6 +278,8 @@ def find_local_files() -> Tuple[str, ...]:
             continue
         if file.endswith(".py"):
             full = os.path.join(package, file)
+            if "moptipy/api/" in full:
+                continue
             if os.path.isfile(full):
                 result.append(Path.file(full))
     assert len(result) > 0
