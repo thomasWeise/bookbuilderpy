@@ -3,6 +3,7 @@ import os
 import os.path
 import pathlib
 import random
+import shutil
 import struct
 import zlib
 from tempfile import mkstemp
@@ -11,8 +12,53 @@ from typing import Final, Tuple, List, Optional, cast, Set
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build import Build
 from bookbuilderpy.git import Repo
+from bookbuilderpy.logger import log
 from bookbuilderpy.temp import Path
 from bookbuilderpy.temp import TempDir
+
+
+def get_local_repo() -> Optional[Repo]:
+    """
+    Get the local repository.
+
+    :returns: the local repository, or None if none exists
+    """
+    log("are we in a local repository?")
+    check = Path.path(".")
+    while True:
+        if check == "/":
+            break
+        if not os.access(check, os.R_OK):
+            break
+        test = Path.path(os.path.join(check, ".git"))
+        if os.path.isdir(test):
+            repo = Repo.from_local(check)
+            log(f"build process is based on commit '{repo.commit}'"
+                f" of repo '{repo.url}'.")
+            return repo
+        check = Path.path(os.path.join(check, ".."))
+    log("build process is not based on git checkout.")
+    return None
+
+
+#: should we use git?
+USE_GIT: bool = True
+if "GITHUB_JOB" not in os.environ:
+    __inner_repo: Final[Optional[Repo]] = get_local_repo()
+    if __inner_repo is None:
+        log("cannot patch repository loader")
+        USE_GIT = False
+    else:
+        def __download(url: str, dest_dir: str,
+                       rp: Repo = __inner_repo) -> Repo:
+            dd = Path.directory(dest_dir)
+            shutil.copytree(rp.path, dd, dirs_exist_ok=True)
+            rr = Repo(dd, url, rp.commit, rp.date_time)
+            log("invoked patched repo downloader of "
+                f"{url} to {dest_dir}, returned {rr}.")
+            return rr
+        Repo.download = __download
+        log("repository loader patched")
 
 #: the list of repositories to use for testing
 REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
@@ -100,6 +146,7 @@ def create_metadata(dest: Path,
         "  \\interfootnotelinepenalty=10000",
         "  \\raggedbottom",
         "  ```",
+        "CJKmainfont: Noto Sans CJK SC",
         "cref: true",
         "chapters: true",
         'figPrefix:',
@@ -397,6 +444,23 @@ def create_random_png(destdir: Path,
     return path.relative_to(destdir)
 
 
+def make_label(base: str) -> str:
+    """
+    Make a unique label from a string.
+
+    :param str base: the base string
+    :returns: the label
+    """
+    attr: Final[str] = "_cnt_"
+    if hasattr(make_label, attr):
+        cnt = getattr(make_label, attr) + 1
+    else:
+        cnt = 0
+    setattr(make_label, attr, cnt)
+    xl = base.replace("/", "_").replace(".", "_").lower()
+    return f"{xl}_{cnt}"
+
+
 def make_name(names: Set[str]) -> str:
     """
     Make a random name.
@@ -523,7 +587,7 @@ def generate_example_lang(
                         (handle, spath) = mkstemp(suffix=".py",
                                                   prefix="t", dir=dest)
                         spath = Path.file(spath)
-                        label = spath.replace("/", "_").replace(".", "_")
+                        label = make_label(spath)
                         os.close(handle)
                         rf = Path.file(repofile)
                         cde = rf.read_all_str()
@@ -535,7 +599,7 @@ def generate_example_lang(
                         fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
                     else:
                         spath = repo[1][int(random.uniform(0, len(repo[1])))]
-                        label = spath.replace("/", "_").replace(".", "_")
+                        label = make_label(spath)
                         fd.write(f"\n\n\\{bc.CMD_GIT_CODE}"
                                  f"{{{repo[0]}}}{{{label}}}{{")
                         make_text(fd, False, 1)
@@ -619,8 +683,7 @@ def build_example(source_dir: str, dest_dir: str) -> None:
     in_dir.ensure_dir_exists()
     out_dir = Path.path(dest_dir)
     out_dir.ensure_dir_exists()
-    root = generate_example(in_dir,
-                            with_git=("GITHUB_JOB" in os.environ))
+    root = generate_example(in_dir, with_git=USE_GIT)
     with Build(root, out_dir, False) as build:
         build.build()
 
