@@ -63,7 +63,7 @@ def __raw_load(in_file: Path,
                in_dir: Path,
                resolve_cmd_only_once: bool = True) -> str:
     """
-    A raw version of the recursive path resolution.
+    Perform a raw version of the recursive path resolution.
 
     :param Path in_file: the input file path
     :param Path in_dir: the input directory

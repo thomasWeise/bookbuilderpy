@@ -80,6 +80,7 @@ def _do_call(tool: str, arg: str) -> Tuple[str, bool]:
     :rtype: Tuple[str, bool]
     """
     try:
+        # nosemgrep
         ret = subprocess.run([tool, arg], check=False,  # nosec
                              text=True, capture_output=True,  # nosec
                              timeout=360)  # nosec

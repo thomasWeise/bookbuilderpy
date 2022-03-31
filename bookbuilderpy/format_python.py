@@ -41,7 +41,7 @@ def __no_empty_after(line: str) -> bool:
 
 def __empty_before(line: str) -> bool:
     """
-    An empty line is needed before this one.
+    Check whether an empty line is needed before this one.
 
     :param line: the line
     :return: a boolean value
@@ -246,7 +246,7 @@ def format_python(code: Iterable[str],
         raise TypeError(
             f"strip_hints must be bool, but is {type(strip_hints)}.")
 
-    old_len: Tuple[int, int] = sys.maxsize, sys.maxsize
+    old_len: Tuple[int, int] = (sys.maxsize, sys.maxsize)
 
     shortest: List[str] = list(code)
     rcode: List[str] = shortest
@@ -262,7 +262,7 @@ def format_python(code: Iterable[str],
             raise ValueError("Code becomes empty.")
 
         text = lines_to_str(rcode)
-        new_len: Tuple[int, int] = text.count("\n"), len(text)
+        new_len: Tuple[int, int] = (text.count("\n"), len(text))
         if not_first_run and (old_len <= new_len):
             break
         shortest = rcode

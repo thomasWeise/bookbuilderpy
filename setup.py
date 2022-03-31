@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 version = {}
 with open("bookbuilderpy/version.py") as fp:
-    exec(fp.read(), version)
+    exec(fp.read(), version)  # nosemgrep
 
 setup(
     name='bookbuilderpy',

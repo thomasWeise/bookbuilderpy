@@ -262,7 +262,7 @@ class Build(AbstractContextManager):
 
     def __get_resource(self, name: str, directory: Path) -> Optional[Path]:
         """
-        A function used for getting an internal build resource to a directory.
+        Get an internal build resource to a directory.
 
         :param str name: the resource name
         :param Path directory: the destination path

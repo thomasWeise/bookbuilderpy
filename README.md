@@ -173,7 +173,7 @@ The following basic commands are already available in pandoc's [markdown](http:/
 - Abbreviations and LaTeX-style commands can be created and called normally, as long as they do not clash with the [`bookbuilderpy`-specific commands](#32-bookbuilderpy-specific-commands).
   For example, you can do:
 
-```markdown
+```
 \newcommand{\mathSpace}[1]{\mathbb{#1}}
 \newcommand{\realNumbers}{\mathSpace{R}}
 
@@ -182,7 +182,7 @@ Assume that $x\in\realNumbers$ is a value larger than $2$, then $\sqrt{x}>1$ is 
 
 - Tables can be created as follows:
 
-```markdown
+```
 This is some normal text.
 
 |centered column|right-aligned column|left-aligned column|

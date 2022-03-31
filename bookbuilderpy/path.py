@@ -12,7 +12,7 @@ from bookbuilderpy.strings import enforce_non_empty_str_without_ws
 
 def _canonicalize_path(path: str) -> str:
     """
-    An method which will check and canonicalize a path.
+    Check and canonicalize a path.
 
     :param str path: the path
     :return: the canonicalized path
@@ -42,7 +42,7 @@ def _canonicalize_path(path: str) -> str:
 
 def copy_pure(path_in: str, path_out: str):
     """
-    The internal method to copy a file.
+    Perform the internal method to copy a file.
 
     :param str path_in: the path to the input file
     :param str path_out: the path to the output file
@@ -52,7 +52,7 @@ def copy_pure(path_in: str, path_out: str):
 
 def move_pure(path_in: str, path_out: str):
     """
-    The method to copy a file.
+    Copy a file.
 
     :param str path_in: the path to the input file
     :param str path_out: the path to the output file
@@ -62,7 +62,7 @@ def move_pure(path_in: str, path_out: str):
 
 def _copy_un_gzip(path_in: str, path_out: str):
     """
-    The internal method for copying a gzip-compressed file.
+    Copy a gzip-compressed file.
 
     :param str path_in: the path to the input file
     :param str path_out: the path to the output file
@@ -122,7 +122,7 @@ class Path(str):
 
     def enforce_file(self) -> None:
         """
-        A method which enforces that a path references an existing file.
+        Enforce that a path references an existing file.
 
         :raises ValueError:  if `path` does not reference an existing file
         """
@@ -134,7 +134,7 @@ class Path(str):
 
     def enforce_dir(self) -> None:
         """
-        A method which enforces that a path references an existing directory.
+        Enforce that a path references an existing directory.
 
         :raises ValueError:  if `path` does not reference an existing directory
         """

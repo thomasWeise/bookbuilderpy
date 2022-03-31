@@ -34,7 +34,7 @@ class Repo:
                  commit: str,
                  date_time: str):
         """
-        The information about a repository.
+        Set up the information about a repository.
 
         :param Path path: the path
         :param str url: the url

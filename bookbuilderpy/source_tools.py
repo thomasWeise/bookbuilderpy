@@ -216,7 +216,7 @@ def format_empty_lines(lines: Iterable[str],
                        force_no_empty_after: Callable = lambda line: False,
                        max_consecutive_empty_lines: int = 1) -> List[str]:
     """
-    A generator that strips any consecutive empty lines.
+    Obtain a generator that strips any consecutive empty lines.
 
     :param Iterable[str] lines: the original line iterable
     :param Callable empty_before: a function checking whether an empty line

@@ -18,11 +18,14 @@ from bookbuilderpy.versions import TOOL_FIREFOX, TOOL_FIREFOX_DRIVER, has_tool
 
 #: the regexes for java script
 __REGEXES_URI_JAVASCRIPT: Final[Tuple[reg.Regex, ...]] = tuple(
-    [reg.compile(
-        f'<script src=\"data:application/{x}(;\\s*charset=utf-8)?;base64,'
-        '((?:[A-Za-z0-9+\\/]{4})*(?:[A-Za-z0-9+\\/]{4}|[A-Za-z0-9+\\/]{3}='
-        '|[A-Za-z0-9+\\/]{2}={2}))\"(\\s+type="text/javascript")?'
-        f'{y}',
+    [reg.compile(  # nosemgrep
+        f'<script src=\"data:application/{x}'  # nosemgrep
+        '(;\\s*charset=utf-8)?;base64,'  # nosemgrep
+        '((?:[A-Za-z0-9+\\/]{4})*(?:[A-Za-z0-9+\\/]'  # nosemgrep
+        '{4}|[A-Za-z0-9+\\/]{3}='  # nosemgrep
+        '|[A-Za-z0-9+\\/]{2}={2}))'  # nosemgrep
+        '\"(\\s+type="text/javascript")?'  # nosemgrep
+        f'{y}',  # nosemgrep
         flags=reg.V1 | reg.MULTILINE)
         for x in ["octet-stream", "javascript"]
         for y in ["\\s*/>", ">\\s*</script>"]]
@@ -30,12 +33,15 @@ __REGEXES_URI_JAVASCRIPT: Final[Tuple[reg.Regex, ...]] = tuple(
 
 #: the regexes for css
 __REGEXES_URI_CSS: Final[Tuple[reg.Regex, ...]] = tuple(
-    [reg.compile(
-        f'<link rel=\"stylesheet\" href=\"data:application/{x}(;'
-        '\\s*charset=utf-8)?;base64,((?:[A-Za-z0-9+\\/]{4})*(?:[A-Za-z'
-        '0-9+\\/]{4}|[A-Za-z0-9+\\/]{3}=|[A-Za-z0-9+\\/]{2}={2}))\"'
-        '(\\s+type="text/css")?'
-        f'{y}',
+    [reg.compile(  # nosemgrep
+        '<link rel=\"stylesheet\" '  # nosemgrep
+        f'href=\"data:application/{x}(;'  # nosemgrep
+        '\\s*charset=utf-8)?;base64,((?:[A-Za-z0-9'  # nosemgrep
+        '+\\/]{4})*(?:[A-Za-z'  # nosemgrep
+        '0-9+\\/]{4}|[A-Za-z0-9+\\/]{3}=|'  # nosemgrep
+        '[A-Za-z0-9+\\/]{2}={2}))\"'  # nosemgrep
+        '(\\s+type="text/css")?'  # nosemgrep
+        f'{y}',  # nosemgrep
         flags=reg.V1 | reg.MULTILINE)
         for x in ["octet-stream"]
         for y in ["\\s*/>", ">\\s*</link>"]]
@@ -214,7 +220,7 @@ def html_postprocess(in_file: str,
 
 def __inner_minify(parsed: bs4.BeautifulSoup) -> None:
     """
-    The inner HTML minification routine.
+    Execute the inner HTML minification routine.
 
     This routine can be applied before and after ID normalization.
 

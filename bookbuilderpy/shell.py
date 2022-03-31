@@ -43,6 +43,7 @@ def shell(command: Union[str, Iterable[str]],
         wd = Path.directory(cwd)
         execstr = f"'{execstr}' in '{wd}'"
         log(f"executing {execstr}.")
+        # nosemgrep
         ret = subprocess.run(cmd, check=False, text=True,  # nosec
                              timeout=timeout,  # nosec
                              stdout=subprocess.PIPE,  # nosec
@@ -51,6 +52,7 @@ def shell(command: Union[str, Iterable[str]],
     else:
         execstr = f"'{execstr}'"
         log(f"executing {execstr}.")
+        # nosemgrep
         ret = subprocess.run(cmd, check=False, text=True,  # nosec
                              timeout=timeout,  # nosec
                              stdout=subprocess.PIPE,  # nosec
