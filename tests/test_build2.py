@@ -277,7 +277,8 @@ def find_local_files() -> Tuple[str, ...]:
         if "html" in file:
             continue
         if file in ("process.py", "objective.py", "encoding.py",
-                    "operators.py", "algorithm.py", "space.py"):
+                    "operators.py", "algorithm.py", "space.py",
+                    "website.py"):
             continue
         if file.endswith(".py"):
             full = os.path.join(package, file)
@@ -315,7 +316,8 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
             if "html" in f:
                 continue
             if f in ("process.py", "objective.py", "encoding.py",
-                     "operators.py", "algorithm.py", "space.py"):
+                     "operators.py", "algorithm.py", "space.py",
+                     "website.py"):
                 continue
             if "moptipy/api" in f:
                 continue

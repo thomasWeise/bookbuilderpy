@@ -12,7 +12,6 @@ def str_to_lines(text: str) -> List[str]:
 
     :param str text: the original text string
     :return: the lines
-    :rtype: Iterable[lines]
 
     >>> str_to_lines("\n123\n  456\n789 \n 10\n\n")
     ['', '123', '  456', '789 ', ' 10', '', '']
@@ -89,7 +88,7 @@ def datetime_to_date_str(date: datetime.datetime) -> str:
     """
     Convert a datetime object to a date string.
 
-    :param datatime.datetime date: the date
+    :param datetime.datetime date: the date
     :return: the date string
     :rtype: str
     """
@@ -102,7 +101,7 @@ def datetime_to_datetime_str(date: datetime.datetime) -> str:
     """
     Convert a datetime object to a date-time string.
 
-    :param datatime.datetime date: the date
+    :param datetime.datetime date: the date
     :return: the date-time string
     :rtype: str
     """

@@ -14,7 +14,7 @@ class TempDir(Path, AbstractContextManager):
     A scoped temporary directory to be used in a 'with' block.
 
     The directory and everything in it will be deleted upon exiting the
-    'with' block. You can obtain its absolute/real path via :func:`str`.
+    'with' block.
     """
 
     #: is the directory open?
@@ -36,7 +36,7 @@ class TempDir(Path, AbstractContextManager):
         """
         Create the temporary directory.
 
-        :param Optional[str] directory: an optional root directory
+        :param directory: an optional root directory
         :raises TypeError: if `directory` is not `None` but also no `str`
         """
         if not (directory is None):
@@ -70,7 +70,6 @@ class TempFile(Path, AbstractContextManager):
     A scoped temporary file to be used in a 'with' block.
 
     This file will be deleted upon exiting the 'with' block.
-    You can obtain its absolute/real path via :func:`str`.
     """
 
     #: is the directory open?
