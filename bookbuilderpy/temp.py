@@ -93,9 +93,9 @@ class TempFile(Path, AbstractContextManager):
         """
         Create a temporary file.
 
-        :param Optional[str] directory: a root directory or `TempDir` instance
-        :param Optional[str] prefix: an optional prefix
-        :param Optional[str] suffix: an optional suffix, e.g., `.txt`
+        :param directory: a root directory or `TempDir` instance
+        :param prefix: an optional prefix
+        :param suffix: an optional suffix, e.g., `.txt`
         :raises TypeError: if any of the parameters does not fulfill the type
             contract
         """

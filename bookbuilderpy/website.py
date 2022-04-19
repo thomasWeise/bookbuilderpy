@@ -91,14 +91,13 @@ def build_website(docs: Iterable[LangResult],
     """
     Build a website linking to all the generated documents.
 
-    :param Iterable[LangResult] docs: the per-language results
-    :param str outer_file: the wrapper file
-    :param Optional[str] body_file: the body file
-    :param str dest_dir: the destination directory
-    :param str input_dir: the base input directory
-    :param Callable get_meta: a callable used to get the results
+    :param docs: the per-language results
+    :param outer_file: the wrapper file
+    :param body_file: the body file
+    :param dest_dir: the destination directory
+    :param input_dir: the base input directory
+    :param get_meta: a callable used to get the results
     :return: the file record to the generated website
-    :rtype: File
     """
     if docs is None:
         raise ValueError("docs cannot be None.")

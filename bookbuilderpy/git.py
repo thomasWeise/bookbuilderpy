@@ -36,10 +36,10 @@ class Repo:
         """
         Set up the information about a repository.
 
-        :param Path path: the path
-        :param str url: the url
-        :param str commit: the commit
-        :param str date_time: the date and time
+        :param path: the path
+        :param url: the url
+        :param commit: the commit
+        :param date_time: the date and time
         """
         if not isinstance(path, Path):
             raise TypeError(f"Expected Path, got '{type(path)}'.")
@@ -70,7 +70,6 @@ class Repo:
         :param url: the repository url
         :param dest_dir: the destination directory
         :return: the repository information
-        :rtype: Repo
         """
         if not has_tool(TOOL_GIT):
             raise ValueError(f"No '{TOOL_GIT}' installation found.")
@@ -109,9 +108,8 @@ class Repo:
         Load all the information from an local repository.
 
         :param path: the path to the repository
-        :param Optional[str] url: the url
+        :param url: the url
         :return: the repository information
-        :rtype: Repo
         """
         if not has_tool(TOOL_GIT):
             raise ValueError(f"No '{TOOL_GIT}' installation found.")
@@ -167,7 +165,6 @@ class Repo:
         Get the base url of this repository.
 
         :return: the base url of this repository
-        :rtype: str
         """
         base_url = self.url
         base_url_lower = base_url.lower()
@@ -179,11 +176,10 @@ class Repo:
 
     def make_url(self, relative_path: str) -> str:
         """
-        Make a url relative to this repository.
+        Make an url relative to this repository.
 
-        :param str relative_path: the relative path
+        :param relative_path: the relative path
         :return: the url
-        :rtype: str
         """
         pt: Final[Path] = self.path.resolve_inside(relative_path)
         pt.ensure_file_exists()
@@ -202,7 +198,6 @@ class Repo:
         Get the name of this repository in the form 'user/name'.
 
         :return: the name of this repository in the form 'user/name'.
-        :rtype: str
         """
         base_url = self.url
         if base_url.lower().endswith(".git"):

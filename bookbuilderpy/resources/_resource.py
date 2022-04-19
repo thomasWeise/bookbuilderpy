@@ -12,12 +12,11 @@ def load_resource(name: str, source_dir: str, dest_dir: str) -> \
     """
     Load a text resource or template for the use with pandoc.
 
-    :param str name: the template name
-    :param str source_dir: the source directory
-    :param str dest_dir: the destination directory
+    :param name: the template name
+    :param source_dir: the source directory
+    :param dest_dir: the destination directory
     :return: the fully qualified path to the resource file if it was created,
         or None if no new file was created
-    :rtype: Optional[Path]
     """
     input_dir = Path.directory(source_dir)
     output_dir = Path.directory(dest_dir)

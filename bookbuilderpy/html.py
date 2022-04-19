@@ -53,10 +53,9 @@ def __base64_unpacker(args, start: str, end: str) -> str:
     Convert the base64 encoded text to normal text.
 
     :param args: the arguments
-    :param str start: the start tag
-    :param str end: the end tag
+    :param start: the start tag
+    :param end: the end tag
     :return: the text
-    :rtype: str
     """
     decoded = base64.b64decode(str(args.groups()[1]).strip()).decode(UTF8)
     res = f'{start}{decoded.strip()}{end}'
@@ -73,7 +72,6 @@ def __base64_unpacker_js(args) -> str:
 
     :param args: the arguments
     :return: the text
-    :rtype: str
     """
     return __base64_unpacker(args, '<script type="text/javascript">',
                              '</script>')
@@ -87,7 +85,6 @@ def __base64_unpacker_css(args) -> str:
 
     :param args: the arguments
     :return: the text
-    :rtype: str
     """
     return __base64_unpacker(args, '<style type="text/css">', '</style>')
 
@@ -96,9 +93,8 @@ def __unpack_data_uris(text: str) -> str:
     """
     Unpack all javascript data urls.
 
-    :param str text: the original html text
+    :param text: the original html text
     :return: the text with all scripts expanded
-    :rtype: str
     """
     for regex in __REGEXES_URI_JAVASCRIPT:
         text = reg.sub(regex, __base64_unpacker_js, text)
@@ -119,18 +115,17 @@ def html_postprocess(in_file: str,
     """
     Post-process a html file.
 
-    :param str in_file: the input file
-    :param str out_file: the output file
-    :param bool flatten_data_uris: should we flatten data URIs?
-    :param bool fully_evaluate_html: should we use selenium to fully evaluate
+    :param in_file: the input file
+    :param out_file: the output file
+    :param flatten_data_uris: should we flatten data URIs?
+    :param fully_evaluate_html: should we use selenium to fully evaluate
         all html and javascript?
-    :param bool purge_scripts: should we purge all javascripts from the file?
-    :param bool minify: should we minify the HTML output?
-    :param bool purge_mathjax: purge all mathjax stuff?
-    :param bool canonicalize_ids: should we canonicalize the IDs?
-    :param bool overwrite: should the output file be overwritten if it exists?
+    :param purge_scripts: should we purge all javascripts from the file?
+    :param minify: should we minify the HTML output?
+    :param purge_mathjax: purge all mathjax stuff?
+    :param canonicalize_ids: should we canonicalize the IDs?
+    :param overwrite: should the output file be overwritten if it exists?
     :return: the output file
-    :rtype: Path
     """
     source = Path.file(in_file)
     output = Path.path(out_file)
@@ -269,13 +264,12 @@ def __html_crusher(text: str,
     """
     Crush the html content.
 
-    :param str text: the text coming in
-    :param bool canonicalize_ids: should we canonicalize the IDs?
-    :param bool purge_mathjax: purge all mathjax stuff?
-    :param bool minify: should we minify the HTML output?
-    :param bool purge_scripts: should we purge all javascripts?
+    :param text: the text coming in
+    :param canonicalize_ids: should we canonicalize the IDs?
+    :param purge_mathjax: purge all mathjax stuff?
+    :param minify: should we minify the HTML output?
+    :param purge_scripts: should we purge all javascripts?
     :return: the crushed html text
-    :rtype: str
     """
     parsed: bs4.BeautifulSoup = bs4.BeautifulSoup(text, "html.parser")
 
@@ -453,9 +447,8 @@ def __int2str(x: int) -> str:
     """
     Convert an integer to a string.
 
-    :param int x: the integer
+    :param x: the integer
     :return: the compact string
-    :rtype: str
     """
     if x == 0:
         return __DIGITS_START[0]

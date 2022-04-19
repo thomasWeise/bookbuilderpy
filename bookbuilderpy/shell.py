@@ -21,12 +21,12 @@ def shell(command: Union[str, Iterable[str]],
     the logger. If wants_stdout is True, the command's stdout is returned.
     Otherwise, None is returned.
 
-    :param Union[str, Iterable[str]] command: the command to execute
-    :param int timeout: the timeout
-    :param Optional[str] cwd: the directory to run inside
-    :param bool wants_stdout: if True, the stdout is returned,
-        if False, None is returned
-    :param Optional[Dict[int, str]] exit_code_to_str: an optional map
+    :param command: the command to execute
+    :param timeout: the timeout
+    :param cwd: the directory to run inside
+    :param wants_stdout: if `True`, the stdout is returned, if `False`,
+        `None` is returned
+    :param exit_code_to_str: an optional map
         converting erroneous exit codes to strings
     """
     if timeout < 0:

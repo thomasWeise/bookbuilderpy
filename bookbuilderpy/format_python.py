@@ -21,7 +21,6 @@ def __no_empty_after(line: str) -> bool:
 
     :param line: the line
     :return: a boolean value
-    :rtype: str
     >>> __no_empty_after("def ")
     True
     >>> __no_empty_after("import ")
@@ -45,7 +44,6 @@ def __empty_before(line: str) -> bool:
 
     :param line: the line
     :return: a boolean value
-    :rtype: str
     >>> __empty_before("def")
     False
     >>> __empty_before("def ")
@@ -64,7 +62,6 @@ def __force_no_empty_after(line: str) -> bool:
 
     :param line: the line
     :return: a boolean value
-    :rtype: str
     >>> __force_no_empty_after("@")
     True
     """
@@ -86,9 +83,8 @@ def __format_lines(code: str) -> str:
     r"""
     Format Python code lines.
 
-    :param str code: the original code
+    :param code: the original code
     :return: the formatted lines.
-    :rtype: str
 
     >>> __format_lines("\ndef a():\n   return 7-   45\n\n")
     'def a():\n    return 7 - 45'
@@ -109,9 +105,8 @@ def __strip_hints(code: str,
     r"""
     Strip all type hints from the given code string.
 
-    :param str code: the code string
+    :param code: the code string
     :return: the stripped code string
-    :rtype: str
     >>> __format_lines(__strip_hints(
     ...     "a: int = 7\ndef b(c: int) -> List[int]:\n    return [4]"))
     'a = 7\n\ndef b(c):\n    return [4]'
@@ -152,11 +147,10 @@ def __strip_docstrings_and_comments(code: str,
     r"""
     Remove all docstrings and comments from a string.
 
-    :param str code: the code
-    :param bool strip_docstrings: should we delete docstrings?
-    :param bool strip_comments: should we delete comments?
+    :param code: the code
+    :param strip_docstrings: should we delete docstrings?
+    :param strip_comments: should we delete comments?
     :return: the stripped string
-    :rtype: str
 
     >>> __strip_docstrings_and_comments("a = 5# bla\n", False, False)
     'a = 5# bla\n'
@@ -227,12 +221,11 @@ def format_python(code: Iterable[str],
     """
     Format a python code fragment.
 
-    :param Iterable[str] code: the code fragment
-    :param bool strip_docstrings: should we delete docstrings?
-    :param bool strip_comments: should we delete comments?
-    :param bool strip_hints: should we delete type hints?
+    :param code: the code fragment
+    :param strip_docstrings: should we delete docstrings?
+    :param strip_comments: should we delete comments?
+    :param strip_hints: should we delete type hints?
     :return: the formatted code
-    :rtype: List[str]
     """
     if not isinstance(code, Iterable):
         raise TypeError(f"code must be Iterable, but is {type(code)}.")
@@ -314,14 +307,12 @@ def preprocess_python(code: List[str],
 
     Finally, the Python formatter is applied.
 
-    :param List[str] code: the code loaded from a file
-    :param Optional[List[int]] lines: the lines to keep, or None if we
-        keep all
-    :param Optional[List[str]] labels: a list of labels marking start and end
-        of code snippets to include
-    :param Set[str] args: the arguments for the code formatter
+    :param code: the code loaded from a file
+    :param lines: the lines to keep, or `None` if we keep all
+    :param labels: a list of labels marking start and end of code snippets
+        to include
+    :param args: the arguments for the code formatter
     :return: the formatted code string
-    :rtype: str
     """
     keep_lines = select_lines(code=code, labels=labels, lines=lines)
 

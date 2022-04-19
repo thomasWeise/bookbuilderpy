@@ -7,6 +7,6 @@ def log(message: str) -> None:
     """
     Write a message to the log.
 
-    :param str message: the message
+    :param message: the message
     """
     print(f"{datetime.datetime.now()}: {message}", flush=True)

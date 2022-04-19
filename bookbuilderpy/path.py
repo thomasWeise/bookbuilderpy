@@ -14,9 +14,8 @@ def _canonicalize_path(path: str) -> str:
     """
     Check and canonicalize a path.
 
-    :param str path: the path
+    :param path: the path
     :return: the canonicalized path
-    :rtype: str
     """
     if not isinstance(path, str):
         raise TypeError(
@@ -44,8 +43,8 @@ def copy_pure(path_in: str, path_out: str):
     """
     Perform the internal method to copy a file.
 
-    :param str path_in: the path to the input file
-    :param str path_out: the path to the output file
+    :param path_in: the path to the input file
+    :param path_out: the path to the output file
     """
     shutil.copyfile(path_in, path_out)
 
@@ -54,8 +53,8 @@ def move_pure(path_in: str, path_out: str):
     """
     Copy a file.
 
-    :param str path_in: the path to the input file
-    :param str path_out: the path to the output file
+    :param path_in: the path to the input file
+    :param path_out: the path to the output file
     """
     shutil.move(path_in, path_out)
 
@@ -64,8 +63,8 @@ def _copy_un_gzip(path_in: str, path_out: str):
     """
     Copy a gzip-compressed file.
 
-    :param str path_in: the path to the input file
-    :param str path_out: the path to the output file
+    :param path_in: the path to the input file
+    :param path_out: the path to the output file
     """
     with gzip.open(path_in, 'rb') as f_in:
         with open(path_out, 'wb') as f_out:
@@ -88,9 +87,8 @@ def _get_text_encoding(filename: str) -> str:
 
     Adapted from https://stackoverflow.com/questions/13590749.
 
-    :param str filename: the filename
+    :param filename: the filename
     :return: the encoding
-    :rtype: str
     """
     with open(filename, 'rb') as f:
         header = f.read(4)  # Read just the first four bytes.
@@ -148,9 +146,8 @@ class Path(str):
         """
         Check whether another path is contained in this path.
 
-        :param str other: the other path
-        :return: `True` is this path contains the other path, `False` of mpt
-        :rtype: bool
+        :param other: the other path
+        :return: `True` is this path contains the other path, `False` if not
         """
         if self == other:
             return True
@@ -162,7 +159,7 @@ class Path(str):
         """
         Raise an exception if this path does not contain the other path.
 
-        :param str other: the other path
+        :param other: the other path
         :raises ValueError: if `other` is not a sub-path of this path
         """
         self.enforce_dir()
@@ -173,7 +170,7 @@ class Path(str):
         """
         Enforce that neither path contains another one.
 
-        :param str other: the other path
+        :param other: the other path
         :raises ValueError: if `other` is contained in this path or vice versa
         """
         if self.__common is None:
@@ -191,9 +188,8 @@ class Path(str):
         """
         Compute a relative path of this path towards the given base path.
 
-        :param str base_path: the string
+        :param base_path: the string
         :return: a relative path
-        :rtype: str
         :raises ValueError: if this path is not inside `base_path`
         """
         opath: Final[Path] = Path.path(base_path)
@@ -205,9 +201,8 @@ class Path(str):
         """
         Resolve a relative path to an absolute path inside this path.
 
-        :param str relative_path: the path to resolve
+        :param relative_path: the path to resolve
         :return: the resolved child path
-        :rtype: Path
         :raises ValueError: If the path would resolve to something outside of
             this path and/or if it is empty.
         """
@@ -220,9 +215,8 @@ class Path(str):
         """
         Atomically ensure that the file exists and create it otherwise.
 
-        :return:  `True` if the file already existed and
+        :return: `True` if the file already existed and
             `False` if it was newly and atomically created.
-        :rtype: bool
         :raises: ValueError if anything goes wrong during the file creation
         """
         existed: bool = False
@@ -246,7 +240,6 @@ class Path(str):
         Open this file for reading.
 
         :return: the file open for reading
-        :rtype: io.TextIOWrapper
         """
         return cast(io.TextIOWrapper, io.open(
             self, mode="rt", encoding=_get_text_encoding(self),
@@ -257,7 +250,6 @@ class Path(str):
         Read all the lines in a file.
 
         :return: the list of strings of text
-        :rtype: List[str]
         """
         self.enforce_file()
         with self.__open_for_read() as reader:
@@ -274,7 +266,6 @@ class Path(str):
         Read a file as a single string.
 
         :return: the single string of text
-        :rtype: str
         """
         self.enforce_file()
         with self.__open_for_read() as reader:
@@ -291,7 +282,6 @@ class Path(str):
         Open the file for writing.
 
         :return: the text io wrapper for writing
-        :rtype: io.TextIOWrapper
         """
         return cast(io.TextIOWrapper, io.open(
             self, mode="wt", encoding="utf-8", errors="strict"))
@@ -300,7 +290,7 @@ class Path(str):
         """
         Read all the lines in a file.
 
-        :param Iterable[str] contents: the contents to write
+        :param contents: the contents to write
         """
         self.ensure_file_exists()
         if not isinstance(contents, (str, Iterable)):
@@ -321,7 +311,6 @@ class Path(str):
 
         :return: the directory: either this path if it already identifies a
             directory, or the parent directory if this path identifies a file.
-        :rtype: Path
         :raises ValueError: if no containing directory exists
         """
         if os.path.isfile(self):
@@ -337,8 +326,8 @@ class Path(str):
         """
         Resolve a path to an input file relative to this path.
 
-        :param str relative_path: the relative path to resolve
-        :param Optional[str] lang: the language to use
+        :param relative_path: the relative path to resolve
+        :param lang: the language to use
         :return: the resolved path
         :raises ValueError: if the path cannot be resolved to a file
         """
@@ -365,10 +354,9 @@ class Path(str):
         """
         Split the file name 'name' into a prefix and a suffix.
 
-        :param str name: the file name
-        :param bool enforce_suffix: crash if no suffix?
+        :param name: the file name
+        :param enforce_suffix: crash if no suffix?
         :return: a tuple of [prefix, suffix]
-        :rtype: Tuple[str, str]
         """
         dot: int = name.rfind(".")
         if (dot < 0) or (dot >= (len(name) - 1)):
@@ -389,9 +377,8 @@ class Path(str):
         """
         Get a canonical path.
 
-        :param str path: the path to canonicalize
+        :param path: the path to canonicalize
         :return: the `Path` instance
-        :rtype: Path
         """
         if isinstance(path, Path):
             return cast(Path, path)
@@ -402,9 +389,8 @@ class Path(str):
         """
         Get a path identifying a file.
 
-        :param str path: the path
+        :param path: the path
         :return: the file
-        :rtype: Path
         """
         fi: Final[Path] = Path.path(path)
         fi.enforce_file()
@@ -415,9 +401,8 @@ class Path(str):
         """
         Get a path identifying a directory.
 
-        :param str path: the path
+        :param path: the path
         :return: the file
-        :rtype: Path
         """
         fi: Final[Path] = Path.path(path)
         fi.enforce_dir()
@@ -436,10 +421,9 @@ class Path(str):
         file.
         Otherwise, a normal copy is performed.
 
-        :param str source: the source file
-        :param str dest: the destination file
+        :param source: the source file
+        :param dest: the destination file
         :return: the fully-qualified destination path
-        :rtype: Path
         """
         source_file = Path.file(source)
         dest_file = Path.path(dest)
@@ -463,9 +447,9 @@ class Path(str):
         """
         Copy an input file to an destination directory.
 
-        :param str source_dir: the source directory
-        :param str input_file: the input file
-        :param str dest_dir: the destination directory
+        :param source_dir: the source directory
+        :param input_file: the input file
+        :param dest_dir: the destination directory
         :return: the path
         """
         in_dir = Path.path(source_dir)

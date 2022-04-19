@@ -21,11 +21,10 @@ def __load_input(input_file: str,
     """
     Recursively load an input file.
 
-    :param str input_file: the input file
-    :param str input_dir: the base directory
-    :param Optional[str] lang_id: the language to use
+    :param input_file: the input file
+    :param input_dir: the base directory
+    :param lang_id: the language to use
     :return: the fully-resolved input
-    :rtype: str
     """
     in_file = Path.file(input_file)
     in_dir = Path.directory(input_dir)
@@ -92,11 +91,10 @@ def load_input(input_file: str,
     """
     Recursively load an input file.
 
-    :param str input_file: the input file
-    :param str input_dir: the base directory
-    :param Optional[str] lang_id: the language to use
+    :param input_file: the input file
+    :param input_dir: the base directory
+    :param lang_id: the language to use
     :return: the fully-resolved input
-    :rtype: str
     """
     log(f"beginning to load file '{input_file}' from input dir "
         f"'{input_dir}' under lang id '{lang_id}'.")

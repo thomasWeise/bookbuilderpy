@@ -23,12 +23,11 @@ def __create_command_re(name: str, n: int = 1,
     Note that the expression will pass the curly braces of the arguments to
     the command which later need to be stripped away if necessary.
 
-    :param str name: the name of the command
-    :param int n: the number of parameters
-    :param bool strip_white_space: should the white space around
+    :param name: the name of the command
+    :param n: the number of parameters
+    :param strip_white_space: should the white space around
         the command be stripped
     :return: a regular expression representing the command
-    :rtype: re.Regex
 
     >>> cmd = __create_command_re("y", 2, False)
     >>> s = 'blabla\\y{1}{2}xaxa \\y{3}{4} zhdfg'
@@ -96,9 +95,8 @@ def __strip_group(s: str) -> str:
     arguments. After the leading `{` and the trailing `}` are removed, the
     remaining string will be stripped of leading and trailing white space.
 
-    :param str s: the input string
+    :param s: the input string
     :return: the sanitized string
-    :rtype: str
 
     >>> __strip_group("{ f}")
     'f'
@@ -134,16 +132,15 @@ def create_preprocessor(name: str,
     The command can appear nested in its arguments. In this case, the
     preprocessor `f` will resolve the inner-most occurences first.
 
-    :param str name: the command name
-    :param Callable func: the function to call
-    :param int n: the number of arguments to pass to func
-    :param bool strip_white_space: should surrounding white space be stripped?
-    :param int wrap_in_newlines: the number of newlines into which the output
+    :param name: the command name
+    :param func: the function to call
+    :param n: the number of arguments to pass to func
+    :param strip_white_space: should surrounding white space be stripped?
+    :param wrap_in_newlines: the number of newlines into which the output
         should be wrapped
     :return: a function that can be invoked on a string and which replaces
         all the occurences of the command with the results of corresponding
         `func` invocations
-    :rtype: Callable
 
     >>> f = lambda a, b: a + "-" + b
     >>> cmd = create_preprocessor("sub", f, 2)

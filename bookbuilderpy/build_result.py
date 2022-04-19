@@ -24,7 +24,7 @@ class File:
         """
         Create the build result as a file.
 
-        :param Path path: the path of the file
+        :param path: the path of the file
         """
         if not isinstance(path, Path):
             raise TypeError(f"Expected Path, got '{type(path)}'.")
@@ -62,10 +62,10 @@ class LangResult:
         """
         Create the build result of a given language.
 
-        :param Optional[str] lang: the language
-        :param Optional[str] lang_name: the language name
-        :param Path directory: the path of directory containing all the files
-        :param Tuple[File, ...] results: the result files
+        :param lang: the language
+        :param lang_name: the language name
+        :param directory: the path of directory containing all the files
+        :param results: the result files
         """
         if (lang is None) != (lang_name is None):
             raise ValueError(

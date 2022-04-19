@@ -14,11 +14,10 @@ def pdf_postprocess(in_file: str,
     """
     Post-process a pdf file.
 
-    :param str in_file: the input file
-    :param str out_file: the output file
-    :param bool overwrite: should the output file be overwritten if it exists?
+    :param in_file: the input file
+    :param out_file: the output file
+    :param overwrite: should the output file be overwritten if it exists?
     :return: the output file
-    :rtype: Path
     """
     source = Path.file(in_file)
     output = Path.path(out_file)

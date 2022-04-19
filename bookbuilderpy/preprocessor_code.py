@@ -15,10 +15,9 @@ def get_programming_language(path: str) -> Optional[str]:
     """
     Get the programming language corresponding to a path.
 
-    :param str path: the path to the source file
+    :param path: the path to the source file
     :return: a string identifying the programming language, or None if none
         detected.
-    :rtype: Optional[str]
     """
     _, suffix = Path.split_prefix_suffix(basename(Path.path(path)))
     suffix = suffix.lower()
@@ -34,12 +33,11 @@ def load_code(path: str,
     """
     Load a piece of code from the given path.
 
-    :param str path: the path
-    :param str lines: a line definition string
-    :param str labels: a label definition string
-    :param str args: a string of arguments to be passed to the formatter
+    :param path: the path
+    :param lines: a line definition string
+    :param labels: a label definition string
+    :param args: a string of arguments to be passed to the formatter
     :return: the code
-    :rtype: str
     """
     src = Path.file(path)
     log(f"Now loading code from '{src}'.")

@@ -68,26 +68,25 @@ def pandoc(source_file: str,
     """
     Invoke pandoc.
 
-    :param str source_file: the source file
-    :param str dest_file: the destination file
-    :param str format_in: the input format
-    :param str format_out: the output format
-    :param bool standalone: should we produce a stand-alone document?
-    :param Optional[int] tabstops: the number of spaces with which we replace
+    :param source_file: the source file
+    :param dest_file: the destination file
+    :param format_in: the input format
+    :param format_out: the output format
+    :param standalone: should we produce a stand-alone document?
+    :param tabstops: the number of spaces with which we replace
         a tab character, or None to not replace
-    :param bool toc_print: should we print the table of contents
-    :param bool toc_depth: the depth of the table of contents
-    :param bool crossref: should we use crossref
-    :param bool bibliography: should we use a bibliography
-    :param Optional[str] template: which template should we use, if any?
-    :param Optional[str] csl: which csl file should we use, if any?
-    :param bool number_sections: should sections be numbered?
-    :param Optional[str] locale: the language to be used for compiling
+    :param toc_print: should we print the table of contents
+    :param toc_depth: the depth of the table of contents
+    :param crossref: should we use crossref
+    :param bibliography: should we use a bibliography
+    :param template: which template should we use, if any?
+    :param csl: which csl file should we use, if any?
+    :param number_sections: should sections be numbered?
+    :param locale: the language to be used for compiling
     :param args: any additional arguments
-    :param Callable resolve_resources: a function to resolve resources
-    :param bool overwrite: should the output file be overwritten if it exists?
+    :param resolve_resources: a function to resolve resources
+    :param overwrite: should the output file be overwritten if it exists?
     :return: the Path to the generated output file and it size
-    :rtype: File
     """
     if not has_tool(TOOL_PANDOC):
         raise ValueError("Pandoc is not installed.")
@@ -210,24 +209,23 @@ def latex(source_file: str,
     """
     Invoke pandoc to build LaTeX and then PDF output.
 
-    :param str source_file: the source file
-    :param str dest_file: the destination file
-    :param str format_in: the input format
-    :param Optional[str] locale: the language to be used for compiling
-    :param bool standalone: should we produce a stand-alone document?
-    :param Optional[int] tabstops: the number of spaces with which we replace
+    :param source_file: the source file
+    :param dest_file: the destination file
+    :param format_in: the input format
+    :param locale: the language to be used for compiling
+    :param standalone: should we produce a stand-alone document?
+    :param tabstops: the number of spaces with which we replace
         a tab character, or None to not replace
-    :param bool toc_print: should we print the table of contents
-    :param bool toc_depth: the depth of the table of contents
-    :param bool crossref: should we use crossref
-    :param bool bibliography: should we use a bibliography
-    :param bool number_sections: should sections be numbered?
-    :param str top_level_division: the top-level division
-    :param bool use_listings: should the listings package be used?
-    :param Callable get_meta: a function to access meta-data
-    :param Callable resolve_resources: a function to resolve resources
+    :param toc_print: should we print the table of contents
+    :param toc_depth: the depth of the table of contents
+    :param crossref: should we use crossref
+    :param bibliography: should we use a bibliography
+    :param number_sections: should sections be numbered?
+    :param top_level_division: the top-level division
+    :param use_listings: should the listings package be used?
+    :param get_meta: a function to access meta-data
+    :param resolve_resources: a function to resolve resources
     :return: the Path to the generated output file and it size
-    :rtype: File
     """
     args = []
     if locale is not None:
@@ -279,20 +277,20 @@ def html(source_file: str,
     """
     Invoke pandoc to build HTML output.
 
-    :param str source_file: the source file
-    :param str dest_file: the destination file
-    :param str format_in: the input format
-    :param Optional[str] locale: the language to be used for compiling
-    :param bool standalone: should we produce a stand-alone document?
-    :param Optional[int] tabstops: the number of spaces with which we replace
+    :param source_file: the source file
+    :param dest_file: the destination file
+    :param format_in: the input format
+    :param locale: the language to be used for compiling
+    :param standalone: should we produce a stand-alone document?
+    :param tabstops: the number of spaces with which we replace
         a tab character, or None to not replace
-    :param bool toc_print: should we print the table of contents
-    :param bool toc_depth: the depth of the table of contents
-    :param bool crossref: should we use crossref
-    :param bool bibliography: should we use a bibliography
-    :param bool number_sections: should sections be numbered?
-    :param Callable get_meta: a function to access meta-data
-    :param Callable resolve_resources: a function to resolve resources
+    :param toc_print: should we print the table of contents
+    :param toc_depth: the depth of the table of contents
+    :param crossref: should we use crossref
+    :param bibliography: should we use a bibliography
+    :param number_sections: should sections be numbered?
+    :param get_meta: a function to access meta-data
+    :param resolve_resources: a function to resolve resources
     :return: the Path to the generated output file and it size
     :rtype: File
     """
@@ -380,22 +378,21 @@ def epub(source_file: str,
     """
     Invoke pandoc to build epub output.
 
-    :param str source_file: the source file
-    :param str dest_file: the destination file
-    :param str format_in: the input format
-    :param Optional[str] locale: the language to be used for compiling
-    :param bool standalone: should we produce a stand-alone document?
-    :param Optional[int] tabstops: the number of spaces with which we replace
+    :param source_file: the source file
+    :param dest_file: the destination file
+    :param format_in: the input format
+    :param locale: the language to be used for compiling
+    :param standalone: should we produce a stand-alone document?
+    :param tabstops: the number of spaces with which we replace
         a tab character, or None to not replace
-    :param bool toc_print: should we print the table of contents
-    :param bool toc_depth: the depth of the table of contents
-    :param bool crossref: should we use crossref
-    :param bool bibliography: should we use a bibliography
-    :param bool number_sections: should sections be numbered?
-    :param Callable get_meta: a function to access meta-data
-    :param Callable resolve_resources: a function to resolve resources
+    :param toc_print: should we print the table of contents
+    :param toc_depth: the depth of the table of contents
+    :param crossref: should we use crossref
+    :param bibliography: should we use a bibliography
+    :param number_sections: should sections be numbered?
+    :param get_meta: a function to access meta-data
+    :param resolve_resources: a function to resolve resources
     :return: the Path to the generated output file and it size
-    :rtype: File
     """
     return pandoc(source_file=source_file,
                   dest_file=dest_file,
@@ -420,9 +417,8 @@ def azw3(epub_file: str) -> File:
     """
     Convert an epub book into an azw3 one.
 
-    :param str epub_file: the epub file
+    :param epub_file: the epub file
     :return: the azw3 file
-    :rtype: File
     """
     input_file = Path.file(epub_file)
     input_dir = Path.directory(os.path.dirname(input_file))

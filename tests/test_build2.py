@@ -278,14 +278,17 @@ def find_local_files() -> Tuple[str, ...]:
             continue
         if file in ("process.py", "objective.py", "encoding.py",
                     "operators.py", "algorithm.py", "space.py",
-                    "website.py"):
+                    "website.py", "metadata.yaml"):
             continue
         if file.endswith(".py"):
-            full = os.path.join(package, file)
+            full = Path.path(os.path.join(package, file))
             if "moptipy/api" in full:
                 continue
             if os.path.isfile(full):
                 result.append(Path.file(full))
+            s = full.read_all_str()
+            if s.encode("ascii", "ignore").decode() != s:
+                continue
     assert len(result) > 0
     result = [f for f in result if "_" not in f]
     assert len(result) > 0
@@ -308,7 +311,8 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
         if len(res) <= 0:
             raise ValueError(f"Repo {repo} is empty.")
         result: List[str] = list()
-        for f in [Path.file(str(f)).relative_to(r.path) for f in res]:
+        for full in [Path.file(str(f)) for f in res]:
+            f = full.relative_to(r.path)
             if "_" in f:
                 continue
             if "test" in f:
@@ -317,9 +321,12 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
                 continue
             if f in ("process.py", "objective.py", "encoding.py",
                      "operators.py", "algorithm.py", "space.py",
-                     "website.py"):
+                     "website.py", "metadata.yaml"):
                 continue
             if "moptipy/api" in f:
+                continue
+            s = full.read_all_str()
+            if s.encode("ascii", "ignore").decode() != s:
                 continue
             if "/" in f:
                 result.append(f)
@@ -602,7 +609,9 @@ def generate_example_lang(
                         label = make_label(spath)
                         os.close(handle)
                         rf = Path.file(repofile)
-                        cde = rf.read_all_str()
+                        cde = rf.read_all_str().encode(
+                            "ascii", "ignore").decode()
+
                         spath.write_all(cde.encode("ascii", errors="ignore")
                                         .decode("ascii"))
                         spath = spath.relative_to(dest)

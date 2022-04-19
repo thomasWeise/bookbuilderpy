@@ -19,9 +19,8 @@ def parse_metadata(text: str) -> Dict[str, Any]:
     """
     Extract the metadata of a string and parse it.
 
-    :param str text: the text
+    :param text: the text
     :return: the metadata
-    :rtype: str
     """
     enforce_non_empty_str(text)
 
@@ -65,11 +64,10 @@ def __raw_load(in_file: Path,
     """
     Perform a raw version of the recursive path resolution.
 
-    :param Path in_file: the input file path
-    :param Path in_dir: the input directory
-    :param bool resolve_cmd_only_once: should only one include be resolved?
+    :param in_file: the input file path
+    :param in_dir: the input directory
+    :param resolve_cmd_only_once: should only one include be resolved?
     :return: the loaded string
-    :rtype: str
     """
     text = in_file.read_all_str()
 
@@ -109,9 +107,8 @@ def load_initial_metadata(in_file: Path,
     gain access to the raw metadata which should be the same over all builds
     of a book. This means things such as shared source code repositories.
 
-    :param Path in_file: the input file
-    :param Path in_dir: the input directory
+    :param in_file: the input file
+    :param in_dir: the input directory
     :return: the map with the meta-data
-    :rtype: Dict[str,Any]
     """
     return parse_metadata(__raw_load(in_file, in_dir, True))

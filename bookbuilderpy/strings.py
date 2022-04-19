@@ -10,7 +10,7 @@ def str_to_lines(text: str) -> List[str]:
     r"""
     Convert a string to an iterable of lines.
 
-    :param str text: the original text string
+    :param text: the original text string
     :return: the lines
 
     >>> str_to_lines("\n123\n  456\n789 \n 10\n\n")
@@ -26,10 +26,9 @@ def lines_to_str(lines: Iterable[str],
     r"""
     Convert an iterable of strings to a single string.
 
-    :param Iterable[str] lines: the lines
-    :param bool trailing_newline: should the re be a newline at the end?
+    :param lines: the lines
+    :param trailing_newline: should the re be a newline at the end?
     :return: the single string
-    :rtype: str
 
     >>> lines_to_str(["a", "b", "", "c", ""], trailing_newline=True)
     'a\nb\n\nc\n'
@@ -53,9 +52,8 @@ def enforce_non_empty_str(text: str) -> str:
     """
     Enforce that a text is a non-empty string.
 
-    :param str text: the text
+    :param text: the text
     :returns: the text
-    :rtype: str
     :raises TypeError: if `text` is not a `str`
     :raises ValueError: if `text` is empty
     """
@@ -70,9 +68,8 @@ def enforce_non_empty_str_without_ws(text: str) -> str:
     """
     Enforce that a text is a non-empty string without white space.
 
-    :param str text: the text
+    :param text: the text
     :returns: the text
-    :rtype: str
     :raises TypeError: if `text` is not a `str`
     :raises ValueError: if `text` is empty or contains any white space
         characters
@@ -88,9 +85,8 @@ def datetime_to_date_str(date: datetime.datetime) -> str:
     """
     Convert a datetime object to a date string.
 
-    :param datetime.datetime date: the date
+    :param date: the date
     :return: the date string
-    :rtype: str
     """
     if not isinstance(date, datetime.datetime):
         raise TypeError(f"Excepted datetime.datetime, but {type(date)}.")
@@ -101,9 +97,8 @@ def datetime_to_datetime_str(date: datetime.datetime) -> str:
     """
     Convert a datetime object to a date-time string.
 
-    :param datetime.datetime date: the date
+    :param date: the date
     :return: the date-time string
-    :rtype: str
     """
     if not isinstance(date, datetime.datetime):
         raise TypeError(f"Excepted datetime.datetime, but {type(date)}.")
@@ -114,9 +109,8 @@ def enforce_url(url: str) -> str:
     """
     Enforce that a string is a valid url.
 
-    :param str url: the url
+    :param url: the url
     :return: the url
-    :rtype: str
     """
     enforce_non_empty_str_without_ws(url)
     if ".." in url:
@@ -137,9 +131,8 @@ def get_prefix_str(str_list: Union[Tuple[str, ...], List[str]]) -> str:
     r"""
     Compute the common prefix string.
 
-    :param Union[Tuple[str, ...], List[str]] str_list: the list of strings
+    :param str_list: the list of strings
     :return: the common prefix
-    :rtype: str
 
     >>> get_prefix_str(["abc", "acd"])
     'a'
@@ -187,9 +180,8 @@ def lang_to_locale(lang: str) -> str:
     """
     Convert a language ID to a locale.
 
-    :param str lang: the language id
+    :param lang: the language id
     :return: the locale
-    :rtype: str
     """
     lang = enforce_non_empty_str_without_ws(lang)
     if lang in __LANG_DICT:
@@ -203,9 +195,8 @@ def file_size(size: int) -> str:
     """
     Convert a file size to a string.
 
-    :param int size: the size
+    :param size: the size
     :return: the string
-    :rtype: str
     """
     if isinstance(size, int) and (size >= 0):
         if size <= 0:
@@ -235,10 +226,9 @@ def to_string(obj,
     Convert any object to a string, try to use a proper locale.
 
     :param obj: the input object
-    :param Optional[str] locale: the locale
-    :param bool use_seq_and: should we use "and" in sequences?
+    :param locale: the locale
+    :param use_seq_and: should we use "and" in sequences?
     :return: the string representation
-    :rtype: str
     """
     if obj is None:
         return "None"
@@ -277,11 +267,10 @@ def regex_sub(search: str,
     """
     Replace all occurrences of 'search' in 'inside' with 'replace'.
 
-    :param str search: the regular expression to search
-    :param str replace: the regular expression to replace it with
-    :param str inside: the string in which to search/replace
-    :return: the new string after the recursive replace
-    :rtype: str
+    :param search: the regular expression to search
+    :param replace: the regular expression to replace it with
+    :param inside: the string in which to search/replace
+    :return: the new string after the recursive replacement
     """
     while True:
         text = re.sub(search, replace, inside, re.MULTILINE)

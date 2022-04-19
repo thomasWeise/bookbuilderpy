@@ -38,9 +38,9 @@ class Build(AbstractContextManager):
         """
         Set up the build.
 
-        :param str input_file: the input file
-        :param str output_dir: the output dir
-        :param bool fail_without_pandoc: fail if pandoc is not available?
+        :param input_file: the input file
+        :param output_dir: the output dir
+        :param fail_without_pandoc: fail if pandoc is not available?
         """
         super().__init__()
 
@@ -86,7 +86,6 @@ class Build(AbstractContextManager):
         Get the input directory.
 
         :return: the input directory
-        :rtype: Path
         """
         return self.__input_dir
 
@@ -96,7 +95,6 @@ class Build(AbstractContextManager):
         Get the input file.
 
         :return: the input file
-        :rtype: Path
         """
         return self.__input_file
 
@@ -106,7 +104,6 @@ class Build(AbstractContextManager):
         Get the output directory.
 
         :return: the output directory
-        :rtype: Path
         """
         return self.__output_dir
 
@@ -114,11 +111,10 @@ class Build(AbstractContextManager):
         """
         Get a meta-data element.
 
-        :param str key: the key
-        :param bool raise_on_none: should we raise an error if the property
+        :param key: the key
+        :param raise_on_none: should we raise an error if the property
             was not found (True) or return None (False)?
         :return: the meta-data element
-        :rtype: Any
         """
         if not isinstance(key, str):
             raise TypeError(f"key must be str, but is {type(key)}.")
@@ -168,11 +164,10 @@ class Build(AbstractContextManager):
 
     def __get_meta_no_error(self, key: str) -> Any:
         """
-        Get a meta data element without raising an error if it is not present.
+        Get a metadata element without raising an error if it is not present.
 
-        :param str key: the key
-        :return: the meta data element, or None
-        :rtype: Any
+        :param key: the key
+        :return: the metadata element, or None
         """
         return self.__get_meta(key, False)
 
@@ -180,9 +175,8 @@ class Build(AbstractContextManager):
         """
         Get a meta-data element.
 
-        :param str key: the key
+        :param key: the key
         :return: the meta-data element
-        :rtype: Any
         """
         return self.__get_meta(key, True)
 
@@ -190,9 +184,8 @@ class Build(AbstractContextManager):
         """
         Get a meta-data element as a string.
 
-        :param str key: the key
+        :param key: the key
         :return: the meta-data element
-        :rtype: str
         """
         return to_string(obj=self.get_meta(key),
                          locale=self.__get_meta_no_error(bc.META_LOCALE),
@@ -202,8 +195,8 @@ class Build(AbstractContextManager):
         """
         Make the repository at the specified url available under the given id.
 
-        :param str name: the repository name
-        :param str url: the repository url
+        :param name: the repository name
+        :param url: the repository url
         """
         name = enforce_non_empty_str(name).strip()
         url = enforce_non_empty_str(url).strip()
@@ -224,7 +217,7 @@ class Build(AbstractContextManager):
         """
         Load the repositories listed in the metadata.
 
-        :param Dict[str, Any] meta: the metadata
+        :param meta: the metadata
         """
         if not isinstance(meta, dict):
             raise TypeError(f"Expected dict, got {type(meta)}.")
@@ -248,9 +241,8 @@ class Build(AbstractContextManager):
         """
         Get a repository of the given name.
 
-        :param str name: the repository name
+        :param name: the repository name
         :return: the repository structure
-        :rtype: Repo
         """
         name = enforce_non_empty_str(name).strip()
         if not (name in self.__repo_ids):
@@ -264,10 +256,9 @@ class Build(AbstractContextManager):
         """
         Get an internal build resource to a directory.
 
-        :param str name: the resource name
-        :param Path directory: the destination path
+        :param name: the resource name
+        :param directory: the destination path
         :return: the path to the resource, or None if none was copied
-        :rtype: Optional[Path]
         """
         return load_resource(enforce_non_empty_str_without_ws(name),
                              self.__input_dir, directory)
@@ -281,11 +272,11 @@ class Build(AbstractContextManager):
         """
         Apply pandoc and build the input file to the output dir.
 
-        :param Path input_file: the path to the input file
-        :param Path output_dir: the path to the output directory
-        :param Optional[str] lang_id: the language ID
-        :param Optional[str] lang_name: the language name
-        :param bool has_bibliography: is there a bibliography?
+        :param input_file: the path to the input file
+        :param output_dir: the path to the output directory
+        :param lang_id: the language ID
+        :param lang_name: the language name
+        :param has_bibliography: is there a bibliography?
         """
         if not has_tool(TOOL_PANDOC):
             if self.__fail_without_pandoc:
@@ -354,9 +345,9 @@ class Build(AbstractContextManager):
         """
         Perform the book build for one language.
 
-        :param Optional[str] lang_id: the language ID
-        :param Optional[str] lang_name: the language name
-        :param bool use_lang_id_as_suffix: should we use the language id as
+        :param lang_id: the language ID
+        :param lang_name: the language name
+        :param use_lang_id_as_suffix: should we use the language id as
             file name suffix?
         """
         self.__metadata_lang = None
@@ -553,11 +544,10 @@ class Build(AbstractContextManager):
         """
         Run a build on an input file to an output directory.
 
-        :param str input_file: the input file
-        :param str output_dir: the output directory
-        :param str exit_on_error: should we quit Python upon error?
+        :param input_file: the input file
+        :param output_dir: the output directory
+        :param exit_on_error: should we quit Python upon error?
         :return: a tuple of results
-        :rtype: Tuple[LangResult]
         """
         try:
             with Build(input_file, output_dir, True) as bd:

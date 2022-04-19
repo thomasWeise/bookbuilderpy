@@ -14,9 +14,8 @@ def load_html_github_template(dest: Path) -> Path:
     """
     Load the HTML 5 template with GitHub look and feel.
 
-    :param Path dest: the destination directory
+    :param dest: the destination directory
     :return: the full path of the template
-    :rtype: Path
     """
     log(f"now loading html github template to '{dest}'.")
     with TempDir.create() as temp:
@@ -73,9 +72,8 @@ def load_latex_eisvogel_template(dest: Path) -> Path:
     """
     Load the LaTeX eisvogel template.
 
-    :param Path dest: the destination directory
+    :param dest: the destination directory
     :return: the full path of the template
-    :rtype: Path
     """
     log(f"now loading latex eisvogel template to '{dest}'.")
     with TempDir.create() as temp:
@@ -102,9 +100,8 @@ def load_csl_template(dest: Path) -> List[Path]:
     """
     Load the CSL templates template.
 
-    :param Path dest: the destination directory
+    :param dest: the destination directory
     :return: the full path of the template
-    :rtype: List[Path]
     """
     log(f"now csl template(s) to '{dest}'.")
     paths: Final[List[Path]] = []
@@ -134,9 +131,8 @@ def load_mathjax(dest: Path) -> Path:
     books are displayed. This also allows us to purge the javascripts
     after the conversion.
 
-    :param Path dest: the destination
+    :param dest: the destination
     :return: the paths to the downloaded resources
-    :rtype: Path
     """
     log(f"now loading mathjax svg to '{dest}'.")
     name = "mathjax.js"

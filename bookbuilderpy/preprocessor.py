@@ -19,12 +19,12 @@ def preprocess(text: str,
     """
     Apply all the preprocessor commands to the given text.
 
-    :param str text: the text of the book to be preprocessed.
-    :param str input_dir: the input director
-    :param Callable get_meta: a command for obtaining meta information.
-    :param Callable get_repo: a command for obtaining a repository
-    :param Optional[Repo] repo: the root repository of the project
-    :param str output_dir: the output directory
+    :param text: the text of the book to be preprocessed.
+    :param input_dir: the input director
+    :param get_meta: a command for obtaining meta information.
+    :param get_repo: a command for obtaining a repository
+    :param repo: the root repository of the project
+    :param output_dir: the output directory
     """
     src = Path.directory(input_dir)
     dst = Path.directory(output_dir)

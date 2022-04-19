@@ -15,7 +15,6 @@ def __name(request: urllib3.HTTPResponse) -> str:
 
     :param request: the request
     :return: the file name
-    :rtype: str
     """
     content_disp: str = "Content-Disposition"
     if content_disp in request.headers.keys():
@@ -60,9 +59,8 @@ def load_binary_from_url(url: str) -> Tuple[str, bytes]:
     """
     Load all the binary data from one url.
 
-    :param str url: the url
+    :param url: the url
     :return: a tuple of the file name and the binary data that was loaded
-    :rtype: Tuple[str, bytes]
     """
     http: urllib3.PoolManager = urllib3.PoolManager()
     request: urllib3.HTTPResponse = http.request("GET", url)
@@ -79,9 +77,8 @@ def load_text_from_url(url: str) -> Tuple[str, str]:
     """
     Load all the text from one url.
 
-    :param str url: the url
+    :param url: the url
     :return: a tuple of the file name and the text that was loaded
-    :rtype: Tuple[str, str]
     """
     name, data = load_binary_from_url(url)
     return name, data.decode(UTF8)

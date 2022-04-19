@@ -48,10 +48,9 @@ def __chkstr(n: str,
     """
     Check whether we should keep a version string.
 
-    :param str n: the original string
+    :param n: the original string
     :param purge_starts: the strings to purge at the start
     :return: the string, or `None` if it can be purged
-    :rtype: Optional[str]
     """
     n = n.strip()
     if len(n) <= 0:
@@ -74,10 +73,9 @@ def _do_call(tool: str, arg: str) -> Tuple[str, bool]:
     """
     Invoke a sub-process.
 
-    :param str tool: the tool
-    :param str arg: the argument
+    :param tool: the tool
+    :param arg: the argument
     :return: the output
-    :rtype: Tuple[str, bool]
     """
     try:
         # nosemgrep
@@ -113,9 +111,8 @@ class __Versions:
         """
         Check if the given tool is installed.
 
-        :param str tool: the tool executable
+        :param tool: the tool executable
         :return: `True` if the tool is installed, `False` otherwise.
-        :rtype: bool
         """
         if tool in self.__has_tool:
             return self.__has_tool[tool][1]
@@ -127,7 +124,6 @@ class __Versions:
         Get the versions of all involved libraries and tools.
 
         :return: a string with version information of all libraries and tools
-        :rtype: str
         """
         if self.__versions:
             return self.__versions
@@ -171,9 +167,8 @@ def has_tool(tool: str) -> bool:
     """
     Check if the given tool is installed.
 
-    :param str tool: the tool executable
+    :param tool: the tool executable
     :return: `True` if the tool is installed, `False` otherwise.
-    :rtype: bool
     """
     return __SINGLETON.has_tool(tool)
 
@@ -183,6 +178,5 @@ def get_versions() -> str:
     Get the versions of all involved libraries and tools.
 
     :return: a string with version information of all libraries and tools
-    :rtype: str
     """
     return __SINGLETON.get_versions()

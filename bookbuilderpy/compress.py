@@ -44,8 +44,7 @@ def can_xz_compress() -> bool:
     """
     Check if xz compression is available.
 
-    :return: True if xz compression is available, False otherwise
-    :rtype: bool
+    :return: `True` if xz compression is available, `False` otherwise
     """
     return has_tool(TOOL_TAR) and has_tool(TOOL_XZ)
 
@@ -55,11 +54,9 @@ def compress_xz(source: Iterable[Union[Path, File, str]],
     """
     Compress a sequence of files to tar.xz.
 
-    :param Iterable[Union[Path, File, str]] source: the list of files
-    :param str dest: the destination file
+    :param source: the list of files
+    :param dest: the destination file
     :return: the created archive
-    :return: the created archive
-    :rtype: File
     """
     if not has_tool(TOOL_TAR):
         raise ValueError(f"tool {TOOL_TAR} not installed.")
@@ -91,8 +88,7 @@ def can_zip_compress() -> bool:
     """
     Check if zip compression is available.
 
-    :return: True if zip compression is available, False otherwise
-    :rtype: bool
+    :return: `True` if zip compression is available, `False` otherwise
     """
     return has_tool(TOOL_ZIP)
 
@@ -102,10 +98,9 @@ def compress_zip(source: Iterable[Union[Path, File, str]],
     """
     Compress a sequence of files to zip.
 
-    :param Iterable[Union[Path, File, str]] source: the list of files
-    :param str dest: the destination file
+    :param source: the list of files
+    :param dest: the destination file
     :return: the created archive
-    :rtype: File
     """
     if not has_tool(TOOL_ZIP):
         raise ValueError(f"Tool {TOOL_ZIP} not installed.")

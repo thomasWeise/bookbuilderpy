@@ -23,16 +23,14 @@ def select_lines(code: Iterable[str],
     Finally, leading and trailing empty lines as well as superfluous empty
     lines are removed.
 
-    :param Iterable[str] code: the code loaded from a file
-    :param Optional[Iterable[int]] lines: the lines to keep, or `None` if we
-        keep all
-    :param Optional[Iterable[str]] labels: a list of labels marking start and
+    :param code: the code loaded from a file
+    :param lines: the lines to keep, or `None` if we keep all
+    :param labels: a list of labels marking start and
         end of code snippets to include
-    :param str line_comment_start: the string marking the line comment start
-    :param int max_consecutive_empty_lines: the maximum number of permitted
+    :param line_comment_start: the string marking the line comment start
+    :param max_consecutive_empty_lines: the maximum number of permitted
         consecutive empty lines
     :return: the list of selected lines
-    :rtype: List[str]
 
     >>> select_lines(["def a():", "    b=c", "    return x"])
     ['def a():', '    b=c', '    return x']
@@ -218,17 +216,16 @@ def format_empty_lines(lines: Iterable[str],
     """
     Obtain a generator that strips any consecutive empty lines.
 
-    :param Iterable[str] lines: the original line iterable
-    :param Callable empty_before: a function checking whether an empty line
+    :param lines: the original line iterable
+    :param empty_before: a function checking whether an empty line
         is required before a certain string
-    :param Callable no_empty_after: a function checking whether an empty line
+    :param no_empty_after: a function checking whether an empty line
         is prohibited after a string
-    :param Callable force_no_empty_after: a function checking whether an empty
+    :param force_no_empty_after: a function checking whether an empty
         line is prohibited after a string
-    :param int max_consecutive_empty_lines: the maximum number of permitted
+    :param max_consecutive_empty_lines: the maximum number of permitted
         consecutive empty lines
     :return: the generation
-    :rtype: str
 
     >>> code = ["", "a", "", "b", "", "", "c", "", "", "", "d", "e", ""]
     >>> format_empty_lines(code, max_consecutive_empty_lines=3)
@@ -303,9 +300,8 @@ def strip_common_whitespace_prefix(lines: Iterable[str]) -> List[str]:
     r"""
     Strip a common whitespace prefix from a list of strings and merge them.
 
-    :param Iterable[str] lines: the lines
+    :param lines: the lines
     :return: the code with the white space prefix stripped
-    :rtype: List[str]
 
     >>> strip_common_whitespace_prefix([" a", "  b"])
     ['a', ' b']

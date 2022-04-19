@@ -11,7 +11,6 @@ def _get_file(name: str) -> Optional[bytes]:
 
     :param name: the file name
     :return: the file contents
-    :rtype: Optional[bytes]
     """
     if not name:
         return None
