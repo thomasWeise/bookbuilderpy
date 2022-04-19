@@ -81,18 +81,15 @@ release = release["__version__"]
 extensions = ['myst_parser',  # for processing README.md
               'sphinx.ext.autodoc',  # to convert docstrings to documentation
               'sphinx.ext.doctest',  # do the doc tests again
-              # 'sphinx.ext.intersphinx',  # to link to numpy et al.
+              'sphinx.ext.intersphinx',  # to link to other libraries
               'sphinx_autodoc_typehints',  # to infer types from hints
               'sphinx.ext.viewcode',  # add rendered source code
               ]
 
 # Location of dependency documentation for cross-referencing.
-# intersphinx_mapping = {
-#    'abc': ("https://docs.python.org/3/", None),
-#    'matplotlib': ('https://matplotlib.org/stable/', None),
-#    'numpy': ('https://numpy.org/doc/stable/', None),
-#    'sklearn': ('https://scikit-learn.org/stable/', None)
-#}
+intersphinx_mapping = {
+    'abc': ("https://docs.python.org/3/", None)
+}
 
 # add default values after comma
 typehints_defaults = "comma"
