@@ -120,8 +120,8 @@ class Repo:
 
         log(f"checking commit information of repo '{dest}' via '{TOOL_GIT}'.")
         stdout: str = enforce_non_empty_str(shell(
-            [TOOL_GIT, "-C", dest, "log", "--no-abbrev-commit"], timeout=120,
-            cwd=dest, wants_stdout=True))
+            [TOOL_GIT, "-C", dest, "log", "--no-abbrev-commit", "-1"],
+            timeout=120, cwd=dest, wants_stdout=True))
 
         match = re.search("^\\s*commit\\s+(.+?)\\s+", stdout,
                           flags=re.MULTILINE)
