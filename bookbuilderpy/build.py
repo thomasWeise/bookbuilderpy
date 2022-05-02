@@ -565,7 +565,7 @@ class Build(AbstractContextManager):
         except BaseException as be:
             sys.stdout.flush()
             sys.stderr.flush()
-            exinfo = "  ".join(tb.format_exception(etype=type(be),
+            exinfo = "  ".join(tb.format_exception(type(be),
                                                    value=be,
                                                    tb=be.__traceback__))
             log(f"The build process has FAILED with error '{be}':"
