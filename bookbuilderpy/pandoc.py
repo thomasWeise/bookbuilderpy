@@ -48,6 +48,21 @@ __EXIT_CODES: Dict[int, str] = {
 }
 
 
+def __pandoc_check_stderr(stderr: str) -> Optional[BaseException]:
+    """
+    Check the standard error output of pandoc.
+
+    :param stderr: the standard error string
+    """
+    if stderr is None:
+        return None
+    if "Undefined cross-reference" in stderr:
+        return ValueError("Undefined cross-reference!")
+    if "[WARNING] Citeproc" in stderr:
+        return ValueError("Undefined citation!")
+    return None
+
+
 def pandoc(source_file: str,
            dest_file: str,
            format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
@@ -177,12 +192,14 @@ def pandoc(source_file: str,
         locale = enforce_non_empty_str_without_ws(locale)
         cmd.append(f"-V lang={locale.replace('_', '-')}")
 
-    shell(cmd, timeout=600, cwd=input_dir, exit_code_to_str=__EXIT_CODES)
-
-    if template_file:
-        os.remove(template_file)
-    if csl_file:
-        os.remove(csl_file)
+    try:
+        shell(cmd, timeout=600, cwd=input_dir, exit_code_to_str=__EXIT_CODES,
+              check_stderr=__pandoc_check_stderr)
+    finally:
+        if template_file:
+            os.remove(template_file)
+        if csl_file:
+            os.remove(csl_file)
 
     res = File(output_file)
 
@@ -294,71 +311,86 @@ def html(source_file: str,
     :return: the Path to the generated output file and it size
     :rtype: File
     """
-    with TempFile.create(suffix=".html") as tmp:
-        inner_file: Path
-        with ResourceServer() as serv:
-            inner_file = pandoc(source_file=source_file,
-                                dest_file=tmp,
-                                format_in=format_in,
-                                format_out=bc.PANDOC_FORMAT_HTML5,
-                                locale=locale,
-                                standalone=standalone,
-                                tabstops=tabstops,
-                                toc_print=toc_print,
-                                toc_depth=toc_depth,
-                                crossref=crossref,
-                                bibliography=bibliography,
-                                template=get_meta(bc.PANDOC_TEMPLATE_HTML5),
-                                csl=get_meta(bc.PANDOC_CSL),
-                                number_sections=number_sections,
-                                resolve_resources=resolve_resources,
-                                overwrite=True,
-                                args=[f"--mathjax={serv.get_mathjax_url()}",
-                                      "--ascii", "--html-q-tags",
-                                      "--self-contained"]).path
-            inner_file.enforce_file()
+    endresult: Optional[Path] = None  # nosem  # type: ignore  # nolint
+    try:
+        with TempFile.create(suffix=".html") as tmp:
+            # noinspection PyUnusedLocal
+            inner_file: Optional[Path] = None  # nosem  # type: ignore
+            try:
+                with ResourceServer() as serv:
+                    inner_file = pandoc(
+                        source_file=source_file,
+                        dest_file=tmp,
+                        format_in=format_in,
+                        format_out=bc.PANDOC_FORMAT_HTML5,
+                        locale=locale,
+                        standalone=standalone,
+                        tabstops=tabstops,
+                        toc_print=toc_print,
+                        toc_depth=toc_depth,
+                        crossref=crossref,
+                        bibliography=bibliography,
+                        template=get_meta(bc.PANDOC_TEMPLATE_HTML5),
+                        csl=get_meta(bc.PANDOC_CSL),
+                        number_sections=number_sections,
+                        resolve_resources=resolve_resources,
+                        overwrite=True,
+                        args=[f"--mathjax={serv.get_mathjax_url()}",
+                              "--ascii", "--html-q-tags",
+                              "--self-contained"]).path
+                    if inner_file is not None:
+                        inner_file.enforce_file()
+            except BaseException as ve:
+                raise ve
 
-        if bibliography:
+            if inner_file is None:
+                raise ValueError("Huh? pandoc did not return a file?")
 
-            # For some reason, the id and the text of each bibliography
-            # item are each put into separate divs of classes for which
-            # no styles are given. Therefore, we convert these divs to
-            # spans and add some vertical spacing.
-            text = enforce_non_empty_str(inner_file.read_all_str().strip())
-            end = text.rfind("<div id=\"refs\"")
-            if end > 0:
-                text_1 = text[:end]
-                text_2 = text[end:]
-                del text
+            if bibliography:
+                # For some reason, the id and the text of each bibliography
+                # item are each put into separate divs of classes for which
+                # no styles are given. Therefore, we convert these divs to
+                # spans and add some vertical spacing.
+                text = enforce_non_empty_str(
+                    inner_file.read_all_str().strip())
+                end = text.rfind("<div id=\"refs\"")
+                if end > 0:
+                    text_1 = text[:end]
+                    text_2 = text[end:]
+                    del text
 
-                text_2 = regex_sub(
-                    '\\s*<div\\s+class="\\s*csl-left-margin\\s*"\\s*>'
-                    '\\s*(.*?)\\s*</div>\\s*',
-                    '<span class="csl-left-margin">\\1</span>&nbsp;',
-                    text_2)
+                    text_2 = regex_sub(
+                        '\\s*<div\\s+class="\\s*csl-left-margin\\s*"\\s*>'
+                        '\\s*(.*?)\\s*</div>\\s*',
+                        '<span class="csl-left-margin">\\1</span>&nbsp;',
+                        text_2)
 
-                text_2 = regex_sub(
-                    '\\s*<div\\s+class="\\s*csl-right-inline\\s*"\\s*>'
-                    '\\s*(.*?)\\s*</div>\\s*',
-                    '<span class="csl-right-inline">\\1</span>',
-                    text_2)
+                    text_2 = regex_sub(
+                        '\\s*<div\\s+class="\\s*csl-right-inline\\s*"\\s*>'
+                        '\\s*(.*?)\\s*</div>\\s*',
+                        '<span class="csl-right-inline">\\1</span>',
+                        text_2)
 
-                text_2 = text_2.replace(
-                    ' class="csl-entry" role="doc-biblioentry">',
-                    ' class="csl-entry" role="doc-biblioentry" '
-                    'style="margin-top:0.33em">')
+                    text_2 = text_2.replace(
+                        ' class="csl-entry" role="doc-biblioentry">',
+                        ' class="csl-entry" role="doc-biblioentry" '
+                        'style="margin-top:0.33em">')
 
-                inner_file.write_all([text_1, text_2])
-        endresult = html_postprocess(in_file=inner_file,
-                                     out_file=dest_file,
-                                     flatten_data_uris=True,
-                                     fully_evaluate_html=True,
-                                     purge_scripts=True,
-                                     minify=True,
-                                     purge_mathjax=True,
-                                     canonicalize_ids=True,
-                                     overwrite=False)
+                    inner_file.write_all([text_1, text_2])
+            endresult = html_postprocess(in_file=inner_file,
+                                         out_file=dest_file,
+                                         flatten_data_uris=True,
+                                         fully_evaluate_html=True,
+                                         purge_scripts=True,
+                                         minify=True,
+                                         purge_mathjax=True,
+                                         canonicalize_ids=True,
+                                         overwrite=False)
+    except BaseException as vee:
+        raise vee
 
+    if endresult is None:
+        raise ValueError("end result is still None?")
     return File(endresult)
 
 

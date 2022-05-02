@@ -8,6 +8,7 @@ from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.shell import shell
 from bookbuilderpy.temp import TempFile
+from bookbuilderpy.types import type_error
 from bookbuilderpy.versions import TOOL_TAR, TOOL_ZIP, TOOL_XZ, has_tool
 
 
@@ -29,7 +30,7 @@ def __paths(source: Iterable[Union[Path, File, str]]):
         elif isinstance(f, str):
             files.append(Path.file(f))
         else:
-            raise TypeError(f"Type '{type(f)}' not supported.")
+            raise type_error(f, "path element", (Path, File, str))
     if len(files) <= 1:
         raise ValueError("Nothing to compress?")
 

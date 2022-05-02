@@ -5,6 +5,8 @@ import string
 from typing import Iterable, List, Union, Tuple, Final, Dict, Optional
 from urllib.parse import urlparse
 
+from bookbuilderpy.types import type_error
+
 
 def str_to_lines(text: str) -> List[str]:
     r"""
@@ -17,7 +19,7 @@ def str_to_lines(text: str) -> List[str]:
     ['', '123', '  456', '789 ', ' 10', '', '']
     """
     if not isinstance(text, str):
-        raise TypeError(f"text must be str, but is {type(text)}.")
+        raise type_error(text, "text", str)
     return text.split("\n")
 
 
@@ -40,7 +42,7 @@ def lines_to_str(lines: Iterable[str],
     'a\nb\n\nc'
     """
     if not isinstance(lines, Iterable):
-        raise TypeError(f"lines must be str, but is {type(lines)}.")
+        raise type_error(lines, "lines", Iterable)
 
     res = "\n".join(lines).rstrip()
     if trailing_newline:
@@ -58,7 +60,7 @@ def enforce_non_empty_str(text: str) -> str:
     :raises ValueError: if `text` is empty
     """
     if not isinstance(text, str):
-        raise TypeError(f"str expected, but got {type(text)}.")
+        raise type_error(text, "text", str)
     if len(text) <= 0:
         raise ValueError(f"Non-empty str expected, but got '{text}'.")
     return text
@@ -89,7 +91,7 @@ def datetime_to_date_str(date: datetime.datetime) -> str:
     :return: the date string
     """
     if not isinstance(date, datetime.datetime):
-        raise TypeError(f"Excepted datetime.datetime, but {type(date)}.")
+        raise type_error(date, "date", datetime.datetime)
     return date.strftime("%Y\u2011%m\u2011%d")
 
 
@@ -101,7 +103,7 @@ def datetime_to_datetime_str(date: datetime.datetime) -> str:
     :return: the date-time string
     """
     if not isinstance(date, datetime.datetime):
-        raise TypeError(f"Excepted datetime.datetime, but {type(date)}.")
+        raise type_error(date, "date", datetime.datetime)
     return date.strftime("%Y\u2011%m\u2011%d\u00a0%H:%M\u00a0%Z")
 
 

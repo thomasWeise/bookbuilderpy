@@ -13,6 +13,7 @@ import yapf  # type: ignore
 from bookbuilderpy.source_tools import select_lines, format_empty_lines, \
     strip_common_whitespace_prefix
 from bookbuilderpy.strings import str_to_lines, lines_to_str
+from bookbuilderpy.types import type_error
 
 
 def __no_empty_after(line: str) -> bool:
@@ -228,16 +229,13 @@ def format_python(code: Iterable[str],
     :return: the formatted code
     """
     if not isinstance(code, Iterable):
-        raise TypeError(f"code must be Iterable, but is {type(code)}.")
+        raise type_error(code, "code", Iterable)
     if not isinstance(strip_docstrings, bool):
-        raise TypeError("strip_docstrings must be bool, "
-                        f"but is {type(strip_docstrings)}.")
+        raise type_error(strip_docstrings, "strip_docstrings", bool)
     if not isinstance(strip_comments, bool):
-        raise TypeError(
-            f"strip_comments must be bool, but is {type(strip_comments)}.")
+        raise type_error(strip_comments, "strip_comments", bool)
     if not isinstance(strip_hints, bool):
-        raise TypeError(
-            f"strip_hints must be bool, but is {type(strip_hints)}.")
+        raise type_error(strip_hints, "strip_hints", bool)
 
     old_len: Tuple[int, int] = (sys.maxsize, sys.maxsize)
 

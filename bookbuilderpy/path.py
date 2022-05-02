@@ -8,6 +8,7 @@ import shutil
 from typing import cast, Optional, List, Iterable, Final, Union, Tuple
 
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws
+from bookbuilderpy.types import type_error
 
 
 def _canonicalize_path(path: str) -> str:
@@ -18,8 +19,7 @@ def _canonicalize_path(path: str) -> str:
     :return: the canonicalized path
     """
     if not isinstance(path, str):
-        raise TypeError(
-            f"path must be instance of str, but is {type(path)}.")
+        raise type_error(path, "path", str)
     if len(path) <= 0:
         raise ValueError("Path must not be empty.")
 
@@ -29,8 +29,7 @@ def _canonicalize_path(path: str) -> str:
                 os.path.expanduser(
                     os.path.expandvars(path)))))
     if not isinstance(path, str):
-        raise TypeError("Path canonicalization should yield string, but "
-                        f"returned {type(path)}.")
+        raise type_error(path, "canonicalized path", str)
     if len(path) <= 0:
         raise ValueError("Canonicalization must yield non-empty string, "
                          f"but returned '{path}'.")
@@ -255,8 +254,7 @@ class Path(str):
         with self.__open_for_read() as reader:
             ret = reader.readlines()
         if not isinstance(ret, List):
-            raise TypeError("List of strings expected, but "
-                            f"found {type(ret)} in '{self}'.")
+            raise type_error(ret, "ret", List)
         if len(ret) <= 0:
             raise ValueError(f"File '{self}' contains no text.")
         return ret
@@ -271,8 +269,7 @@ class Path(str):
         with self.__open_for_read() as reader:
             ret = reader.read()
         if not isinstance(ret, str):
-            raise TypeError("String expected, but "
-                            f"found {type(ret)} in '{self}'.")
+            raise type_error(ret, "ret", str)
         if len(ret) <= 0:
             raise ValueError(f"File '{self}' contains no text.")
         return ret
@@ -294,8 +291,7 @@ class Path(str):
         """
         self.ensure_file_exists()
         if not isinstance(contents, (str, Iterable)):
-            raise TypeError(
-                f"Excepted str or Iterable, got {type(contents)}.")
+            raise type_error(contents, "contents", (str, Iterable))
         with self.__open_for_write() as writer:
             all_text = contents if isinstance(contents, str) \
                 else "\n".join(contents)

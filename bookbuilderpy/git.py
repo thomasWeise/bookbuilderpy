@@ -12,6 +12,7 @@ from bookbuilderpy.path import Path
 from bookbuilderpy.shell import shell
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
     enforce_non_empty_str, datetime_to_datetime_str, enforce_url
+from bookbuilderpy.types import type_error
 from bookbuilderpy.versions import TOOL_GIT, has_tool
 
 
@@ -42,7 +43,7 @@ class Repo:
         :param date_time: the date and time
         """
         if not isinstance(path, Path):
-            raise TypeError(f"Expected Path, got '{type(path)}'.")
+            raise type_error(path, "path", Path)
         path.enforce_dir()
         object.__setattr__(self, "path", path)
         object.__setattr__(self, "url", enforce_url(url))
@@ -136,9 +137,7 @@ class Repo:
         date_raw: Final[datetime.datetime] = datetime.datetime.strptime(
             date_str, "%a %b %d %H:%M:%S %Y %z")
         if not isinstance(date_raw, datetime.datetime):
-            raise TypeError(
-                f"Expected datetime.datetime, but got {type(date_raw)} when "
-                f"parsing date string '{date_str}' of repo '{dest}'.")
+            raise type_error(date_raw, "date_raw", datetime.datetime)
         date_time: Final[str] = datetime_to_datetime_str(date_raw)
         log(f"found commit '{commit}' and date/time '{date_time}' "
             f"for repo '{dest}'.")

@@ -4,6 +4,8 @@ from typing import Callable
 
 import regex as reg  # type: ignore
 
+from bookbuilderpy.types import type_error
+
 
 def __create_command_re(name: str, n: int = 1,
                         strip_white_space: bool = False) -> reg.Regex:
@@ -53,18 +55,17 @@ def __create_command_re(name: str, n: int = 1,
     'a{1}-{2}b'
     """
     if not isinstance(name, str):
-        raise TypeError(f"name must be string but is {type(name)}.")
+        raise type_error(name, "name", str)
     if len(name) <= 0:
         raise ValueError(f"name cannot be '{name}'.")
     if name in ("n", "r", "t", "x", "u"):
         raise ValueError(f"invalid command name: '{name}'.")
     if not isinstance(n, int):
-        raise TypeError(f"n must be int, but is {type(n)}.")
+        raise type_error(n, "n", int)
     if n < 0:
         raise ValueError(f"n cannot be '{n}'.")
     if not isinstance(strip_white_space, bool):
-        raise TypeError("strip_white_space must be int, "
-                        f"but is {type(strip_white_space)}.")
+        raise type_error(strip_white_space, "strip_white_space", bool)
 
     # First, we build the regular expression, which makes sure that braces
     # numbers match.
@@ -104,7 +105,7 @@ def __strip_group(s: str) -> str:
     'x'
     """
     if not isinstance(s, str):
-        raise TypeError(f"s should be str, but is {type(s)}.")
+        raise type_error(s, "s", str)
     if (len(s) <= 1) or (s[0] != '{') or (s[-1] != '}'):
         raise ValueError(f"invalid argument '{s}'.")
     return s[1:-1].strip()
@@ -165,7 +166,7 @@ def create_preprocessor(name: str,
     '12\n\na3b\n\n4'
     """
     if not callable(func):
-        raise TypeError(f"func must be callable, but is {type(func)}.")
+        raise type_error(func, "func", call=True)
 
     # Create the inner function that sanitizes the arguments and passes them on
     # to func.
@@ -181,7 +182,7 @@ def create_preprocessor(name: str,
                     f"Expected {inner_n} groups, got {len(groups)}.")
             ret = inner_func(*[__strip_group(g) for g in groups])
         if not isinstance(ret, str):
-            raise TypeError(f"return value must be str, but is {type(ret)}.")
+            raise type_error(ret, "return value", str)
         if nls:
             ret = ret.strip()
             return nls if len(ret) <= 0 else f"{nls}{ret}{nls}"

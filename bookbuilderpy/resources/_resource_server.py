@@ -1,6 +1,6 @@
 """An internal web server for serving persistent resources."""
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from importlib import resources
+from importlib import resources  # nosem
 from threading import Thread
 from typing import Optional
 
@@ -95,10 +95,17 @@ class ResourceServer:
         self.__thread.start()
         return self
 
-    def __exit__(self, *args):
-        """Close and exist the server."""
+    def __exit__(self, exception_type, exception_value, traceback) -> bool:
+        """
+        Close and exist the server.
+
+        :param exception_type: ignored
+        :param exception_value: ignored
+        :param traceback: ignored
+        :returns: `True` to suppress an exception, `False` to rethrow it
+        """
         self.__httpd.shutdown()
         del self.__httpd
         self.__thread.join()
         del self.__thread
-        return self
+        return exception_type is None

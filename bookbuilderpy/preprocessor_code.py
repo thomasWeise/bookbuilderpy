@@ -9,6 +9,7 @@ from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
     lines_to_str
+from bookbuilderpy.types import type_error
 
 
 def get_programming_language(path: str) -> Optional[str]:
@@ -45,8 +46,7 @@ def load_code(path: str,
     keep_lines: Optional[List[int]] = None
     if lines is not None:
         if not isinstance(lines, str):
-            raise TypeError(
-                f"line info needs to be str, but is {type(lines)}.")
+            raise type_error(lines, "lines", str)
 
         if len(lines) > 0:
             keep_lines = []
@@ -63,8 +63,7 @@ def load_code(path: str,
     keep_labels: Optional[List[str]] = None
     if labels is not None:
         if not isinstance(labels, str):
-            raise TypeError(
-                f"labels info needs to be str, but is {type(labels)}.")
+            raise type_error(labels, "labels", str)
         if len(labels) > 0:
             keep_labels = []
             for label in labels.split(","):
@@ -74,7 +73,7 @@ def load_code(path: str,
     arg_set: Final[Set[str]] = set()
     if args is not None:
         if not isinstance(args, str):
-            raise TypeError(f"args needs to be str, but is {type(args)}.")
+            raise type_error(args, "args", str)
         if len(args) > 0:
             for arg in args.split(","):
                 arg_set.add(

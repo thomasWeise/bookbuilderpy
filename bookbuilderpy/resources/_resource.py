@@ -1,6 +1,6 @@
 """The package for loading text templates and resources."""
 import os.path
-from importlib import resources
+from importlib import resources  # nosem
 from typing import Optional
 from bookbuilderpy.path import Path, copy_pure
 from bookbuilderpy.strings import enforce_non_empty_str, \

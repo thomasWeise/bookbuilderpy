@@ -1,7 +1,9 @@
 """In this file, we put some shared tools for rendering source codes."""
 
-from typing import Optional, List, Iterable, Set, Callable
 import sys
+from typing import Optional, List, Iterable, Set, Callable
+
+from bookbuilderpy.types import type_error
 
 
 def select_lines(code: Iterable[str],
@@ -39,16 +41,15 @@ def select_lines(code: Iterable[str],
     ['def a():', '    return x']
     """
     if not isinstance(code, Iterable):
-        raise TypeError(f"code must be Iterable[str], but is {type(code)}.")
+        raise type_error(code, "code", Iterable)
     if not isinstance(max_consecutive_empty_lines, int):
-        raise TypeError("max_consecutive_empty_lines must be int but is "
-                        f"{type(max_consecutive_empty_lines)}.")
+        raise type_error(
+            max_consecutive_empty_lines, "max_consecutive_empty_lines", int)
     if max_consecutive_empty_lines < 0:
         raise ValueError("max_consecutive_empty_lines must be >= 0, but is "
                          f"{max_consecutive_empty_lines}.")
     if not isinstance(line_comment_start, str):
-        raise TypeError("line_comment_start must be str but is "
-                        f"{type(line_comment_start)}.")
+        raise type_error(line_comment_start, "line_comment_start", str)
     if not line_comment_start:
         raise ValueError("line_comment_start cannot be "
                          f"'{line_comment_start}'.")
@@ -59,8 +60,7 @@ def select_lines(code: Iterable[str],
     label_str: Optional[List[str]] = None
     if labels is not None:
         if not isinstance(labels, Iterable):
-            raise TypeError(
-                f"labels must be Iterable[str], but is {type(code)}.")
+            raise type_error(labels, "labels", Iterable)
         label_lst = list(labels)
         label_str = list({label.strip() for label in label_lst})
         if len(label_lst) != len(label_str):
@@ -166,8 +166,7 @@ def select_lines(code: Iterable[str],
 
     if lines is not None:  # select the lines we want to keep
         if not isinstance(lines, Iterable):
-            raise TypeError(
-                f"lines must be List[int], but is {type(lines)}.")
+            raise type_error(lines, "lines", Iterable)
         lines_ints = list(set(lines))
         if not lines_ints:
             raise ValueError(f"Empty lines provided: {lines}.")
@@ -250,20 +249,18 @@ def format_empty_lines(lines: Iterable[str],
     ['a', '', 'b', 'c', '', '', 'd', 'e']
     """
     if not isinstance(max_consecutive_empty_lines, int):
-        raise TypeError("max_consecutive_empty_lines must be int but is "
-                        f"{type(max_consecutive_empty_lines)}.")
+        raise type_error(
+            max_consecutive_empty_lines, "max_consecutive_empty_lines", int)
     if max_consecutive_empty_lines < 0:
         raise ValueError("max_consecutive_empty_lines must be >= 0, but is "
                          f"{max_consecutive_empty_lines}.")
     if not callable(empty_before):
-        raise TypeError(
-            f"empty_before must be callable, but is {type(empty_before)}.")
-    if not callable(empty_before):
-        raise TypeError("no_empty_after must be callable, "
-                        f"but is {type(no_empty_after)}.")
+        raise type_error(empty_before, "empty_before", call=True)
+    if not callable(no_empty_after):
+        raise type_error(no_empty_after, "no_empty_after", call=True)
     if not callable(force_no_empty_after):
-        raise TypeError("force_no_empty_after must be callable, "
-                        f"but is {type(force_no_empty_after)}.")
+        raise type_error(
+            force_no_empty_after, "force_no_empty_after", call=True)
 
     result: List[str] = []
     print_empty: int = 0

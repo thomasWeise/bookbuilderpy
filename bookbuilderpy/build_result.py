@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
     enforce_non_empty_str
+from bookbuilderpy.types import type_error
 
 
 @dataclass(frozen=True, init=False, order=True)
@@ -27,13 +28,12 @@ class File:
         :param path: the path of the file
         """
         if not isinstance(path, Path):
-            raise TypeError(f"Expected Path, got '{type(path)}'.")
+            raise type_error(path, "path", Path)
         path.enforce_file()
         object.__setattr__(self, "path", path)
         size = os.path.getsize(self.path)
         if not isinstance(size, int):
-            raise TypeError(
-                f"File size of '{path}' must be int, but is '{type(size)}'.")
+            raise type_error(size, f"os.path.getsize({self.path})", int)
         if size <= 0:
             raise ValueError(f"File size of '{path}' is {size}.")
         object.__setattr__(self, "size", size)
@@ -82,14 +82,12 @@ class LangResult:
             else:
                 object.__setattr__(self, "lang_name", None)
         if not isinstance(directory, Path):
-            raise TypeError(
-                f"directory must be Path, but is {type(directory)}.")
+            raise type_error(directory, "directory", Path)
         directory.enforce_dir()
         object.__setattr__(self, "directory", directory)
 
         if not isinstance(results, tuple):
-            raise TypeError(
-                f"results must be Tuple, but are {type(results)}.")
+            raise type_error(results, "results", Tuple)
         if len(results) <= 0:
             raise ValueError("results list cannot be empty.")
         for f in results:

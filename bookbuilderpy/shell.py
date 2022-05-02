@@ -1,7 +1,7 @@
 """The tool for invoking shell commands."""
 
 import subprocess  # nosec
-from typing import Union, Iterable, Optional, Dict
+from typing import Union, Iterable, Optional, Dict, Callable
 
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path
@@ -11,7 +11,9 @@ def shell(command: Union[str, Iterable[str]],
           timeout: int = 3600,
           cwd: Optional[str] = None,
           wants_stdout: bool = False,
-          exit_code_to_str: Optional[Dict[int, str]] = None) -> Optional[str]:
+          exit_code_to_str: Optional[Dict[int, str]] = None,
+          check_stderr: Callable[[str], Optional[BaseException]]
+          = lambda x: None) -> Optional[str]:
     """
     Execute a text-based command on the shell.
 
@@ -28,6 +30,8 @@ def shell(command: Union[str, Iterable[str]],
         `None` is returned
     :param exit_code_to_str: an optional map
         converting erroneous exit codes to strings
+    :param check_stderr: an optional callable that is applied to the std_err
+        string and may raise an exception if need be
     """
     if timeout < 0:
         raise ValueError(f"Timeout must be positive, but is {timeout}.")
@@ -84,5 +88,10 @@ def shell(command: Union[str, Iterable[str]],
     if ret.returncode != 0:
         raise ValueError(
             f"Error {ret.returncode} when executing {execstr} compressor.")
+
+    if stderr:
+        exception = check_stderr(stderr)
+        if exception is not None:
+            raise exception
 
     return stdout if wants_stdout else None

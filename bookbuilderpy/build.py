@@ -24,6 +24,7 @@ from bookbuilderpy.strings import datetime_to_date_str, \
     datetime_to_datetime_str, enforce_non_empty_str, \
     enforce_non_empty_str_without_ws, lang_to_locale, to_string
 from bookbuilderpy.temp import TempDir
+from bookbuilderpy.types import type_error
 from bookbuilderpy.versions import get_versions, has_tool, TOOL_PANDOC
 from bookbuilderpy.website import build_website
 
@@ -117,7 +118,7 @@ class Build(AbstractContextManager):
         :return: the meta-data element
         """
         if not isinstance(key, str):
-            raise TypeError(f"key must be str, but is {type(key)}.")
+            raise type_error(key, "key", str)
         key = key.strip()
 
         if key == bc.META_DATE:
@@ -220,13 +221,13 @@ class Build(AbstractContextManager):
         :param meta: the metadata
         """
         if not isinstance(meta, dict):
-            raise TypeError(f"Expected dict, got {type(meta)}.")
+            raise type_error(meta, "meta", Dict)
         log("checking metadata for repositories.")
         if bc.META_REPOS in meta:
             repo_list = meta[bc.META_REPOS]
             if not isinstance(repo_list, Iterable):
-                raise TypeError(f"{bc.META_REPOS} must be iterable, "
-                                f"but is {type(repo_list)}.")
+                raise type_error(
+                    repo_list, f"meta[{bc.META_REPOS}]", Iterable)
             for repo in repo_list:
                 if bc.META_REPO_ID not in repo:
                     raise ValueError(
@@ -458,13 +459,12 @@ class Build(AbstractContextManager):
             langs = self.__metadata_raw[bc.META_LANGS]
             done = set()
             if not isinstance(langs, Iterable):
-                raise TypeError(
-                    f"{bc.META_LANGS} must be Iterable but is {type(langs)}.")
+                raise type_error(
+                    langs, f"self.__metadata_raw[{bc.META_LANGS}]", Iterable)
             llangs = list(langs)
             for lang in llangs:
                 if not isinstance(lang, dict):
-                    raise TypeError(
-                        f"Language item must be dict, but is {type(lang)}.")
+                    raise type_error(lang, "item of llangs", Dict)
                 lang_id = enforce_non_empty_str_without_ws(
                     lang[bc.META_LANG_ID])
                 if lang_id in done:
@@ -521,13 +521,14 @@ class Build(AbstractContextManager):
             f"to '{self.__output_dir}'.")
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback) -> None:
+    def __exit__(self, exception_type, exception_value, traceback) -> bool:
         """
         Delete the temporary directory and everything in it.
 
         :param exception_type: ignored
         :param exception_value: ignored
         :param traceback: ignored
+        :returns: `True` to suppress an exception, `False` to rethrow it
         """
         opn = self.__is_open
         self.__is_open = False
@@ -536,6 +537,7 @@ class Build(AbstractContextManager):
             self.__exit.close()
             log(f"finished the build of '{self.__input_file}' "
                 f"to '{self.__output_dir}'.")
+        return exception_type is None
 
     @staticmethod
     def run(input_file: str,
