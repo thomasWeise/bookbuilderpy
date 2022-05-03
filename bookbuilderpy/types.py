@@ -13,9 +13,9 @@ def type_name(tpe: Type) -> str:
     'None'
     >>> type_name(int)
     'int'
-    >>> from moptipy.utils.path import Path
+    >>> from bookbuilderpy.path import Path
     >>> type_name(Path)
-    'moptipy.utils.path.Path'
+    'bookbuilderpy.path.Path'
     """
     c1: str = str(tpe)
     if c1.startswith("<class '"):
@@ -41,12 +41,9 @@ def type_name_of(obj) -> str:
     :param obj: the object
     :returns: the fully-qualified class name of the object
 
-    >>> from moptipy.examples.jssp.instance import Instance
-    >>> type_name_of(Instance.from_resource("demo"))
-    'moptipy.examples.jssp.instance.Instance'
-    >>> from numpy.random import default_rng
-    >>> type_name_of(default_rng())
-    'numpy.random._generator.Generator'
+    >>> from bookbuilderpy.path import Path
+    >>> type_name_of(Path.path("/tmp"))
+    'bookbuilderpy.path.Path'
     """
     if obj is None:
         return "None"

@@ -7,6 +7,7 @@ with open("bookbuilderpy/version.py") as fp:
 
 setup(
     name='bookbuilderpy',
+    python_requires='>=3.9',
     description='A package for compiling electronic books.',
     url='git@github.com/thomasWeise/bookbuilderpy.git',
     author='Thomas Weise',
@@ -26,7 +27,6 @@ setup(
         'Intended Audience :: Education',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9'
     ],
     keywords=[
