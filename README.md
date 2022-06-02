@@ -80,24 +80,51 @@ This is the way we want to use our tool chain (although you can also run it just
 Additionally, our tool chain supports writing the book in [multiple languages](#331-language-specification-and-resolution) in parallel.
 But more about this later.
 
+
 ## 2. Installation and Local Use
 
 The following examples are for [Ubuntu](https://ubuntu.com) [Linux](https://www.linux.org).
 Under other Linux flavors, they may work differently and different commands may be required.
 Execute the examples at your own risk.
 
+
 ### 2.1. Local Installation and Use
 
-You can easily install this package and its required packages using [`pip`](https://pypi.org/project/pip/) by doing
+#### Installation of the Package
+
+In order to use this package and to, e.g., run the example codes, you need to first install it using [`pip`](https://pypi.org/project/pip/).
+You can install the newest version of this library from [PyPi](https://pypi.org/project/bookbuilderpy/) using [`pip`](https://pypi.org/project/pip/) by doing
+
+```shell
+pip install bookbuilderpy
+```
+
+This will install the latest official release of our package.
+If you want to install the latest source code version from GitHub (which may not yet be officially released), you can do
 
 ```shell
 pip install git+https://github.com/thomasWeise/bookbuilderpy.git
 ```
 
+If you want to install the latest source code version from GitHub (which may not yet be officially released) and you have set up a private/public key for GitHub, you can also do:
+
+```shell
+git clone ssh://git@github.com/thomasWeise/bookbuilderpy
+git install bookbuilderpy
+```
+
+This may sometimes work better if you are having trouble reaching GitHub via `https` or `http`.
+You can also clone the repository and then run a `make` build, which will automatically install all dependencies, run all the tests, and then install the package on your system, too.
+If this build completes successful, you can be sure that `bookbuilderpy` will work properly on your machine.
+
+
+#### Installation of the Tool Chain
+
 If you want the full tool chain, though, you also need [pandoc](http://pandoc.org/), [TeX Live](http://tug.org/texlive/), and [calibre](http://calibre-ebook.com) must be installed.
 Additionally, you should have installed [git](http://en.wikipedia.org/wiki/Git), [Firefox](https://www.mozilla.org/en-US/firefox/new/), the [Firefox geckodriver](https://github.com/mozilla/geckodriver), and [ghostscript](http://ghostscript.com/).
 Most likely, this package will only work under [Linux](https://www.linux.org) &ndash; at least I did not test it under Windows.
 All commands and examples in the following require [Linux](https://www.linux.org).
+
 
 ### 2.2. Using the Docker Image
 
