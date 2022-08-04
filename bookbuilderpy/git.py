@@ -84,7 +84,7 @@ class Repo:
             shell([TOOL_GIT, "-C", dest, "clone",
                    "--depth", "1", url, dest], timeout=300,
                   cwd=dest)
-        except TimeoutExpired as error:
+        except TimeoutExpired:
             if url.startswith("https://github.com"):
                 url2 = enforce_url(f"ssh://git@{url[8:]}")
                 log(f"timeout when loading url '{url}', so we try "
@@ -97,7 +97,7 @@ class Repo:
                       cwd=dest)
             else:
                 log(f"timeout when loading url '{url}'.")
-                raise error
+                raise
         log(f"successfully finished loading{s}.")
 
         return Repo.from_local(path=dest, url=url)

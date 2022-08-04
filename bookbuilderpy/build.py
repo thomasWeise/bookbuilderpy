@@ -250,7 +250,7 @@ class Build(AbstractContextManager):
             raise ValueError(f"unknown repository '{name}'.")
         r = self.__repo_ids[name]
         if not isinstance(r, Repo):
-            raise ValueError(f"invalid repository '{name}'?")
+            raise type_error(name, f"invalid repository '{name}'?", Repo)
         return r
 
     def __get_resource(self, name: str, directory: Path) -> Optional[Path]:
@@ -497,8 +497,12 @@ class Build(AbstractContextManager):
                           input_dir=self.__input_dir,
                           get_meta=self.get_meta_str)
 
-    def build(self) -> None:
-        """Perform the build."""
+    def build(self) -> Tuple[LangResult, ...]:
+        """
+        Perform the build.
+
+        :returns: the results
+        """
         log(f"starting the build process for input file '{self.__input_file}'"
             f", input dir '{self.__input_dir}', and output dir "
             f"'{self.__output_dir}' with the following tool versions:\n"
@@ -512,6 +516,10 @@ class Build(AbstractContextManager):
         log("build process completed, created "
             f"{sum(len(c.results) for c in self.__results)} "
             f"book files in total for {len(self.__results)} language(s).")
+        res = tuple(self.__results)
+        if (res is None) or (len(res) <= 0):
+            raise ValueError("Build any results.")
+        return res
 
     def __enter__(self) -> 'Build':
         """Nothing, just exists for `with`."""
@@ -537,6 +545,8 @@ class Build(AbstractContextManager):
             self.__exit.close()
             log(f"finished the build of '{self.__input_file}' "
                 f"to '{self.__output_dir}'.")
+        del exception_value
+        del traceback
         return exception_type is None
 
     @staticmethod
@@ -553,15 +563,9 @@ class Build(AbstractContextManager):
         """
         try:
             with Build(input_file, output_dir, True) as bd:
-                bd.build()
-                res = tuple(bd.__results)
+                res = bd.build()
             sys.stdout.flush()
             sys.stderr.flush()
-            if len(res) <= 0:
-                raise ValueError(
-                    f"Build '{input_file}' -> '{output_dir}' did not produce "
-                    "any results.")
-            return res
         except BaseException as be:
             sys.stdout.flush()
             sys.stderr.flush()
@@ -574,4 +578,6 @@ class Build(AbstractContextManager):
             sys.stderr.flush()
             if exit_on_error:
                 sys.exit(1)
-            raise be
+            raise be if isinstance(be, ValueError) else ValueError(be)
+        else:
+            return res

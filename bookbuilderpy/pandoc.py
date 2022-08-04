@@ -341,7 +341,7 @@ def html(source_file: str,
                     if inner_file is not None:
                         inner_file.enforce_file()
             except BaseException as ve:
-                raise ve
+                raise ve if isinstance(ve, ValueError) else ValueError(ve)
 
             if inner_file is None:
                 raise ValueError("Huh? pandoc did not return a file?")
@@ -386,8 +386,8 @@ def html(source_file: str,
                                          purge_mathjax=True,
                                          canonicalize_ids=True,
                                          overwrite=False)
-    except BaseException as vee:
-        raise vee
+    except BaseException as be:
+        raise be if isinstance(be, ValueError) else ValueError(be)
 
     if endresult is None:
         raise ValueError("end result is still None?")

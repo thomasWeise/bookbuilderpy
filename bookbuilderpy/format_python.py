@@ -98,7 +98,8 @@ def __format_lines(code: str) -> str:
 
 #: the regexes stripping comments that occupy a complete line
 __REGEX_STRIP_LINE_COMMENT: reg.Regex = reg.compile(
-    '\\n[ \\t]*?#.*?\\n', flags=reg.V1 | reg.MULTILINE)
+    '\\n[ \\t]*?#.*?\\n',
+    flags=reg.V1 | reg.MULTILINE)  # pylint: disable=E1101
 
 
 def __strip_hints(code: str,

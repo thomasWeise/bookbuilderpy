@@ -26,7 +26,7 @@ __REGEXES_URI_JAVASCRIPT: Final[Tuple[reg.Regex, ...]] = tuple(
         '|[A-Za-z0-9+\\/]{2}={2}))'  # nosemgrep
         '\"(\\s+type="text/javascript")?'  # nosemgrep
         f'{y}',  # nosemgrep
-        flags=reg.V1 | reg.MULTILINE)
+        flags=reg.V1 | reg.MULTILINE)  # pylint: disable=E1101
         for x in ["octet-stream", "javascript"]
         for y in ["\\s*/>", ">\\s*</script>"]]
 )
@@ -42,7 +42,7 @@ __REGEXES_URI_CSS: Final[Tuple[reg.Regex, ...]] = tuple(
         '[A-Za-z0-9+\\/]{2}={2}))\"'  # nosemgrep
         '(\\s+type="text/css")?'  # nosemgrep
         f'{y}',  # nosemgrep
-        flags=reg.V1 | reg.MULTILINE)
+        flags=reg.V1 | reg.MULTILINE)  # pylint: disable=E1101
         for x in ["octet-stream"]
         for y in ["\\s*/>", ">\\s*</link>"]]
 )
@@ -421,16 +421,17 @@ def __html_crusher(text: str,
 
     # apply the final minification step
     if minify:
-        ntext = enforce_non_empty_str(minify_html.minify(
-            text, do_not_minify_doctype=True,
-            ensure_spec_compliant_unquoted_attribute_values=True,
-            remove_bangs=True,
-            remove_processing_instructions=True,
-            # keep_closing_tags=True,
-            keep_html_and_head_opening_tags=True,
-            keep_spaces_between_attributes=True,
-            minify_css=True,
-            minify_js=True).strip())
+        ntext = enforce_non_empty_str(
+            minify_html.minify(  # pylint: disable=E1101
+                text, do_not_minify_doctype=True,
+                ensure_spec_compliant_unquoted_attribute_values=True,
+                remove_bangs=True,
+                remove_processing_instructions=True,
+                # keep_closing_tags=True,
+                keep_html_and_head_opening_tags=True,
+                keep_spaces_between_attributes=True,
+                minify_css=True,
+                minify_js=True).strip())
         if len(ntext) < len(text):
             text = ntext
 

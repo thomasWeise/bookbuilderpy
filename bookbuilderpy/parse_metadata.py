@@ -10,6 +10,8 @@ import bookbuilderpy.constants as bc
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
 from bookbuilderpy.strings import enforce_non_empty_str
+from bookbuilderpy.types import type_error
+
 
 #: the full metadata command
 __FULL_META_CMD: Final[str] = f"\\{bc.CMD_GET_META}"
@@ -48,7 +50,7 @@ def parse_metadata(text: str) -> Dict[str, Any]:
             raise ValueError(f"Invalid metadata '{text}'.") from e
 
     if not isinstance(res, dict):
-        raise ValueError(f"Metadata should be dict, but is '{type(res)}'.")
+        raise type_error(res, "metadata", dict)
     if len(res) <= 0:
         raise ValueError(f"Metadata should not be empty, but is '{res}'.")
     return res

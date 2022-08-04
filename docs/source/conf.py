@@ -28,11 +28,11 @@ with io.open(os.path.join(root_path, "README.md"),
 # We need to move all sub-headings one step up.
 # Furthermore, we can turn all absolute URLs starting with
 # http://thomasweise.github.io/bookbuilderpy/xxx to local references, i.e.,
-# ./xxx. Finally, it seems that the myst parser now again drops the numerical
-# prefixes of links, i.e., it tags `## 1.2. Hello` with id `hello` instead of
-# `12-hello`. This means that we need to fix all references following the
-# pattern `[xxx](#12-hello)` to `[xxx](#hello)`. We do this with a regular
-# expression `regex_search`.
+# ./xxx. Finally, it seems that the myst parser now again drops the
+# numerical prefixes of links, i.e., it tags `## 1.2. Hello` with id `hello`
+# instead of `12-hello`. This means that we need to fix all references
+# following the pattern `[xxx](#12-hello)` to `[xxx](#hello)`. We do this with
+# a regular expression `regex_search`.
 new_lines = []
 in_code: bool = False  # we only process non-code lines
 skip: bool = True
@@ -40,12 +40,23 @@ skip: bool = True
 regex_search = re.compile("(\\[.+?])\\(#\\d+-(.+?)\\)")
 license_link: str = \
     "https://github.com/thomasWeise/bookbuilderpy/blob/main/LICENSE"
+needs_newline: bool = False
+can_add_anyway: bool = True
 for line in old_lines:
     if skip:  # we skip everything until the introduction section
         if line.lstrip().startswith("## 1. Introduction"):
             skip = False
-        else:
+        elif line.startswith("[![") and can_add_anyway:
+            needs_newline = True
+            new_lines.append(line)
             continue
+        else:
+            can_add_anyway = False
+            continue
+    if needs_newline:
+        new_lines.append("")
+        needs_newline = False
+        continue
     if in_code:
         if line.startswith("```"):
             in_code = False  # toggle to non-code
@@ -95,7 +106,7 @@ release = release["__version__"]
 extensions = ['myst_parser',  # for processing README.md
               'sphinx.ext.autodoc',  # to convert docstrings to documentation
               'sphinx.ext.doctest',  # do the doc tests again
-              'sphinx.ext.intersphinx',  # to link to other libraries
+              'sphinx.ext.intersphinx',  # to link to numpy et al.
               'sphinx_autodoc_typehints',  # to infer types from hints
               'sphinx.ext.viewcode',  # add rendered source code
               ]

@@ -1,4 +1,6 @@
 [![make build](https://github.com/thomasWeise/bookbuilderpy/actions/workflows/build.yaml/badge.svg)](https://github.com/thomasWeise/bookbuilderpy/actions/workflows/build.yaml)
+[![pypi downloads](https://img.shields.io/pypi/dw/bookbuilderpy.svg)](https://pypistats.org/packages/bookbuilderpy)
+[![coverage report](https://thomasweise.github.io/bookbuilderpy/tc/badge.svg)](https://thomasweise.github.io/bookbuilderpy/tc/index.html)
 
 # bookbuilderpy: Building Books from Markdown
 
@@ -329,14 +331,14 @@ For this purpose, you first need to specify the repositories in the metadata sec
 ```yaml
 repos:
   - id: mp
-    url: https://github.com/thomasWeise/moptipy.git
+    url: https://github.com/thomasWeise/bookbuilderpy.git
   - id: bb
     url: https://github.com/thomasWeise/bookbuilderpy.git
 ```
 
 The above list specifies two git repository mnemonics, `mp` and `bp`.
 When the book is being built, both repositories are automatically checked out.
-The `\git.code{repo}{label}{caption}{path}{lines}{labels}{args}` command with `repo` set to `mp` will then refer to the first repository (`moptipy`) and the `path` argument then is a path relative to the repository root.
+The `\git.code{repo}{label}{caption}{path}{lines}{labels}{args}` command with `repo` set to `mp` will then refer to the first repository (`bookbuilderpy`) and the `path` argument then is a path relative to the repository root.
 `repo=bb` would instead refer to the `bookbuilderpy` repository.
 
 ### 3.3.3. Website Construction
