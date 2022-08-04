@@ -706,7 +706,11 @@ def build_example(source_dir: str, dest_dir: str) -> None:
     out_dir.ensure_dir_exists()
     root = generate_example(in_dir, with_git=USE_GIT)
     with Build(root, out_dir, False) as build:
-        build.build()
+        try:
+            build.build()
+        except ValueError as ve:
+            if str(ve) != "Did not build any results.":
+                raise
 
 
 def test_build_examples():

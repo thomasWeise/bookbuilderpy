@@ -518,7 +518,7 @@ class Build(AbstractContextManager):
             f"book files in total for {len(self.__results)} language(s).")
         res = tuple(self.__results)
         if (res is None) or (len(res) <= 0):
-            raise ValueError("Build any results.")
+            raise ValueError("Did not build any results.")
         return res
 
     def __enter__(self) -> 'Build':

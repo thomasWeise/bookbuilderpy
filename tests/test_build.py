@@ -85,7 +85,11 @@ def test_in_out_path():
             with Build(f, dst, False) as build:
                 assert build.input_file is not None
 
-                build.build()
+                try:
+                    build.build()
+                except ValueError as ve:
+                    if str(ve) != "Did not build any results.":
+                        raise
                 if USE_GIT:
                     assert build.get_repo("bp").url == \
                            "https://github.com/thomasWeise/bookbuilderpy.git"
