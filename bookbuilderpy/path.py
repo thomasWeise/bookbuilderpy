@@ -7,7 +7,7 @@ import os.path
 import shutil
 from typing import cast, Optional, List, Iterable, Final, Union, Tuple
 
-from bookbuilderpy.strings import enforce_non_empty_str_without_ws
+from bookbuilderpy.strings import enforce_non_empty_str_without_ws, regex_sub
 from bookbuilderpy.types import type_error
 
 
@@ -297,6 +297,10 @@ class Path(str):
                 else "\n".join(contents)
             if len(all_text) <= 0:
                 raise ValueError("Writing empty text is not permitted.")
+            all_text = regex_sub("[ \t]+\n", "\n", all_text.rstrip())
+            if len(all_text) <= 0:
+                raise ValueError(
+                    "Text becomes empty after removing trailing whitespace?")
             writer.write(all_text)
             if all_text[-1] != "\n":
                 writer.write("\n")

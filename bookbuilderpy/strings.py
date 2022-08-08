@@ -266,16 +266,21 @@ def to_string(obj,
 def regex_sub(search: str,
               replace: str,
               inside: str) -> str:
-    """
+    r"""
     Replace all occurrences of 'search' in 'inside' with 'replace'.
 
     :param search: the regular expression to search
     :param replace: the regular expression to replace it with
     :param inside: the string in which to search/replace
     :return: the new string after the recursive replacement
+
+    >>> regex_sub('[ \t]+\n', '\n', ' bla \nxyz\tabc\t\n')
+    ' bla\nxyz\tabc\n'
+    >>> regex_sub('[0-9]A', 'X', '23A7AA')
+    '2XXA'
     """
     while True:
         text = re.sub(search, replace, inside, re.MULTILINE)
-        if text == inside:
+        if text is inside:
             return inside
         inside = text
