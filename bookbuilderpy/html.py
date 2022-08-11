@@ -266,7 +266,9 @@ def __inner_minify(parsed: bs4.BeautifulSoup) -> None:
 
 
 #: the useless spans pattern
-__USELESS_SPANS: Final[Pattern] = _compile("<span>(.*)</span>", MULTILINE)
+__USELESS_SPANS: Final[Pattern] = _compile(
+    r"<span>([a-zA-Z0-9 \t\n,;.:-_#'+~*^°!\"§$%&/()[]{}=?\\?`@|>]*?)</span>",
+    MULTILINE)
 
 
 def __html_crusher(text: str,
