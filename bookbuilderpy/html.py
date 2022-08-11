@@ -3,7 +3,8 @@ import base64
 import os
 import string
 from os.path import exists
-from typing import Final, List, Tuple, Dict
+from re import compile as _compile, MULTILINE
+from typing import Final, List, Tuple, Dict, Pattern
 
 import bs4  # type: ignore
 import minify_html  # type: ignore
@@ -12,7 +13,7 @@ from selenium import webdriver  # type: ignore
 
 from bookbuilderpy.logger import log
 from bookbuilderpy.path import Path, UTF8, move_pure
-from bookbuilderpy.strings import enforce_non_empty_str
+from bookbuilderpy.strings import enforce_non_empty_str, regex_sub
 from bookbuilderpy.temp import TempDir
 from bookbuilderpy.versions import TOOL_FIREFOX, TOOL_FIREFOX_DRIVER, has_tool
 
@@ -97,9 +98,17 @@ def __unpack_data_uris(text: str) -> str:
     :return: the text with all scripts expanded
     """
     for regex in __REGEXES_URI_JAVASCRIPT:
-        text = reg.sub(regex, __base64_unpacker_js, text)
+        while True:
+            tn = reg.sub(regex, __base64_unpacker_js, text)
+            if tn is text:
+                break
+            text = tn
     for regex in __REGEXES_URI_CSS:
-        text = reg.sub(regex, __base64_unpacker_css, text)
+        while True:
+            tn = reg.sub(regex, __base64_unpacker_css, text)
+            if tn is text:
+                break
+            text = tn
     return text
 
 
@@ -254,6 +263,10 @@ def __inner_minify(parsed: bs4.BeautifulSoup) -> None:
                         child.attrs.update(tag.attrs)
                         tag.replace_with(child)
                         continue
+
+
+#: the useless spans pattern
+__USELESS_SPANS: Final[Pattern] = _compile("<span>(.*)</span>", MULTILINE)
 
 
 def __html_crusher(text: str,
@@ -434,6 +447,7 @@ def __html_crusher(text: str,
                 minify_js=True).strip())
         if len(ntext) < len(text):
             text = ntext
+        text = regex_sub(__USELESS_SPANS, "\\1", text)
 
     return text
 

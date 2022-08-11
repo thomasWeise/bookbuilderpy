@@ -113,7 +113,7 @@ extensions = ['myst_parser',  # for processing README.md
 
 # Location of dependency documentation for cross-referencing.
 intersphinx_mapping = {
-    'abc': ("https://docs.python.org/3/", None)
+    'python': ("https://docs.python.org/3/", None),
 }
 
 # add default values after comma

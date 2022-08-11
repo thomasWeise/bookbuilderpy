@@ -5,7 +5,9 @@ import gzip
 import io
 import os.path
 import shutil
-from typing import cast, Optional, List, Iterable, Final, Union, Tuple
+from typing import cast, Optional, List, Iterable, Final, Union, Tuple, \
+    Pattern
+from re import compile as _compile, MULTILINE
 
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, regex_sub
 from bookbuilderpy.types import type_error
@@ -68,6 +70,11 @@ def _copy_un_gzip(path_in: str, path_out: str):
     with gzip.open(path_in, 'rb') as f_in:
         with open(path_out, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
+
+
+#: a pattern used to clean up training white space
+_PATTERN_TRAILING_WHITESPACE: Final[Pattern] = \
+    _compile(r"[ \t]+\n", MULTILINE)
 
 
 #: the UTF-8 encoding
@@ -150,6 +157,8 @@ class Path(str):
         """
         if self == other:
             return True
+        if not os.path.isdir(self):
+            return False
         if self.__common is None:
             self.__common = os.path.commonpath([self])
         return self.__common == os.path.commonpath([self, Path.path(other)])
@@ -224,6 +233,8 @@ class Path(str):
         except FileExistsError:
             existed = True
         except Exception as err:
+            if isinstance(err, ValueError):
+                raise
             raise ValueError(
                 f"Error when trying to create file '{self}'.") from err
         self.enforce_file()
@@ -231,7 +242,15 @@ class Path(str):
 
     def ensure_dir_exists(self) -> None:
         """Make sure that the directory exists, create it otherwise."""
-        os.makedirs(name=self, exist_ok=True)
+        try:
+            os.makedirs(name=self, exist_ok=True)
+        except FileExistsError:
+            pass
+        except Exception as err:
+            if isinstance(err, ValueError):
+                raise
+            raise ValueError(
+                f"Error when trying to create directory '{self}'.") from err
         self.enforce_dir()
 
     def __open_for_read(self) -> io.TextIOWrapper:
@@ -297,7 +316,8 @@ class Path(str):
                 else "\n".join(contents)
             if len(all_text) <= 0:
                 raise ValueError("Writing empty text is not permitted.")
-            all_text = regex_sub("[ \t]+\n", "\n", all_text.rstrip())
+            all_text = regex_sub(_PATTERN_TRAILING_WHITESPACE,
+                                 "\n", all_text.rstrip())
             if len(all_text) <= 0:
                 raise ValueError(
                     "Text becomes empty after removing trailing whitespace?")

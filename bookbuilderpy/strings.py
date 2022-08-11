@@ -2,7 +2,8 @@
 import datetime
 import re
 import string
-from typing import Iterable, List, Union, Tuple, Final, Dict, Optional
+from typing import Iterable, List, Union, Tuple, Final, Dict, Optional, \
+    Pattern, Callable
 from urllib.parse import urlparse
 
 from bookbuilderpy.types import type_error
@@ -263,8 +264,8 @@ def to_string(obj,
     return str(obj).strip()
 
 
-def regex_sub(search: str,
-              replace: str,
+def regex_sub(search: Union[str, Pattern],
+              replace: Union[Callable, str],
               inside: str) -> str:
     r"""
     Replace all occurrences of 'search' in 'inside' with 'replace'.
