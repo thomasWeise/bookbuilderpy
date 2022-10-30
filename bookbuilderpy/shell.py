@@ -3,7 +3,7 @@
 import subprocess  # nosec
 from typing import Union, Iterable, Optional, Dict, Callable
 
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 
 
@@ -46,7 +46,7 @@ def shell(command: Union[str, Iterable[str]],
     if cwd:
         wd = Path.directory(cwd)
         execstr = f"'{execstr}' in '{wd}'"
-        log(f"executing {execstr}.")
+        logger(f"executing {execstr}.")
         # nosemgrep
         ret = subprocess.run(cmd, check=False, text=True,  # nosec
                              timeout=timeout,  # nosec
@@ -55,7 +55,7 @@ def shell(command: Union[str, Iterable[str]],
                              cwd=wd)  # nosec
     else:
         execstr = f"'{execstr}'"
-        log(f"executing {execstr}.")
+        logger(f"executing {execstr}.")
         # nosemgrep
         ret = subprocess.run(cmd, check=False, text=True,  # nosec
                              timeout=timeout,  # nosec
@@ -83,7 +83,7 @@ def shell(command: Union[str, Iterable[str]],
         stderr = stderr.strip()
         if stderr:
             logging.append(f"\nstderr:\n{stderr}")
-    log("\n".join(logging))
+    logger("\n".join(logging))
 
     if ret.returncode != 0:
         raise ValueError(

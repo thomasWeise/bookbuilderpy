@@ -13,7 +13,7 @@ from bookbuilderpy.build_result import File, LangResult
 from bookbuilderpy.compress import can_xz_compress, can_zip_compress, \
     compress_xz, compress_zip
 from bookbuilderpy.git import Repo
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.pandoc import latex, html, epub, azw3
 from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
 from bookbuilderpy.path import Path
@@ -222,7 +222,7 @@ class Build(AbstractContextManager):
         """
         if not isinstance(meta, dict):
             raise type_error(meta, "meta", Dict)
-        log("checking metadata for repositories.")
+        logger("checking metadata for repositories.")
         if bc.META_REPOS in meta:
             repo_list = meta[bc.META_REPOS]
             if not isinstance(repo_list, Iterable):
@@ -283,8 +283,9 @@ class Build(AbstractContextManager):
             if self.__fail_without_pandoc:
                 raise ValueError("Pandoc not installed.")
             return
-        log(f"now invoking pandoc build steps to file '{input_file}' "
-            f"with target director '{output_dir}' for lang-id '{lang_id}'.")
+        logger(f"now invoking pandoc build steps to file '{input_file}' "
+               f"with target director '{output_dir}' for lang-id "
+               f"'{lang_id}'.")
         input_file.enforce_file()
         output_dir.enforce_dir()
         name, _ = Path.split_prefix_suffix(os.path.basename(input_file))
@@ -332,9 +333,9 @@ class Build(AbstractContextManager):
         if zipf:
             results.append(zipf)
 
-        log(f"finished pandoc build steps to file '{input_file}' "
-            f"with target director '{output_dir}' for lang-id '{lang_id}'"
-            f", produced {len(results)} files.")
+        logger(f"finished pandoc build steps to file '{input_file}' "
+               f"with target director '{output_dir}' for lang-id '{lang_id}'"
+               f", produced {len(results)} files.")
 
         self.__results.append(LangResult(lang_id, lang_name, output_dir,
                                          tuple(results)))
@@ -355,19 +356,19 @@ class Build(AbstractContextManager):
 
         # Start up and define the output directory.
         if lang_id is None:
-            log("beginning build with no language set.")
+            logger("beginning build with no language set.")
             base_dir = self.output_dir
             if lang_name:
                 raise ValueError("Cannot have language name "
                                  f"'{lang_name}' but no language id!")
         elif use_lang_id_as_suffix:
             lang_id = enforce_non_empty_str_without_ws(lang_id)
-            log(f"beginning multi-language build for language {lang_id}.")
+            logger(f"beginning multi-language build for language {lang_id}.")
             base_dir = self.output_dir.resolve_inside(lang_id)
             if lang_name:
                 enforce_non_empty_str(lang_name)
         else:
-            log(f"beginning single-language build in language {lang_id}.")
+            logger(f"beginning single-language build in language {lang_id}.")
             base_dir = self.output_dir
             if lang_name:
                 enforce_non_empty_str(lang_name)
@@ -379,7 +380,7 @@ class Build(AbstractContextManager):
 
         # Then we extract the meta-data.
         self.__metadata_lang = parse_metadata(text)
-        log("done parsing metadata.")
+        logger("done parsing metadata.")
         if lang_id:
             # We set up the language id and lange name meta data properties.
             if bc.META_LANG not in self.__metadata_lang.keys():
@@ -391,19 +392,19 @@ class Build(AbstractContextManager):
         self.__load_repos_from_meta(self.__metadata_lang)
 
         with TempDir.create() as temp:
-            log(f"building in temp directory '{temp}': "
-                "first applying preprocessor.")
+            logger(f"building in temp directory '{temp}': "
+                   "first applying preprocessor.")
 
             text = enforce_non_empty_str(preprocess(
                 text=text, input_dir=self.input_dir,
                 get_meta=self.get_meta_str, get_repo=self.get_repo,
                 repo=self.__repo, output_dir=temp))
-            log("finished applying preprocessor.")
+            logger("finished applying preprocessor.")
 
             has_bibliography = False
             bib = self.__get_meta_no_error(bc.PANDOC_BIBLIOGRAPHY)
             if bib:
-                log(f"found bibliography spec '{bib}', so we load it.")
+                logger(f"found bibliography spec '{bib}', so we load it.")
                 Path.copy_resource(self.__input_dir,
                                    self.__input_dir.resolve_inside(bib),
                                    temp)
@@ -416,8 +417,8 @@ class Build(AbstractContextManager):
                 if not prefix.endswith(end):
                     prefix = prefix + end
             file = temp.resolve_inside(f"{prefix}.{suffix}")
-            log("finished applying preprocessor, now storing "
-                f"{len(text)} characters to file '{file}'.")
+            logger("finished applying preprocessor, now storing "
+                   f"{len(text)} characters to file '{file}'.")
             file.write_all(text)
             del prefix, suffix, text
             self.__pandoc_build(input_file=file,
@@ -429,13 +430,13 @@ class Build(AbstractContextManager):
         # Finalize the build.
         self.__metadata_lang = None
         if lang_id is None:
-            log("finished build with no language set.")
+            logger("finished build with no language set.")
         else:
-            log(f"finished build in language {lang_id}.")
+            logger(f"finished build in language {lang_id}.")
 
     def __load_self_repo(self) -> None:
         """Attempt to load the self repository information."""
-        log("checking if build process is based on git checkout.")
+        logger("checking if build process is based on git checkout.")
         check = self.__input_dir
         while True:
             if check == "/":
@@ -445,15 +446,16 @@ class Build(AbstractContextManager):
             test = Path.path(os.path.join(check, ".git"))
             if os.path.isdir(test):
                 self.__repo = Repo.from_local(check)
-                log(f"build process is based on commit '{self.__repo.commit}'"
+                logger(
+                    f"build process is based on commit '{self.__repo.commit}'"
                     f" of repo '{self.__repo.url}'.")
                 return
             check = Path.path(os.path.join(check, ".."))
-        log("build process is not based on git checkout.")
+        logger("build process is not based on git checkout.")
 
     def __build_all_langs(self) -> None:
         """Perform all the book build steps."""
-        log("beginning the build loop for all languages.")
+        logger("beginning the build loop for all languages.")
         no_lang = True
         if bc.META_LANGS in self.__metadata_raw:
             langs = self.__metadata_raw[bc.META_LANGS]
@@ -478,17 +480,17 @@ class Build(AbstractContextManager):
         if no_lang:
             self.__build_one_lang(
                 self.__get_meta_no_error(bc.META_LANG), None, False)
-        log("finished the build loop for all languages.")
+        logger("finished the build loop for all languages.")
 
     def __build_website(self) -> None:
         """Build the website, if any."""
         template = self.__get_meta_no_error(bc.META_WEBSITE_OUTER)
         if template:
-            log(f"found website template spec '{template}'.")
+            logger(f"found website template spec '{template}'.")
             template = self.input_dir.resolve_inside(template)
             body = self.__get_meta_no_error(bc.META_WEBSITE_BODY)
             if body:
-                log(f"found website body spec '{body}'.")
+                logger(f"found website body spec '{body}'.")
                 body = self.input_dir.resolve_inside(body)
             build_website(docs=self.__results,
                           outer_file=template,
@@ -503,19 +505,19 @@ class Build(AbstractContextManager):
 
         :returns: the results
         """
-        log(f"starting the build process for input file '{self.__input_file}'"
-            f", input dir '{self.__input_dir}', and output dir "
-            f"'{self.__output_dir}' with the following tool versions:\n"
-            f"{get_versions()}")
+        logger(f"starting the build process for input file "
+               f"'{self.__input_file}', input dir '{self.__input_dir}', and "
+               f"output dir '{self.__output_dir}' with the following tool "
+               f"versions:\n{get_versions()}")
         self.__load_self_repo()
         self.__metadata_raw = load_initial_metadata(self.__input_file,
                                                     self.__input_dir)
         self.__load_repos_from_meta(self.__metadata_raw)
         self.__build_all_langs()
         self.__build_website()
-        log("build process completed, created "
-            f"{sum(len(c.results) for c in self.__results)} "
-            f"book files in total for {len(self.__results)} language(s).")
+        logger("build process completed, created "
+               f"{sum(len(c.results) for c in self.__results)} "
+               f"book files in total for {len(self.__results)} language(s).")
         res = tuple(self.__results)
         if (res is None) or (len(res) <= 0):
             raise ValueError("Did not build any results.")
@@ -525,8 +527,8 @@ class Build(AbstractContextManager):
         """Nothing, just exists for `with`."""
         if not self.__is_open:
             raise ValueError("Build already closed.")
-        log(f"starting the build of '{self.__input_file}' "
-            f"to '{self.__output_dir}'.")
+        logger(f"starting the build of '{self.__input_file}' "
+               f"to '{self.__output_dir}'.")
         return self
 
     def __exit__(self, exception_type, exception_value, traceback) -> bool:
@@ -541,10 +543,10 @@ class Build(AbstractContextManager):
         opn = self.__is_open
         self.__is_open = False
         if opn:
-            log("cleaning up temporary files.")
+            logger("cleaning up temporary files.")
             self.__exit.close()
-            log(f"finished the build of '{self.__input_file}' "
-                f"to '{self.__output_dir}'.")
+            logger(f"finished the build of '{self.__input_file}' "
+                   f"to '{self.__output_dir}'.")
         del exception_value
         del traceback
         return exception_type is None
@@ -572,8 +574,8 @@ class Build(AbstractContextManager):
             exinfo = "  ".join(tb.format_exception(type(be),
                                                    value=be,
                                                    tb=be.__traceback__))
-            log(f"The build process has FAILED with error '{be}':"
-                f"\n  {exinfo}")
+            logger(f"The build process has FAILED with error '{be}':"
+                   f"\n  {exinfo}")
             sys.stdout.flush()
             sys.stderr.flush()
             if exit_on_error:

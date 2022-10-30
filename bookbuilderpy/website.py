@@ -8,7 +8,7 @@ import markdown  # type: ignore
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import LangResult, File
 from bookbuilderpy.html import html_postprocess
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
 from bookbuilderpy.strings import file_size, enforce_non_empty_str, \
@@ -109,7 +109,7 @@ def build_website(docs: Iterable[LangResult],
     if os.path.exists(out_file):
         raise ValueError(f"File '{out_file}' already exists.")
 
-    log(f"beginning to build website '{out_file}'.")
+    logger(f"beginning to build website '{out_file}'.")
 
     html = in_dir.resolve_inside(outer_file).read_all_str()
 
@@ -200,5 +200,5 @@ def build_website(docs: Iterable[LangResult],
                                     overwrite=False)
 
     res = File(out_file)
-    log(f"finished building website '{res.path}', size is {res.size}.")
+    logger(f"finished building website '{res.path}', size is {res.size}.")
     return res

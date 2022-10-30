@@ -5,7 +5,7 @@ from typing import Final, Optional
 
 from bookbuilderpy.build import Build
 from bookbuilderpy.git import Repo
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.temp import TempDir, Path
 
 
@@ -15,7 +15,7 @@ def get_local_repo() -> Optional[Repo]:
 
     :returns: the local repository, or None if none exists
     """
-    log("are we in a local repository?")
+    logger("are we in a local repository?")
     check = Path.path(".")
     while True:
         if check == "/":
@@ -25,11 +25,11 @@ def get_local_repo() -> Optional[Repo]:
         test = Path.path(os.path.join(check, ".git"))
         if os.path.isdir(test):
             repo = Repo.from_local(check)
-            log(f"build process is based on commit '{repo.commit}'"
-                f" of repo '{repo.url}'.")
+            logger(f"build process is based on commit '{repo.commit}'"
+                   f" of repo '{repo.url}'.")
             return repo
         check = Path.path(os.path.join(check, ".."))
-    log("build process is not based on git checkout.")
+    logger("build process is not based on git checkout.")
     return None
 
 
@@ -38,7 +38,7 @@ USE_GIT: bool = True
 if "GITHUB_JOB" not in os.environ:
     __inner_repo: Final[Optional[Repo]] = get_local_repo()
     if __inner_repo is None:
-        log("cannot patch repository loader")
+        logger("cannot patch repository loader")
         USE_GIT = False
     else:
         def __download(url: str, dest_dir: str,
@@ -46,11 +46,11 @@ if "GITHUB_JOB" not in os.environ:
             dd = Path.directory(dest_dir)
             shutil.copytree(rp.path, dd, dirs_exist_ok=True)
             rr = Repo(dd, url, rp.commit, rp.date_time)
-            log("invoked patched repo downloader of "
-                f"{url} to {dest_dir}, returned {rr}.")
+            logger("invoked patched repo downloader of "
+                   f"{url} to {dest_dir}, returned {rr}.")
             return rr
         Repo.download = __download
-        log("repository loader patched")
+        logger("repository loader patched")
 
 
 # noinspection PyPackageRequirements

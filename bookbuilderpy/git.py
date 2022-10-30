@@ -7,7 +7,7 @@ from subprocess import TimeoutExpired  # nosec
 from typing import Final
 from typing import Optional
 
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.shell import shell
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
@@ -58,9 +58,9 @@ class Repo:
                              f"'{self.commit}' for repo '{url}'.") from e
         object.__setattr__(self, "date_time",
                            enforce_non_empty_str(date_time))
-        log(f"found repository in path '{self.path}' with commit "
-            f"'{self.commit}' for url '{self.url}' and "
-            f"date '{self.date_time}'.")
+        logger(f"found repository in path '{self.path}' with commit "
+               f"'{self.commit}' for url '{self.url}' and "
+               f"date '{self.date_time}'.")
 
     @staticmethod
     def download(url: str,
@@ -79,7 +79,7 @@ class Repo:
         dest.ensure_dir_exists()
         url = enforce_url(url)
         s = f" repository '{url}' to directory '{dest}'"
-        log(f"starting to load{s} via '{TOOL_GIT}'.")
+        logger(f"starting to load{s} via '{TOOL_GIT}'.")
         try:
             shell([TOOL_GIT, "-C", dest, "clone",
                    "--depth", "1", url, dest], timeout=300,
@@ -87,18 +87,18 @@ class Repo:
         except TimeoutExpired:
             if url.startswith("https://github.com"):
                 url2 = enforce_url(f"ssh://git@{url[8:]}")
-                log(f"timeout when loading url '{url}', so we try "
-                    f"'{url2}' instead, but first delete '{dest}'.")
+                logger(f"timeout when loading url '{url}', so we try "
+                       f"'{url2}' instead, but first delete '{dest}'.")
                 rmtree(dest, ignore_errors=True, onerror=None)
                 dest.ensure_dir_exists()
-                log(f"'{dest}' deleted and created, now re-trying cloning.")
+                logger(f"'{dest}' deleted and created, now re-trying cloning.")
                 shell([TOOL_GIT, "-C", dest, "clone",
                       "--depth", "1", url2, dest], timeout=300,
                       cwd=dest)
             else:
-                log(f"timeout when loading url '{url}'.")
+                logger(f"timeout when loading url '{url}'.")
                 raise
-        log(f"successfully finished loading{s}.")
+        logger(f"successfully finished loading{s}.")
 
         return Repo.from_local(path=dest, url=url)
 
@@ -118,7 +118,8 @@ class Repo:
         dest: Final[Path] = Path.path(path)
         dest.enforce_dir()
 
-        log(f"checking commit information of repo '{dest}' via '{TOOL_GIT}'.")
+        logger(
+            f"checking commit information of repo '{dest}' via '{TOOL_GIT}'.")
         stdout: str = enforce_non_empty_str(shell(
             [TOOL_GIT, "-C", dest, "log", "--no-abbrev-commit", "-1"],
             timeout=120, cwd=dest, wants_stdout=True))
@@ -139,11 +140,11 @@ class Repo:
         if not isinstance(date_raw, datetime.datetime):
             raise type_error(date_raw, "date_raw", datetime.datetime)
         date_time: Final[str] = datetime_to_datetime_str(date_raw)
-        log(f"found commit '{commit}' and date/time '{date_time}' "
-            f"for repo '{dest}'.")
+        logger(f"found commit '{commit}' and date/time '{date_time}' "
+               f"for repo '{dest}'.")
 
         if url is None:
-            log(f"applying '{TOOL_GIT}' to get url information.")
+            logger(f"applying '{TOOL_GIT}' to get url information.")
             url = enforce_non_empty_str(shell(
                 [TOOL_GIT, "-C", dest, "config", "--get", "remote.origin.url"],
                 timeout=120, cwd=dest, wants_stdout=True))
@@ -153,7 +154,7 @@ class Repo:
                 url = enforce_non_empty_str_without_ws(f"{url[:-5]}.git")
             if url.endswith("/"):
                 url = enforce_non_empty_str_without_ws(url[:-1])
-            log(f"found url '{url}' for repo '{dest}'.")
+            logger(f"found url '{url}' for repo '{dest}'.")
             if url.startswith("ssh://git@github.com"):
                 url = f"https://{url[10:]}"
 

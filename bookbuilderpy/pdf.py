@@ -2,7 +2,7 @@
 
 from os.path import exists, dirname
 
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.shell import shell
 from bookbuilderpy.versions import TOOL_GHOSTSCRIPT, has_tool
@@ -27,8 +27,8 @@ def pdf_postprocess(in_file: str,
         raise ValueError(f"Input and output file is the same: '{source}'.")
 
     if has_tool(TOOL_GHOSTSCRIPT):
-        log(f"Post-processing pdf file '{source}' to '{output}' "
-            f"by applying '{TOOL_GHOSTSCRIPT}'.")
+        logger(f"Post-processing pdf file '{source}' to '{output}' "
+               f"by applying '{TOOL_GHOSTSCRIPT}'.")
 
         cmd = [TOOL_GHOSTSCRIPT,
                "-q",
@@ -75,7 +75,7 @@ def pdf_postprocess(in_file: str,
                '-c "<</NeverEmbed [ ]>> setdistillerparams"']
         shell(cmd, timeout=600, cwd=dirname(source))
     else:
-        log(f"'{TOOL_GHOSTSCRIPT}' not installed, copying files directly.")
+        logger(f"'{TOOL_GHOSTSCRIPT}' not installed, copying files directly.")
         Path.copy_file(source, output)
 
     output.enforce_file()

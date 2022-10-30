@@ -6,7 +6,7 @@ import subprocess  # nosec
 from typing import Final, List, Dict, Tuple, Optional
 
 import bookbuilderpy.version as ver
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 
 #: the name of the calibre executable tool
 TOOL_CALIBRE: Final[str] = "calibre"
@@ -128,7 +128,7 @@ class __Versions:
         if self.__versions:
             return self.__versions
 
-        log("obtaining all version information.")
+        logger("obtaining all version information.")
         versions: Final[List[str]] = \
             [f"python version: {platform.python_version()}",
              f"python build: {platform.python_build()[1]}",

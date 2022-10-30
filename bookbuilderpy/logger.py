@@ -3,9 +3,9 @@
 import datetime
 
 
-def log(message: str) -> None:
+def logger(message: str) -> None:
     """
-    Write a message to the log.
+    Write a message to the logger.
 
     :param message: the message
     """

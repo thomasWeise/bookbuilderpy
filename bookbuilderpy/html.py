@@ -11,7 +11,7 @@ import minify_html  # type: ignore
 import regex as reg  # type: ignore
 from selenium import webdriver  # type: ignore
 
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path, UTF8, move_pure
 from bookbuilderpy.strings import enforce_non_empty_str, regex_sub
 from bookbuilderpy.temp import TempDir
@@ -112,6 +112,7 @@ def __unpack_data_uris(text: str) -> str:
     return text
 
 
+# noinspection PyBroadException
 def html_postprocess(in_file: str,
                      out_file: str,
                      flatten_data_uris: bool = True,
@@ -138,7 +139,7 @@ def html_postprocess(in_file: str,
     """
     source = Path.file(in_file)
     output = Path.path(out_file)
-    log(f"post-processing HTML file from '{source}' to '{output}'.")
+    logger(f"post-processing HTML file from '{source}' to '{output}'.")
     if (not overwrite) and exists(output):
         raise ValueError(f"Output file '{output}' already exists.")
     if source == output:
@@ -154,10 +155,10 @@ def html_postprocess(in_file: str,
             if text_n != text:
                 text = text_n
                 needs_file_out = True
-                log("flattening the data uris changed the HTML content.")
+                logger("flattening the data uris changed the HTML content.")
             else:
-                log("flattening the data uris did not change the "
-                    "HTML content.")
+                logger("flattening the data uris did not change the "
+                       "HTML content.")
             del text_n
 
         if fully_evaluate_html:  # flatten scripts and html
@@ -165,15 +166,21 @@ def html_postprocess(in_file: str,
                 options = webdriver.FirefoxOptions()
                 options.headless = True
                 options.add_argument("--enable-javascript")
-                browser = webdriver.Firefox(options=options,
-                                            service_log_path=os.path.devnull)
+                try:
+                    browser = webdriver.Firefox(
+                        options=options, service_log_path=os.path.devnull)
+                except BaseException:
+                    browser = webdriver.Firefox(
+                        options=options, firefox_binary=TOOL_FIREFOX,
+                        service_log_path=os.path.devnull)
+
                 if needs_file_out:
                     current_file = temp.resolve_inside("1.html")
                     current_file.write_all(text)
                     needs_file_out = False
                 current_file.enforce_file()
-                log(f"invoking '{TOOL_FIREFOX_DRIVER}' via selenium on "
-                    f"'{current_file}' to evaluate HTML.")
+                logger(f"invoking '{TOOL_FIREFOX_DRIVER}' via selenium on "
+                       f"'{current_file}' to evaluate HTML.")
                 browser.get('file:///' + current_file)
                 browser.implicitly_wait(1)
                 html = browser.page_source
@@ -186,13 +193,13 @@ def html_postprocess(in_file: str,
                 if html != text:
                     needs_file_out = True
                     text = html
-                    log("html evaluation did change something.")
+                    logger("html evaluation did change something.")
                 else:
-                    log("html evaluation changed nothing.")
+                    logger("html evaluation changed nothing.")
                 del html
             else:
-                log(f"cannot use HTML evaluation, '{TOOL_FIREFOX}' or '"
-                    f"{TOOL_FIREFOX_DRIVER}' not present.")
+                logger(f"cannot use HTML evaluation, '{TOOL_FIREFOX}' or '"
+                       f"{TOOL_FIREFOX_DRIVER}' not present.")
 
         if minify or canonicalize_ids or purge_scripts:  # minify output
             ntext = enforce_non_empty_str(__html_crusher(
@@ -203,19 +210,19 @@ def html_postprocess(in_file: str,
             if ntext != text:
                 needs_file_out = True
                 text = ntext
-                log("html minification has changed the content.")
+                logger("html minification has changed the content.")
             else:
-                log("html minification had no impact")
+                logger("html minification had no impact")
             del ntext
 
         if needs_file_out:
-            log(f"writing post-processing result to '{output}'.")
+            logger(f"writing post-processing result to '{output}'.")
             output.write_all(text)
         elif current_file == source:
-            log(f"copying HTML from '{source}' to '{output}'.")
+            logger(f"copying HTML from '{source}' to '{output}'.")
             Path.copy_file(source, output)
         else:
-            log(f"moving HTML from '{current_file}' to '{output}'.")
+            logger(f"moving HTML from '{current_file}' to '{output}'.")
             move_pure(current_file, output)
 
     output.enforce_file()

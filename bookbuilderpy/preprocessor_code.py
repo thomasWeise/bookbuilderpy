@@ -5,7 +5,7 @@ from typing import List, Optional, Set, Final
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.format_python import preprocess_python
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
     lines_to_str
@@ -41,7 +41,7 @@ def load_code(path: str,
     :return: the code
     """
     src = Path.file(path)
-    log(f"Now loading code from '{src}'.")
+    logger(f"Now loading code from '{src}'.")
 
     keep_lines: Optional[List[int]] = None
     if lines is not None:

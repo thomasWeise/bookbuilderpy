@@ -6,7 +6,7 @@ from typing import Optional, Final, List, Callable, Dict
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File
 from bookbuilderpy.html import html_postprocess
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.pdf import pdf_postprocess
 from bookbuilderpy.resources import ResourceServer
@@ -117,8 +117,8 @@ def pandoc(source_file: str,
     output_dir.ensure_dir_exists()
     input_dir = Path.directory(os.path.dirname(input_file))
 
-    log(f"applying pandoc to generate output file '{output_file}' "
-        f"from '{input_file}'.")
+    logger(f"applying pandoc to generate output file '{output_file}' "
+           f"from '{input_file}'.")
 
     format_in = enforce_non_empty_str_without_ws(format_in)
     format_out = enforce_non_empty_str_without_ws(format_out)
@@ -203,8 +203,8 @@ def pandoc(source_file: str,
 
     res = File(output_file)
 
-    log(f"finished applying pandoc, got output file "
-        f"'{res.path}' of size {res.size} bytes.")
+    logger(f"finished applying pandoc, got output file "
+           f"'{res.path}' of size {res.size} bytes.")
     return res
 
 

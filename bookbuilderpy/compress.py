@@ -4,7 +4,7 @@ import os.path
 from typing import Union, Iterable, List
 
 from bookbuilderpy.build_result import File
-from bookbuilderpy.logger import log
+from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.shell import shell
 from bookbuilderpy.temp import TempFile
@@ -65,7 +65,7 @@ def compress_xz(source: Iterable[Union[Path, File, str]],
         raise ValueError(f"tool {TOOL_XZ} not installed.")
 
     base_dir, files = __paths(source)
-    log(f"Applying tar.xz compression to {files}.")
+    logger(f"Applying tar.xz compression to {files}.")
 
     out = Path.path(dest)
     if os.path.exists(out):
@@ -107,7 +107,7 @@ def compress_zip(source: Iterable[Union[Path, File, str]],
         raise ValueError(f"Tool {TOOL_ZIP} not installed.")
 
     base_dir, files = __paths(source)
-    log(f"Applying zip compression to {files}.")
+    logger(f"Applying zip compression to {files}.")
 
     out = Path.path(dest)
     if os.path.exists(out):
