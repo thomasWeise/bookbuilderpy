@@ -64,8 +64,10 @@ def load_code(path: str, lines: str, labels: str, args: str) -> str:
         if len(labels) > 0:
             keep_labels = set()
             for label in labels.split(","):
-                keep_labels.add(
-                    enforce_non_empty_str_without_ws(label.strip()))
+                ll = enforce_non_empty_str_without_ws(label.strip())
+                if ll in keep_labels:
+                    raise ValueError(f"duplicate label: '{ll}'")
+                keep_labels.add(ll)
             if len(keep_labels) <= 0:
                 raise ValueError(f"labels='{labels}'.")
 
@@ -75,8 +77,10 @@ def load_code(path: str, lines: str, labels: str, args: str) -> str:
             raise type_error(args, "args", str)
         if len(args) > 0:
             for arg in args.split(","):
-                arg_set.add(
-                    enforce_non_empty_str_without_ws(arg.strip()))
+                aa = enforce_non_empty_str_without_ws(arg.strip())
+                if aa in arg_set:
+                    raise ValueError(f"duplicate argument: '{aa}'")
+                arg_set.add(aa)
 
     text: Final[List[str]] = src.read_all_list()
     if len(text) <= 0:
