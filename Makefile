@@ -141,8 +141,13 @@ create_distribution: static_analysis test create_documentation
 	source "$$tempDir/bin/activate" &&\
 	echo "Now installing tar.gz." &&\
 	python3 -m pip --no-input --timeout 360 --retries 100 --require-virtualenv install "$(CWD)/dist/bookbuilderpy-$(VERSION).tar.gz" && ## nosem \
-	echo "Finished, cleaning up." &&\
+	echo "Installing tar.gz has worked. We now create the list of packages in this environment via pip freeze." &&\
+	pip freeze > "$(CWD)/dist/bookbuilderpy-$(VERSION)-requirements_frozen.txt" &&\
+	echo "Now fixing bookbuilderpy line in requirements file." &&\
+	sed -i "s/^bookbuilderpy.*/bookbuilderpy==$(VERSION)/" "$(CWD)/dist/bookbuilderpy-$(VERSION)-requirements_frozen.txt" &&\
+	echo "Now we deactivate the environment." &&\
 	deactivate &&\
+	echo "Finished, cleaning up." &&\
 	rm -rf "$$tempDir" &&\
 	echo "Now testing the wheel." &&\
 	export tempDir=`mktemp -d` &&\
@@ -155,6 +160,10 @@ create_distribution: static_analysis test create_documentation
 	echo "Finished, cleaning up." &&\
 	deactivate &&\
 	rm -rf "$$tempDir" &&\
+	echo "Now also packaging the documentation." &&\
+	cd docs/build &&\
+	tar --dereference --exclude=".nojekyll" -c * | xz -v -9e -c > "$(CWD)/dist/bookbuilderpy-$(VERSION)-documentation.tar.xz" &&\
+	cd $(CWD) &&\
 	echo "Successfully finished building source distribution."
 
 # We install the package and see if that works out.
