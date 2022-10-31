@@ -468,7 +468,6 @@ For Chinese versions of your book using our default template ([Wandmalfarben/Eis
 # line 1..3: hold floating objects in the same section and sub-section
 # line 4..6: prevent ugly broken footnotes
 # line 7..9: fix section and chapter names
-# line 10..12: fix bug https://github.com/Wandmalfarbe/pandoc-latex-template/issues/256
 header-includes:
 - |
   ```{=latex}
@@ -481,8 +480,6 @@ header-includes:
   \AtBeginDocument{%                                        7
   \crefname{chapter}{章}{章}%                                  8
   \crefname{section}{节}{节}%                                 9
-  \addto\captionsenglish{\renewcommand{\figurename}{图}}%    10
-  \addto\captionsenglish{\renewcommand{\tablename}{表}}%     11
   }%                                                        12
   ` ` `
 ```
