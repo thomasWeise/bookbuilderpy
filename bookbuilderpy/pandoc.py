@@ -337,6 +337,8 @@ def html(source_file: str,
                         overwrite=True,
                         args=[f"--mathjax={serv.get_mathjax_url()}",
                               "--ascii", "--html-q-tags",
+                              # eventually replace --self-contained with
+                              # "--embed-resources"
                               "--self-contained"]).path
                     if inner_file is not None:
                         inner_file.enforce_file()

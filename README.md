@@ -152,7 +152,7 @@ If you are a learning-by-doing person, you can clone the "minimal working exampl
 This repository contains a book template showcasing many of the important commands and features of the system.
 It is automatically compiled and published on each commit.
 The website, which then is re-generated automatically each time, is <https://thomasweise.github.io/bookbuilderpy-mwe>
-You can run the example under [Ubuntu](https://ubuntu.com) Linux by cloning the repository executing the build process on this repository with docker as follows, **but execute the code below at your own risk!**
+You can run the example under [Ubuntu](https://ubuntu.com) Linux by cloning the repository executing the build process on this repository with [docker](https://www.docker.com/) as follows, **but execute the code below at your own risk!**
 
 ```shell
 mkdir example

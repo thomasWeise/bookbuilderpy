@@ -37,7 +37,7 @@ def select_lines(code: Iterable[str],
     >>> select_lines(["def a():", "    b=c", "    return x"])
     ['def a():', '    b=c', '    return x']
     >>> pc = ["# start x", "def a():", " b=c # -x", "    return x", "# end x"]
-    >>> select_lines(pc, labels=["x"])
+    >>> select_lines(pc, labels={"x"})
     ['def a():', '    return x']
     """
     if not isinstance(code, Iterable):
@@ -62,14 +62,15 @@ def select_lines(code: Iterable[str],
         if not isinstance(labels, Iterable):
             raise type_error(labels, "labels", Iterable)
         label_lst = list(labels)
+        label_lst.sort()
         label_str = list({label.strip() for label in label_lst})
-        if len(label_lst) != len(label_str):
+        label_str.sort()
+        if label_lst != label_str:
             raise ValueError(
                 f"Invalid label spec {label_lst} of length {len(label_lst)},"
-                f" leading to unique label set {label_str} of shorter "
-                f"length {len(label_str)}.")
+                f" leading to unique label set {label_str} of length "
+                f"{len(label_str)}.")
         del label_lst
-        label_str.sort()
         if label_str and not (label_str[0]):
             raise ValueError(f"Empty label in {labels}.")
 
@@ -78,11 +79,15 @@ def select_lines(code: Iterable[str],
         keep_lines = []
 
         start_labels = [f"{line_comment_start} start {label}"
-                        for label in labels]
+                        for label in label_str]
         end_labels = [f"{line_comment_start} end {label}"
                       for label in label_str]
         add_labels = [f"{line_comment_start} +{label}" for label in label_str]
         del_labels = [f"{line_comment_start} -{label}" for label in label_str]
+        all_labels = set(start_labels + end_labels + add_labels + del_labels)
+        if len(all_labels) != (4 * len(label_str)):
+            raise ValueError("label clash? impossible?")
+        del all_labels
 
         active_labels: Set[int] = set()  # the active label ranges
         current_line_labels: Set[int] = set()  # labels of the current line
@@ -123,7 +128,7 @@ def select_lines(code: Iterable[str],
                         current_line_labels.remove(i)
                         found_mark = True
 
-                # check all potential range end
+                # check all potential line add labels
                 for i, lbl in enumerate(add_labels):
                     if cl.endswith(lbl):
                         cl = cl[:len(cl) - len(lbl)].rstrip()
@@ -135,7 +140,7 @@ def select_lines(code: Iterable[str],
                         current_line_labels.add(i)
                         found_mark = True
 
-                # check all potential range end
+                # check all potential line deletion markers
                 for i, lbl in enumerate(del_labels):
                     if cl.endswith(lbl):
                         cl = cl[:len(cl) - len(lbl)].rstrip()

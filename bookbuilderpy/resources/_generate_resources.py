@@ -137,7 +137,7 @@ def load_mathjax(dest: Path) -> Path:
     """
     logger(f"now loading mathjax svg to '{dest}'.")
     name = "mathjax.js"
-    url = "https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-svg-full.js"
+    url = "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg-full.js"
     _, data = load_text_from_url(url)
     data = enforce_non_empty_str(data.strip())
     dst_file = dest.resolve_inside(name)

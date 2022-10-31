@@ -27,10 +27,7 @@ def get_programming_language(path: str) -> Optional[str]:
     return bc.LANG_UNDEFINED
 
 
-def load_code(path: str,
-              lines: str,
-              labels: str,
-              args: str) -> str:
+def load_code(path: str, lines: str, labels: str, args: str) -> str:
     """
     Load a piece of code from the given path.
 
@@ -60,15 +57,17 @@ def load_code(path: str,
                 else:
                     keep_lines.append(int(line) - 1)
 
-    keep_labels: Optional[List[str]] = None
+    keep_labels: Optional[Set[str]] = None
     if labels is not None:
         if not isinstance(labels, str):
             raise type_error(labels, "labels", str)
         if len(labels) > 0:
-            keep_labels = []
+            keep_labels = set()
             for label in labels.split(","):
-                keep_labels.append(
+                keep_labels.add(
                     enforce_non_empty_str_without_ws(label.strip()))
+            if len(keep_labels) <= 0:
+                raise ValueError(f"labels='{labels}'.")
 
     arg_set: Final[Set[str]] = set()
     if args is not None:

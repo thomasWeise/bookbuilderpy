@@ -3,9 +3,7 @@ import os.path
 from time import sleep
 from typing import Final, Set, List, Dict
 
-# noinspection PyPackageRequirements
 import certifi
-# noinspection PyPackageRequirements
 import urllib3
 
 from bookbuilderpy.logger import logger

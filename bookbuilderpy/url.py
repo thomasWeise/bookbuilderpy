@@ -1,12 +1,18 @@
 """Loading of data from urls."""
 
+from typing import Final
 from typing import Tuple
 
+import certifi
 import urllib3  # type: ignore
 
 from bookbuilderpy.path import UTF8
 from bookbuilderpy.strings import enforce_non_empty_str, \
     enforce_non_empty_str_without_ws
+
+#: The shared HTTP pool
+__HTTP: Final[urllib3.PoolManager] = urllib3.PoolManager(
+    cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
 
 
 def __name(request: urllib3.HTTPResponse) -> str:
@@ -62,8 +68,7 @@ def load_binary_from_url(url: str) -> Tuple[str, bytes]:
     :param url: the url
     :return: a tuple of the file name and the binary data that was loaded
     """
-    http: urllib3.PoolManager = urllib3.PoolManager()
-    request: urllib3.HTTPResponse = http.request("GET", url)
+    request: urllib3.HTTPResponse = __HTTP.request("GET", url)
     if request.status != 200:
         raise ValueError(
             f"Error '{request.status}' when downloading url '{url}'.")

@@ -291,7 +291,7 @@ def format_python(code: Iterable[str],
 
 def preprocess_python(code: List[str],
                       lines: Optional[List[int]] = None,
-                      labels: Optional[List[str]] = None,
+                      labels: Optional[Iterable[str]] = None,
                       args: Optional[Set[str]] = None) -> str:
     r"""
     Preprocess Python code.
