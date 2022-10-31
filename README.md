@@ -566,7 +566,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: docker-practice/actions-setup-docker@master
     - name: build
       run: |
@@ -575,7 +575,7 @@ jobs:
         touch /tmp/result/.nojekyll
 
     - name: deploy
-      uses: JamesIves/github-pages-deploy-action@4.1.4
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
         branch: gh-pages
         folder: /tmp/result
