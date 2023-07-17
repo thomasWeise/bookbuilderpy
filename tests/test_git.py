@@ -6,9 +6,8 @@ from bookbuilderpy.git import Repo
 from bookbuilderpy.temp import TempDir
 
 
-# noinspection PyPackageRequirements
-
-def test_load_git_repo():
+def test_load_git_repo() -> None:
+    """Test loading a github repository."""
     if "GITHUB_JOB" in environ:
         with TempDir.create() as dst:
             repo = "https://github.com/thomasWeise/bookbuilderpy.git"

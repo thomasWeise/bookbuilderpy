@@ -1,7 +1,7 @@
 """Routines for compressing lists of files."""
 
 import os.path
-from typing import Union, Iterable, List
+from typing import Iterable, cast
 
 from bookbuilderpy.build_result import File
 from bookbuilderpy.logger import logger
@@ -9,17 +9,18 @@ from bookbuilderpy.path import Path
 from bookbuilderpy.shell import shell
 from bookbuilderpy.temp import TempFile
 from bookbuilderpy.types import type_error
-from bookbuilderpy.versions import TOOL_TAR, TOOL_ZIP, TOOL_XZ, has_tool
+from bookbuilderpy.versions import TOOL_TAR, TOOL_XZ, TOOL_ZIP, has_tool
 
 
-def __paths(source: Iterable[Union[Path, File, str]]):
+def __paths(source: Iterable[Path | File | str]) \
+        -> tuple[None | Path, list[str]]:
     """
     Convert the iterable of input files into a common path list.
 
     :param source: the paths
     :return: a tuple of a common base path (if any) and the paths
     """
-    files: List[Path] = []
+    files: list[Path] = []
     for f in source:
         if isinstance(f, Path):
             f.enforce_file()
@@ -38,7 +39,7 @@ def __paths(source: Iterable[Union[Path, File, str]]):
     if base_dir:
         return Path.directory(base_dir), \
             [f.relative_to(base_dir) for f in files]
-    return None, files
+    return None, cast(list[str], files)
 
 
 def can_xz_compress() -> bool:
@@ -50,7 +51,7 @@ def can_xz_compress() -> bool:
     return has_tool(TOOL_TAR) and has_tool(TOOL_XZ)
 
 
-def compress_xz(source: Iterable[Union[Path, File, str]],
+def compress_xz(source: Iterable[Path | File | str],
                 dest: str) -> File:
     """
     Compress a sequence of files to tar.xz.
@@ -94,7 +95,7 @@ def can_zip_compress() -> bool:
     return has_tool(TOOL_ZIP)
 
 
-def compress_zip(source: Iterable[Union[Path, File, str]],
+def compress_zip(source: Iterable[Path | File | str],
                  dest: str) -> File:
     """
     Compress a sequence of files to zip.

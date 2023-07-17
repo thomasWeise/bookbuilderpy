@@ -32,6 +32,7 @@ A [Python&nbsp;3](https://docs.python.org/3)-based environment for the automated
     3. [MathJax](#63-mathjax)
 7. [Contact](#7-contact)
 
+
 ## 1. Introduction
 
 The goal of this package is to provide you with a pipeline that can:
@@ -146,6 +147,7 @@ Here, it is assumed that
 - `BOOK_ROOT_MD_FILE` is the root file of your book, say `book.md` (in which case, the full path of `book.md` would be `/home/my/book/sources/book.md`). Notice that you can specify only a single file, but this file can reference other files in sub-directories of `INPUT_DIR` by using commands such as  `\rel.input` (see [below](#32-bookbuilderpy-specific-commands)).
 - `OUTPUT_DIR` is the output directory where the compiled files should be placed, e.g., `/home/my/book/compiled/`. This is where the resulting files will be placed.
 
+
 ### 2.3. Examples
 
 If you are a learning-by-doing person, you can clone the "minimal working example" repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe).
@@ -181,6 +183,7 @@ Our book building pipeline is based on [pandoc flavored markdown](https://pandoc
 It supports the commands and syntax given there, some of which is summarized below in [Section&nbsp;3.1](#31-basic-commands-provided-by-pandoc-and-off-the-shelf-filters).
 However, we add several commands, such as a hierarchical file inclusion structure, a support for multi-language file resolution, a support for including program listings from git repositories, and so on.
 These extensions are discussed in [Section&nbsp;3.2](#32-bookbuilderpy-specific-commands).
+
 
 ## 3.1. Basic commands provided by `pandoc` and off-the-shelf filters
 
@@ -226,6 +229,7 @@ From [@tbl:mytable], we can see that...
 
 - Figures should be included using the [`bookbuilderpy`-specific](#32-bookbuilderpy-specific-commands) `\rel.figure{...}` command.
 
+
 ## 3.2. `bookbuilderpy`-specific commands
 
 The following new commands are added:
@@ -240,7 +244,7 @@ The following new commands are added:
   + `lines`: the lines of the code to keep in the form `1-3,6`, or empty to keep all
   + `labels`: the labels for selecting code pieces, or empty to keep all. For instance, specifying `a,b` will keep all code between line comments `start a` and `end a` and `start b` and `end b`. By ending a line outside the selected range with line comment `+a` (where `a` is again a label name), it will be included. If it is inside the selected range and ends with line comment `-a`, it is excluded.
   + args: any additional, language-specific arguments to pass to the code renderer, as comma-separated strings.
-    - For Python, we automatically strip type hints, docstrings, and comments from the code and also re-format the code. The re-formatting ensures that lines are no longer than 70 characters, which is necessary to make the listings in PDFs to look nicely.
+    - For Python, we automatically strip type hints, docstrings, and comments from the code and also re-format the code. The re-formatting ensures that lines are no longer than 73 characters, which is necessary to make the listings in PDFs to look nicely.
       With `doc` you keep the docstrings, with `comments` you keep the comments, with `hints` you keep the type hints.
       If you specify `format`, then the code is not reformatted at all (which automatically preserves docstrings, type hints, and comments, except for the code selection labels.)
 - `\git.code{repo}{label}{caption}{path}{lines}{labels}{args}` works the same as `\relative.code`, but uses code from the specified git repository instead (see [Metadata](#332-git-repositories)).
@@ -266,12 +270,14 @@ The following new commands are added:
   + `repo.commit`:  if it was detected that the build process is applied to a git repository checkout, then this is the commit id of the checkout; otherwise querying this property will fail the build process.
   + `repo.date`:  if it was detected that the build process is applied to a git repository checkout, then this is the date of the commit that was checked-out; otherwise querying this property will fail the build process.
 
+
 ## 3.3. Metadata
 
 The metadata of your book is a very important portion that specifies not just its title and author, but also all the information for the build process.
 It should be located in a file `metadata.yaml` and the very first line of your main book file then must be a `\rel.input` of this metadata file.
 In the metadata section of your book, you can define things such as the book title and author etc.
 We added the following metadata items:
+
 
 ### 3.3.1. Language Specification and Resolution
 
@@ -323,6 +329,7 @@ Finally, simply first specify the `langs` list in the `metadata.yaml`, and then 
 Last but not least, the language id will be used to decide which pdf-engine is used for building the book.
 For instance, a language ID like `zh`, indicating Chinese, will lead to the use of `xelatex`, while otherwise `pdflatex` will be used.
 
+
 ### 3.3.2. Git Repositories
 
 It is possible to include code from one or multiple git repositories using the `\git.code` command.
@@ -340,6 +347,7 @@ The above list specifies two git repository mnemonics, `mp` and `bp`.
 When the book is being built, both repositories are automatically checked out.
 The `\git.code{repo}{label}{caption}{path}{lines}{labels}{args}` command with `repo` set to `mp` will then refer to the first repository (`bookbuilderpy`) and the `path` argument then is a path relative to the repository root.
 `repo=bb` would instead refer to the `bookbuilderpy` repository.
+
 
 ### 3.3.3. Website Construction
 
@@ -462,7 +470,7 @@ header-includes:
 (without the spaces between the triple-backticks!)
 In the two `\crefname` commands at the end, you can put the singular and plural forms of the names for chapters and sections in your language of choice. 
 
-For Chinese versions of your book using our default template ([Wandmalfarben/Eisvogel](#61-wandmalfarbepandoc-latex-template)), you may instead want to use the following `header-includes` in order to work-around the a [minor issue](https://github.com/Wandmalfarbe/pandoc-latex-template/issues/256) with the template.   
+For Chinese versions of your book using our default template ([Wandmalfarben/Eisvogel](#61-wandmalfarbepandoc-latex-template)), you may instead want to use the following `header-includes`.
 
 ```yaml
 # line 1..3: hold floating objects in the same section and sub-section
@@ -497,6 +505,7 @@ listings: false
 codeBlockCaptions: true
 ```
 
+
 ### 3.4. Graphics
 
 Generally, we suggest to use only vector graphics in your books, as opposed to raster graphics like `jpg` or `png`.
@@ -509,6 +518,7 @@ You can create `svg` graphics using the open-source editor Inkscape or software 
 
 We provide the small tool [ultraSvgz](https://github.com/thomasWeise/ultraSvgz), which runs under Linux and can create very small, minified and compressed `svgz` files from `svg`s.
 Our tool suite supports `svgz` fully and such files tend to actually be smaller than `pdf` or `eps` graphics.
+
 
 ## 4. GitHub Pipeline
 
@@ -538,6 +548,7 @@ Having your book sources on GitHub brings several additional advantages, for ins
 - They may even file pull requests with content to include.
 - You could also write a book collaboratively &ndash; like a software project. This might also be interesting for students who write course notes together.
 
+
 ### 4.1. The Repository
 
 In order to use our workflow, you need to first have an account at [GitHub](https://www.github.com/) and then create an open repository for your book.
@@ -547,6 +558,7 @@ You can use either this client or such a GUI to work with your repository.
 
 You can now fill your repository with your book's source files.
 The repository [thomasWeise/bookbuilderpy-mwe](https://github.com/thomasWeise/bookbuilderpy-mwe) gives you a bare example how that can look like.
+
 
 ## 4.2. The GitHub Action
 
@@ -596,6 +608,7 @@ Done.
 Whenever you commit to your book sources, the book will be compiled and the website is updated.
 Nothing else needed.
 
+
 ## 5. Related Projects and Components
 
 ### 5.1. Own Contributed Projects and Components
@@ -610,6 +623,7 @@ They are all open source and available on GitHub.
   + [docker-pandoc-calibre](https://github.com/thomasWeise/docker-pandoc-calibre) is the container which is the basis for [docker-bookbuilderpy](https://github.com/thomasWeise/docker-bookbuilderpy). It holds a complete installation of pandoc, [calibre](https://calibre-ebook.com), which is used to convert EPUB3 to AZW3, and TeX Live and its sources are [here](https://github.com/thomasWeise/docker-pandoc-calibre) while it is located [here](https://hub.docker.com/r/thomasweise/docker-pandoc-calibre/).
   + [docker-pandoc](https://github.com/thomasWeise/docker-pandoc) is the container which is the basis for [docker-pandoc-calibre](https://github.com/thomasWeise/docker-pandoc-calibre). It holds a complete installation of pandoc and TeX Live and its sources are [here](https://github.com/thomasWeise/docker-pandoc) while it is located [here](https://hub.docker.com/r/thomasweise/docker-pandoc/).
   + [docker-texlive-thin](https://github.com/thomasWeise/docker-texlive-thin) is the container which is the basis for [docker-pandoc](https://github.com/thomasWeise/docker-pandoc). It holds a complete installation of TeX Live and its sources are [here](https://github.com/thomasWeise/docker-texlive-thin) while it is located [here](https://hub.docker.com/r/thomasweise/docker-texlive-thin/).
+
 
 ### 5.2. Related Projects and Components Used
 
@@ -632,11 +646,13 @@ and the two `pandoc` templates
 - [selenium](https://selenium-python.readthedocs.io/), [Firefox](https://www.mozilla.org/en-US/firefox/new/), and [Firefox geckodriver](https://github.com/mozilla/geckodriver) are used to fully evaluate the MathJax javascript to render all the `LaTeX` formulas in the HTML to [SVG](#34-graphics),
 - docker, used to create containers in which all required software is pre-installed,
 
+
 ## 6. License
 
 The copyright holder of this package is Prof. Dr. Thomas Weise (see Contact).
 The package is licensed under the GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007.
 This package also contains third-party components which are under the following licenses;
+
 
 ### 6.1. Wandmalfarbe/pandoc-latex-template
 
@@ -681,8 +697,9 @@ We include the pandoc LaTeX template from [Wandmalfarbe/pandoc-latex-template](h
 % For usage information and examples visit the GitHub page of this template:
 % https://github.com/Wandmalfarbe/pandoc-latex-template
 %%
-```
-    
+``` 
+
+
 ### 6.2 tajmone/pandoc-goodies HTML Template
 
 We include the pandoc HTML-5 template from [tajmone/pandoc-goodies](https://github.com/tajmone/pandoc-goodies) by Tristano Ajmone, Sindre Sorhus, and GitHub Inc., which is under the [MIT license](https://raw.githubusercontent.com/tajmone/pandoc-goodies/master/templates/html5/github/LICENSE). For this, the following terms hold:
@@ -719,6 +736,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
 
 ### 6.3. MathJax
 
@@ -927,6 +945,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
+
 
 ## 7. Contact
 

@@ -2,14 +2,18 @@
 import datetime
 import re
 import string
-from typing import Iterable, List, Union, Tuple, Final, Dict, Optional, \
-    Pattern, Callable
+from typing import (
+    Callable,
+    Final,
+    Iterable,
+    Pattern,
+)
 from urllib.parse import urlparse
 
 from bookbuilderpy.types import type_error
 
 
-def str_to_lines(text: str) -> List[str]:
+def str_to_lines(text: str) -> list[str]:
     r"""
     Convert a string to an iterable of lines.
 
@@ -130,7 +134,7 @@ def enforce_url(url: str) -> str:
     return res.geturl()
 
 
-def get_prefix_str(str_list: Union[Tuple[str, ...], List[str]]) -> str:
+def get_prefix_str(str_list: tuple[str, ...] | list[str]) -> str:
     r"""
     Compute the common prefix string.
 
@@ -150,8 +154,8 @@ def get_prefix_str(str_list: Union[Tuple[str, ...], List[str]]) -> str:
     '\\relative.'
     """
     if len(str_list) <= 0:
-        return ''
-    prefix_str = ''
+        return ""
+    prefix_str = ""
     len_smallest_str = min([len(str_mem) for str_mem in str_list])
     str_list_0 = str_list[0]
     for i in range(len_smallest_str):
@@ -164,7 +168,7 @@ def get_prefix_str(str_list: Union[Tuple[str, ...], List[str]]) -> str:
 
 
 #: The language to locale dictionary for base locales.
-__LANG_DICT: Final[Dict[str, str]] = {
+__LANG_DICT: Final[dict[str, str]] = {
     "en": "en_US",
     "zh": "zh_CN",
     "cn": "zh_CN",
@@ -175,7 +179,7 @@ __LANG_DICT: Final[Dict[str, str]] = {
     "ja": "ja_JP",
     "ko": "ko_KR",
     "pt": "pt_BR",
-    "es": "es_ES"
+    "es": "es_ES",
 }
 
 
@@ -216,14 +220,14 @@ def file_size(size: int) -> str:
 
 
 #: The dictionary with "and" concatenations
-__AND_DICT: Dict[str, Tuple[str, str]] = {
+__AND_DICT: dict[str, tuple[str, str]] = {
     "de": (" und ", " und "),
-    "en": (" and ", ", and ")
+    "en": (" and ", ", and "),
 }
 
 
 def to_string(obj,
-              locale: Optional[str] = None,
+              locale: str | None = None,
               use_seq_and: bool = True) -> str:
     """
     Convert any object to a string, try to use a proper locale.
@@ -264,8 +268,8 @@ def to_string(obj,
     return str(obj).strip()
 
 
-def regex_sub(search: Union[str, Pattern],
-              replace: Union[Callable, str],
+def regex_sub(search: str | Pattern,
+              replace: Callable | str,
               inside: str) -> str:
     r"""
     Replace all occurrences of 'search' in 'inside' with 'replace'.

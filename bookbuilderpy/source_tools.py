@@ -1,16 +1,16 @@
 """In this file, we put some shared tools for rendering source codes."""
 
 import sys
-from typing import Optional, List, Iterable, Set, Callable
+from typing import Callable, Iterable
 
 from bookbuilderpy.types import type_error
 
 
 def select_lines(code: Iterable[str],
-                 lines: Optional[Iterable[int]] = None,
-                 labels: Optional[Iterable[str]] = None,
+                 lines: Iterable[int] | None = None,
+                 labels: Iterable[str] | None = None,
                  line_comment_start: str = "#",
-                 max_consecutive_empty_lines: int = 1) -> List[str]:
+                 max_consecutive_empty_lines: int = 1) -> list[str]:
     r"""
     Select lines of source code based on labels and line indices.
 
@@ -54,10 +54,10 @@ def select_lines(code: Iterable[str],
         raise ValueError("line_comment_start cannot be "
                          f"'{line_comment_start}'.")
 
-    keep_lines: List[str]
+    keep_lines: list[str]
 
     # make sure that labels are unique and non-empty
-    label_str: Optional[List[str]] = None
+    label_str: list[str] | None = None
     if labels is not None:
         if not isinstance(labels, Iterable):
             raise type_error(labels, "labels", Iterable)
@@ -89,12 +89,12 @@ def select_lines(code: Iterable[str],
             raise ValueError("label clash? impossible?")
         del all_labels
 
-        active_labels: Set[int] = set()  # the active label ranges
-        current_line_labels: Set[int] = set()  # labels of the current line
-        done_labels: Set[int] = set()  # the labes for which text as retained
+        active_labels: set[int] = set()  # the active label ranges
+        current_line_labels: set[int] = set()  # labels of the current line
+        done_labels: set[int] = set()  # the labes for which text as retained
 
-        for line, cl in enumerate(code):  # iterate over all code lines
-            cl = cl.rstrip()
+        for line, the_cl in enumerate(code):  # iterate over all code lines
+            cl = the_cl.rstrip()
 
             # first, we need to update the state
             current_line_labels.clear()
@@ -199,11 +199,10 @@ def select_lines(code: Iterable[str],
         current -= 1
         if keep_lines[current]:
             empty_lines = 0
+        elif empty_lines >= max_consecutive_empty_lines:
+            del keep_lines[current]
         else:
-            if empty_lines >= max_consecutive_empty_lines:
-                del keep_lines[current]
-            else:
-                empty_lines += 1
+            empty_lines += 1
 
     if not keep_lines:
         raise ValueError(f"Empty code resulting from {code} after applying "
@@ -216,7 +215,7 @@ def format_empty_lines(lines: Iterable[str],
                        empty_before: Callable = lambda line: False,
                        no_empty_after: Callable = lambda line: False,
                        force_no_empty_after: Callable = lambda line: False,
-                       max_consecutive_empty_lines: int = 1) -> List[str]:
+                       max_consecutive_empty_lines: int = 1) -> list[str]:
     """
     Obtain a generator that strips any consecutive empty lines.
 
@@ -267,12 +266,12 @@ def format_empty_lines(lines: Iterable[str],
         raise type_error(
             force_no_empty_after, "force_no_empty_after", call=True)
 
-    result: List[str] = []
+    result: list[str] = []
     print_empty: int = 0
     no_empty = True
     force_no_empty = True
-    for line in lines:
-        line = line.rstrip()
+    for the_line in lines:
+        line = the_line.rstrip()
         ltr = line.lstrip()
 
         if line:
@@ -298,7 +297,7 @@ def format_empty_lines(lines: Iterable[str],
     return result
 
 
-def strip_common_whitespace_prefix(lines: Iterable[str]) -> List[str]:
+def strip_common_whitespace_prefix(lines: Iterable[str]) -> list[str]:
     r"""
     Strip a common whitespace prefix from a list of strings and merge them.
 

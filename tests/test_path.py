@@ -6,37 +6,36 @@ from typing import cast
 # noinspection PyPackageRequirements
 import pytest
 
-from bookbuilderpy.temp import Path
-from bookbuilderpy.temp import TempFile, TempDir
+from bookbuilderpy.temp import Path, TempDir, TempFile
 
 
-def test_in_out_path():
-    with TempDir.create() as src:
-        with TempDir.create() as dst:
-            input_dir = src.resolve_inside("test/inner/tmp")
-            input_dir.ensure_dir_exists()
-            src.enforce_contains(input_dir)
-            input_file_pure = input_dir.resolve_inside("test.txt")
-            src.enforce_contains(input_file_pure)
-            input_file_pure.write_all(["123", "456", "789"])
+def test_path_1() -> None:
+    """Test the Path class 1."""
+    with TempDir.create() as src, TempDir.create() as dst:
+        input_dir = src.resolve_inside("test/inner/tmp")
+        input_dir.ensure_dir_exists()
+        src.enforce_contains(input_dir)
+        input_file_pure = input_dir.resolve_inside("test.txt")
+        src.enforce_contains(input_file_pure)
+        input_file_pure.write_all(["123", "456", "789"])
 
-            input_file_en = input_dir.resolve_inside("test_en.txt")
-            src.enforce_contains(input_file_en)
-            input_file_en.write_all(["abc", "def", "ghi"])
+        input_file_en = input_dir.resolve_inside("test_en.txt")
+        src.enforce_contains(input_file_en)
+        input_file_en.write_all(["abc", "def", "ghi"])
 
-            res = input_dir.resolve_input_file("test.txt", lang="en")
-            out_en = Path.copy_resource(src, res, dst)
-            assert os.path.basename(out_en) == "test_en.txt"
-            assert out_en.read_all_list() == ["abc\n", "def\n", "ghi\n"]
+        res = input_dir.resolve_input_file("test.txt", lang="en")
+        out_en = Path.copy_resource(src, res, dst)
+        assert os.path.basename(out_en) == "test_en.txt"
+        assert out_en.read_all_list() == ["abc\n", "def\n", "ghi\n"]
 
-            out_en = Path.copy_resource(
-                src, input_dir.resolve_input_file("test.txt", lang="cn"),
-                dst)
-            assert os.path.basename(out_en) == "test.txt"
-            assert out_en.read_all_str() == "123\n456\n789\n"
+        out_en = Path.copy_resource(
+            src, input_dir.resolve_input_file("test.txt", lang="cn"),
+            dst)
+        assert os.path.basename(out_en) == "test.txt"
+        assert out_en.read_all_str() == "123\n456\n789\n"
 
 
-def test_path_creation():
+def test_path_creation() -> None:
     """Test that path creation failes with wrong time."""
     with pytest.raises(TypeError):
         Path.path(cast(str, 1))
@@ -48,9 +47,8 @@ def test_path_creation():
         Path.path("")
 
 
-def test_write_all_read_all_and_enforce_exists():
+def test_write_all_read_all_and_enforce_exists() -> None:
     """Test writing and reading text as well as enforcing existence."""
-
     with TempFile.create() as tf:
         with pytest.raises(ValueError):
             tf.write_all([])
@@ -80,9 +78,8 @@ def test_write_all_read_all_and_enforce_exists():
             tf.ensure_dir_exists()
 
 
-def test_enforce_exists():
+def test_enforce_exists() -> None:
     """Test writing and reading text as well as enforcing existence."""
-
     with TempFile.create() as tf:
         tf.enforce_file()
         tf.ensure_file_exists()
@@ -109,9 +106,8 @@ def test_enforce_exists():
             td.write_all("")
 
 
-def test_enforce_contains_and_empty_readall():
+def test_enforce_contains_and_empty_readall() -> None:
     """Test that enforce_contains works."""
-
     with TempDir.create() as td1:
 
         assert os.path.exists(td1)

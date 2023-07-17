@@ -47,47 +47,59 @@ init: clean
 
 # Run the unit tests.
 test: init
-	echo "Erasing old coverage data." &&\
+	echo "$(NOW): Erasing old coverage data." &&\
 	coverage erase &&\
-	echo "The original value of PATH is '${PATH}'." &&\
+	echo "$(NOW): The original value of PATH is '${PATH}'." &&\
 	export PATH="${PATH}:${PYTHON_PACKAGE_BINARIES}" &&\
-	echo "PATH is now '${PATH}'." &&\
-	echo "Running py.test tests." && \
-	coverage run --include="bookbuilderpy*" -m pytest --strict-config tests -o faulthandler_timeout=360 && \
-	echo "Running py.test with doctests." && \
-	coverage run --include="bookbuilderpy*" -a -m pytest --strict-config --doctest-modules -o faulthandler_timeout=360 --ignore=tests && \
-	echo "Finished running py.test tests."
+	echo "$(NOW): PATH is now '${PATH}'." &&\
+	echo "$(NOW): Running pytest tests." && \
+	timeout --kill-after=15s 90m coverage run --include="bookbuilderpy/*" -m pytest --strict-config tests && \
+	echo "$(NOW): Running pytest with doctests." && \
+	timeout --kill-after=15s 90m coverage run -a --include="bookbuilderpy/*" -m pytest --strict-config --doctest-modules --ignore=tests && \
+	echo "$(NOW): Finished running pytest tests."
 
 # Perform static code analysis.
 static_analysis: init
-	echo "The original value of PATH is '${PATH}'." &&\
+	echo "$(NOW): The original value of PATH is '${PATH}'." &&\
 	export PATH="${PATH}:${PYTHON_PACKAGE_BINARIES}" &&\
-	echo "PATH is now '${PATH}'." &&\
-	echo "Running static code analysis, starting with flake8." && \
-	flake8 . --ignore=W503,TC003,TC101 && \
-	echo "Finished running flake8, now applying pylint to package." &&\
+	echo "$(NOW): PATH is now '${PATH}'." &&\
+	echo "$(NOW): Running static code analysis, starting with flake8." && \
+	flake8 . --ignore=,B008,B009,B010,DUO102,TRY003,TRY101,W503 && \
+	echo "$(NOW): Finished running flake8, now applying pylint to package." &&\
 	pylint bookbuilderpy --disable=C0103,C0302,C0325,R0801,R0901,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R1702,R1728,W0212,W0238,W0703 &&\
-	echo "Done with pylint, now trying mypy." &&\
-	mypy bookbuilderpy --no-strict-optional &&\
-	echo "Done with mypy, now doing pyflakes." &&\
+	echo "$(NOW): Done with pylint, now trying mypy." &&\
+	mypy bookbuilderpy --no-strict-optional --check-untyped-defs &&\
+	echo "$(NOW): Done with mypy, now doing pyflakes." &&\
 	python3 -m pyflakes . &&\
-	echo "Done with pyflakes, now applying bandit to find security issues." &&\
+	echo "$(NOW): Done with pyflakes, now applying bandit to find security issues." &&\
 	bandit -r bookbuilderpy -s B311 &&\
-	echo "Done with bandit, now using pyroma to check setup.py." &&\
+	bandit -r tests -s B311,B101 &&\
+	echo "$(NOW): Done with bandit, now using pyroma to check setup.py." &&\
 	pyroma . &&\
-	echo "Done with pyroma, now applying semgrep." &&\
+	echo "$(NOW): Done with pyroma, now applying semgrep." &&\
 	(semgrep --error --strict --use-git-ignore --skip-unknown-extensions --optimizations all --config=auto || semgrep --error --strict --use-git-ignore --skip-unknown-extensions --optimizations all --config=auto --verbose) &&\
-	echo "Done with semgrep, now applying pydocstyle." &&\
+	echo "$(NOW): Done with semgrep, now applying pydocstyle." &&\
 	pydocstyle --convention=pep257 &&\
-	echo "Done with pydocstype, now applying tryceratops." &&\
-	tryceratops -i TC003 -i TC101 bookbuilderpy &&\
-	echo "Done with tryceratops, now applying unimport." &&\
+	echo "$(NOW): Done with pydocstyle, now applying tryceratops." &&\
+	tryceratops -i TRY003 -i TRY101 bookbuilderpy &&\
+	tryceratops -i TRY003 -i TRY101 tests &&\
+	echo "$(NOW): Done with tryceratops, now applying unimport." &&\
 	unimport bookbuilderpy &&\
-	echo "Done with unimport, now applying vulture." &&\
+	unimport tests &&\
+	echo "$(NOW): Done with unimport, now applying vulture." &&\
 	vulture . --min-confidence 61 &&\
-	echo "Done with vulture, now applying dodgy." &&\
+	echo "$(NOW): Done with vulture, now applying dodgy." &&\
 	dodgy &&\
-	echo "Done: All static checks passed."
+	echo "$(NOW): Done with dodgy, now running pycodestyle." &&\
+	pycodestyle bookbuilderpy &&\
+	pycodestyle tests &&\
+	echo "$(NOW): Done with pycodestyle, now running ruff." &&\
+	ruff --target-version py310 --select A,ANN,B,C,C4,COM,D,DJ,DTZ,E,ERA,EXE,F,G,I,ICN,INP,ISC,N,NPY,PIE,PLC,PLE,PLR,PLW,PT,PYI,Q,RET,RSE,RUF,S,SIM,T,T10,T20,TID,TRY,UP,W,YTT --ignore=ANN001,ANN002,ANN003,ANN101,ANN204,ANN401,B008,B009,B010,C901,D203,D208,D212,D401,D407,D413,N801,PLR0911,PLR0912,PLR0913,PLR0915,PLR2004,RUF100,TRY003,UP035 --line-length 79 bookbuilderpy &&\
+	ruff --target-version py310 --select A,ANN,B,C,C4,COM,D,DJ,DTZ,E,ERA,EXE,F,G,I,ICN,ISC,N,NPY,PIE,PLC,PLE,PLR,PLW,PYI,Q,RET,RSE,RUF,T,SIM,T10,T20,TID,TRY,UP,W,YTT --ignore=ANN001,ANN002,ANN003,ANN101,ANN204,ANN401,B008,B009,B010,C901,D203,D208,D212,D401,D407,D413,N801,PLR0911,PLR0912,PLR0913,PLR0915,PLR2004,RUF100,TRY003,UP035 --line-length 79 tests &&\
+    echo "$(NOW): Done with ruff, now running autoflake." &&\
+    autoflake -c -r bookbuilderpy &&\
+    autoflake -c -r tests &&\
+	echo "$(NOW): Done: All static checks passed."
 
 # We use sphinx to generate the documentation.
 # This automatically checks the docstrings and such and such.
@@ -108,7 +120,7 @@ create_documentation: static_analysis test
 	pygmentize -f html -l text -O full -O style=default -o docs/build/LICENSE.html LICENSE &&\
 	echo "Finished copying LICENSE, now creating coverage report." &&\
 	mkdir -p docs/build/tc &&\
-	coverage html -d docs/build/tc --include="bookbuilderpy*" &&\
+	coverage html -d docs/build/tc --include="bookbuilderpy/*" &&\
 	echo "Now creating coverage badge." &&\
 	coverage-badge -o docs/build/tc/badge.svg &&\
 	if [[ -f docs/build/tc/badge.svg ]];then \

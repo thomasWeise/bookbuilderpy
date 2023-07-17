@@ -107,7 +107,7 @@ def __strip_group(s: str) -> str:
     """
     if not isinstance(s, str):
         raise type_error(s, "s", str)
-    if (len(s) <= 1) or (s[0] != '{') or (s[-1] != '}'):
+    if (len(s) <= 1) or (s[0] != "{") or (s[-1] != "}"):
         raise ValueError(f"invalid argument '{s}'.")
     return s[1:-1].strip()
 

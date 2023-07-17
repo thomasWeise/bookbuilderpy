@@ -6,26 +6,35 @@ import sys
 import traceback as tb
 from contextlib import AbstractContextManager, ExitStack
 from os.path import basename
-from typing import Final, Optional, Dict, Any, Iterable, List, Tuple
+from typing import Any, Final, Iterable
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File, LangResult
-from bookbuilderpy.compress import can_xz_compress, can_zip_compress, \
-    compress_xz, compress_zip
+from bookbuilderpy.compress import (
+    can_xz_compress,
+    can_zip_compress,
+    compress_xz,
+    compress_zip,
+)
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import logger
-from bookbuilderpy.pandoc import latex, html, epub, azw3
+from bookbuilderpy.pandoc import azw3, epub, html, latex
 from bookbuilderpy.parse_metadata import load_initial_metadata, parse_metadata
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor import preprocess
 from bookbuilderpy.preprocessor_input import load_input
 from bookbuilderpy.resources import load_resource
-from bookbuilderpy.strings import datetime_to_date_str, \
-    datetime_to_datetime_str, enforce_non_empty_str, \
-    enforce_non_empty_str_without_ws, lang_to_locale, to_string
+from bookbuilderpy.strings import (
+    datetime_to_date_str,
+    datetime_to_datetime_str,
+    enforce_non_empty_str,
+    enforce_non_empty_str_without_ws,
+    lang_to_locale,
+    to_string,
+)
 from bookbuilderpy.temp import TempDir
 from bookbuilderpy.types import type_error
-from bookbuilderpy.versions import get_versions, has_tool, TOOL_PANDOC
+from bookbuilderpy.versions import TOOL_PANDOC, get_versions, has_tool
 from bookbuilderpy.website import build_website
 
 
@@ -67,17 +76,17 @@ class Build(AbstractContextManager):
         #: the start year
         self.__start_year: Final[str] = self.__start.strftime("%Y")
         #: the raw metadata
-        self.__metadata_raw: Optional[Dict[str, Any]] = None
+        self.__metadata_raw: dict[str, Any] | None = None
         #: the language-specific metadata
-        self.__metadata_lang: Optional[Dict[str, Any]] = None
+        self.__metadata_lang: dict[str, Any] | None = None
         #: the mapping of urls to repositories
-        self.__repo_urls: Dict[str, Repo] = {}
+        self.__repo_urls: dict[str, Repo] = {}
         #: the mapping of repo IDs to repositories
-        self.__repo_ids: Dict[str, Repo] = {}
+        self.__repo_ids: dict[str, Repo] = {}
         #: the internal collection of build results
-        self.__results: List[LangResult] = []
+        self.__results: list[LangResult] = []
         #: the own repository information
-        self.__repo: Optional[Repo] = None
+        self.__repo: Repo | None = None
         #: fail if pandoc is not available?
         self.__fail_without_pandoc: Final[bool] = fail_without_pandoc
 
@@ -128,13 +137,11 @@ class Build(AbstractContextManager):
         if key == bc.META_YEAR:
             return self.__start_year
 
-        if self.__metadata_lang is not None:
-            if key in self.__metadata_lang:
-                return self.__metadata_lang[key]
+        if self.__metadata_lang is not None and key in self.__metadata_lang:
+            return self.__metadata_lang[key]
 
-        if self.__metadata_raw is not None:
-            if key in self.__metadata_raw:
-                return self.__metadata_raw[key]
+        if self.__metadata_raw is not None and key in self.__metadata_raw:
+            return self.__metadata_raw[key]
 
         # If no meta data language properties are set: return default values.
         if key == bc.META_LANG:
@@ -214,14 +221,14 @@ class Build(AbstractContextManager):
         self.__repo_ids[name] = r
         self.__repo_urls[r.url] = r
 
-    def __load_repos_from_meta(self, meta: Dict[str, Any]) -> None:
+    def __load_repos_from_meta(self, meta: dict[str, Any]) -> None:
         """
         Load the repositories listed in the metadata.
 
         :param meta: the metadata
         """
         if not isinstance(meta, dict):
-            raise type_error(meta, "meta", Dict)
+            raise type_error(meta, "meta", dict)
         logger("checking metadata for repositories.")
         if bc.META_REPOS in meta:
             repo_list = meta[bc.META_REPOS]
@@ -246,14 +253,14 @@ class Build(AbstractContextManager):
         :return: the repository structure
         """
         name = enforce_non_empty_str(name).strip()
-        if not (name in self.__repo_ids):
+        if name not in self.__repo_ids:
             raise ValueError(f"unknown repository '{name}'.")
         r = self.__repo_ids[name]
         if not isinstance(r, Repo):
             raise type_error(name, f"invalid repository '{name}'?", Repo)
         return r
 
-    def __get_resource(self, name: str, directory: Path) -> Optional[Path]:
+    def __get_resource(self, name: str, directory: Path) -> Path | None:
         """
         Get an internal build resource to a directory.
 
@@ -267,8 +274,8 @@ class Build(AbstractContextManager):
     def __pandoc_build(self,
                        input_file: Path,
                        output_dir: Path,
-                       lang_id: Optional[str],
-                       lang_name: Optional[str],
+                       lang_id: str | None,
+                       lang_name: str | None,
                        has_bibliography: bool) -> None:
         """
         Apply pandoc and build the input file to the output dir.
@@ -289,8 +296,8 @@ class Build(AbstractContextManager):
         input_file.enforce_file()
         output_dir.enforce_dir()
         name, _ = Path.split_prefix_suffix(os.path.basename(input_file))
-        results: List[File] = []
-        locale: Optional[str] = self.__get_meta_no_error(bc.META_LOCALE)
+        results: list[File] = []
+        locale: str | None = self.__get_meta_no_error(bc.META_LOCALE)
 
         results.append(latex(
             source_file=input_file,
@@ -341,8 +348,8 @@ class Build(AbstractContextManager):
                                          tuple(results)))
 
     def __build_one_lang(self,
-                         lang_id: Optional[str],
-                         lang_name: Optional[str],
+                         lang_id: str | None,
+                         lang_name: str | None,
                          use_lang_id_as_suffix: bool = False) -> None:
         """
         Perform the book build for one language.
@@ -466,7 +473,7 @@ class Build(AbstractContextManager):
             llangs = list(langs)
             for lang in llangs:
                 if not isinstance(lang, dict):
-                    raise type_error(lang, "item of llangs", Dict)
+                    raise type_error(lang, "item of llangs", dict)
                 lang_id = enforce_non_empty_str_without_ws(
                     lang[bc.META_LANG_ID])
                 if lang_id in done:
@@ -499,7 +506,7 @@ class Build(AbstractContextManager):
                           input_dir=self.__input_dir,
                           get_meta=self.get_meta_str)
 
-    def build(self) -> Tuple[LangResult, ...]:
+    def build(self) -> tuple[LangResult, ...]:
         """
         Perform the build.
 
@@ -523,7 +530,7 @@ class Build(AbstractContextManager):
             raise ValueError("Did not build any results.")
         return res
 
-    def __enter__(self) -> 'Build':
+    def __enter__(self) -> "Build":
         """Nothing, just exists for `with`."""
         if not self.__is_open:
             raise ValueError("Build already closed.")
@@ -554,7 +561,7 @@ class Build(AbstractContextManager):
     @staticmethod
     def run(input_file: str,
             output_dir: str,
-            exit_on_error: bool = False) -> Tuple[LangResult, ...]:
+            exit_on_error: bool = False) -> tuple[LangResult, ...]:
         """
         Run a build on an input file to an output directory.
 
@@ -580,6 +587,7 @@ class Build(AbstractContextManager):
             sys.stderr.flush()
             if exit_on_error:
                 sys.exit(1)
-            raise be if isinstance(be, ValueError) else ValueError(be)
-        else:
-            return res
+            if isinstance(be, ValueError):
+                raise
+            raise ValueError from be
+        return res

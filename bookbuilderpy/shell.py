@@ -1,19 +1,19 @@
 """The tool for invoking shell commands."""
 
 import subprocess  # nosec
-from typing import Union, Iterable, Optional, Dict, Callable
+from typing import Callable, Iterable
 
 from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 
 
-def shell(command: Union[str, Iterable[str]],
+def shell(command: str | Iterable[str],
           timeout: int = 3600,
-          cwd: Optional[str] = None,
+          cwd: str | None = None,
           wants_stdout: bool = False,
-          exit_code_to_str: Optional[Dict[int, str]] = None,
-          check_stderr: Callable[[str], Optional[BaseException]]
-          = lambda x: None) -> Optional[str]:
+          exit_code_to_str: dict[int, str] | None = None,
+          check_stderr: Callable[[str], BaseException | None]
+          = lambda x: None) -> str | None:
     """
     Execute a text-based command on the shell.
 
@@ -48,25 +48,23 @@ def shell(command: Union[str, Iterable[str]],
         execstr = f"'{execstr}' in '{wd}'"
         logger(f"executing {execstr}.")
         # nosemgrep
-        ret = subprocess.run(cmd, check=False, text=True,  # nosec
-                             timeout=timeout,  # nosec
-                             stdout=subprocess.PIPE,  # nosec
-                             stderr=subprocess.PIPE,  # nosec
-                             cwd=wd)  # nosec
+        ret = subprocess.run(cmd, check=False, text=True,  # nosec # noqa
+                             timeout=timeout,  # nosec # noqa
+                             capture_output=True,  # nosec # noqa
+                             cwd=wd)  # nosec # noqa
     else:
         execstr = f"'{execstr}'"
         logger(f"executing {execstr}.")
         # nosemgrep
-        ret = subprocess.run(cmd, check=False, text=True,  # nosec
-                             timeout=timeout,  # nosec
-                             stdout=subprocess.PIPE,  # nosec
-                             stderr=subprocess.PIPE)  # nosec
+        ret = subprocess.run(cmd, check=False, text=True,  # nosec # noqa
+                             timeout=timeout,  # nosec # noqa
+                             capture_output=True)  # nosec # noqa
 
     logging = [f"finished executing {execstr}.",
                f"obtained return value {ret.returncode}."]
 
     if (ret.returncode != 0) and exit_code_to_str:
-        ec: Optional[str] = exit_code_to_str.get(ret.returncode, None)
+        ec: str | None = exit_code_to_str.get(ret.returncode, None)
         if ec:
             logging.append(f"meaning of return value: {ec}")
 

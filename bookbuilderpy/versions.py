@@ -3,7 +3,7 @@
 import importlib.metadata as ilm
 import platform
 import subprocess  # nosec
-from typing import Final, List, Dict, Tuple, Optional
+from typing import Final
 
 import bookbuilderpy.version as ver
 from bookbuilderpy.logger import logger
@@ -35,7 +35,7 @@ TOOL_ZIP: Final[str] = "zip"
 
 
 def __chkstr(n: str,
-             purge_starts: Tuple[str, ...] =
+             purge_starts: tuple[str, ...] =
              ("copyright", "there is no", "covered by",
               "the lesser gnu g", "the gnu gen", "for more info",
               "named copying", "primary author", "currently maintaine",
@@ -44,7 +44,7 @@ def __chkstr(n: str,
               "in both s", "the usa", "administration regulat",
               "this is free", "warranty", "the source ", "testing/gecko",
               "this program", "license", "you can obt", "written by",
-              "no lsb mod", "(see the b", "bzip2 code ")) -> Optional[str]:
+              "no lsb mod", "(see the b", "bzip2 code ")) -> str | None:
     """
     Check whether we should keep a version string.
 
@@ -69,7 +69,7 @@ def __chkstr(n: str,
     return n
 
 
-def _do_call(tool: str, arg: str) -> Tuple[str, bool]:
+def _do_call(tool: str, arg: str) -> tuple[str, bool]:
     """
     Invoke a sub-process.
 
@@ -79,9 +79,9 @@ def _do_call(tool: str, arg: str) -> Tuple[str, bool]:
     """
     try:
         # nosemgrep
-        ret = subprocess.run([tool, arg], check=False,  # nosec
-                             text=True, capture_output=True,  # nosec
-                             timeout=360)  # nosec
+        ret = subprocess.run([tool, arg], check=False,  # nosec # noqa
+                             text=True, capture_output=True,  # nosec # noqa
+                             timeout=360)  # nosec # noqa
     except FileNotFoundError:
         return f"{tool} not found", False
     except BaseException as be:
@@ -103,9 +103,9 @@ class __Versions:
     def __init__(self):
         """Initialize."""
         #: the set of tool information
-        self.__has_tool: Final[Dict[str, Tuple[str, bool]]] = {}
+        self.__has_tool: Final[dict[str, tuple[str, bool]]] = {}
         #: the version string
-        self.__versions: Optional[str] = None
+        self.__versions: str | None = None
 
     def has_tool(self, tool: str) -> bool:
         """
@@ -129,7 +129,7 @@ class __Versions:
             return self.__versions
 
         logger("obtaining all version information.")
-        versions: Final[List[str]] = \
+        versions: Final[list[str]] = \
             [f"python version: {platform.python_version()}",
              f"python build: {platform.python_build()[1]}",
              f"python compiler: {platform.python_compiler()}",
@@ -148,11 +148,11 @@ class __Versions:
                      TOOL_GHOSTSCRIPT, TOOL_GIT, TOOL_PANDOC,
                      TOOL_PDFLATEX, TOOL_RSVG_CONVERT, TOOL_TAR,
                      TOOL_XELATEX, TOOL_XZ, TOOL_ZIP]:
-            has: Tuple[str, bool]
+            has: tuple[str, bool]
             if tool in self.__has_tool:
                 has = self.__has_tool[tool]
             else:
-                self.__has_tool[tool] = has = _do_call(tool, '--version')
+                self.__has_tool[tool] = has = _do_call(tool, "--version")
             versions.append(f"\n{tool}: {has[0]}")
 
         self.__versions = "\n".join(versions)

@@ -1,6 +1,6 @@
-"""This script is there to generate the resources."""
+"""Generate the resources."""
 from os.path import dirname
-from typing import Final, List
+from typing import Final
 
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import logger
@@ -43,8 +43,8 @@ def load_html_github_template(dest: Path) -> Path:
         text = text.replace(',"Apple Color Emoji"', "")
         text = text.replace(',"Segoe UI Emoji"', "")
         text = text.replace(',"Segoe UI Symbol"', "")
-        text = text.replace('div.line-block{line-height:0.85;',
-                            'div.line-block{')
+        text = text.replace("div.line-block{line-height:0.85;",
+                            "div.line-block{")
         start1 = text.find(".markdown-body p,")
         if start1 > 0:
             start2 = text.find("{", start1)
@@ -54,8 +54,8 @@ def load_html_github_template(dest: Path) -> Path:
                     replacer = "margin-top:0;"
                     found = text.find(replacer, start2)
                     if start2 < found < end1:
-                        text = f"{text[:found]}margin-top:16px;" \
-                               f"{text[found+len(replacer):]}"
+                        text = (f"{text[:found]}margin-top:16px;"
+                                f"{text[found+len(replacer):]}")
 
         dst_file = dest.resolve_inside(name)
         dst_file.write_all(text)
@@ -97,7 +97,7 @@ def load_latex_eisvogel_template(dest: Path) -> Path:
         return dst_file
 
 
-def load_csl_template(dest: Path) -> List[Path]:
+def load_csl_template(dest: Path) -> list[Path]:
     """
     Load the CSL templates template.
 
@@ -105,7 +105,7 @@ def load_csl_template(dest: Path) -> List[Path]:
     :return: the full path of the template
     """
     logger(f"now csl template(s) to '{dest}'.")
-    paths: Final[List[Path]] = []
+    paths: Final[list[Path]] = []
 
     for name in ["association-for-computing-machinery"]:
         url = f"https://www.zotero.org/styles/{name}"
@@ -137,7 +137,7 @@ def load_mathjax(dest: Path) -> Path:
     """
     logger(f"now loading mathjax svg to '{dest}'.")
     name = "mathjax.js"
-    url = "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg-full.js"
+    url = "https://unpkg.com/mathjax@3/es5/tex-svg-full.js"
     _, data = load_text_from_url(url)
     data = enforce_non_empty_str(data.strip())
     dst_file = dest.resolve_inside(name)

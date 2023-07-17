@@ -1,13 +1,11 @@
 """Test the temporary directories."""
-from io import open
-from os.path import isfile, isdir, exists, dirname, sep, basename
+from os.path import basename, dirname, exists, isdir, isfile, sep
 
-from bookbuilderpy.temp import TempFile, TempDir
+from bookbuilderpy.temp import TempDir, TempFile
 
 
-# noinspection PyPackageRequirements
-
-def test_temp_file():
+def test_temp_file() -> None:
+    """Test temp files."""
     with TempFile.create() as tmp:
         assert isinstance(tmp, str)
         assert len(tmp) > 0
@@ -28,7 +26,8 @@ def test_temp_file():
     assert not exists(tmp)
 
 
-def test_temp_dir():
+def test_temp_dir() -> None:
+    """Test temp directories."""
     with TempDir.create() as tmp:
         assert isinstance(tmp, str)
         assert len(tmp) > 0
@@ -55,7 +54,8 @@ def test_temp_dir():
             assert isfile(path2)
             assert exists(path2)
         inner = (path + sep + "xx.y")
-        open(inner, "w").close()
+        with open(inner, "w"):
+            pass
         assert isfile(inner)
         assert exists(inner)
     assert not isdir(path)

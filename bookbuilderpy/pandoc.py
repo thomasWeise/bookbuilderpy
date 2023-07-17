@@ -1,7 +1,7 @@
 """A routine for invoking pandoc."""
 
 import os.path
-from typing import Optional, Final, List, Callable, Dict
+from typing import Callable, Final
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build_result import File
@@ -11,14 +11,16 @@ from bookbuilderpy.path import Path
 from bookbuilderpy.pdf import pdf_postprocess
 from bookbuilderpy.resources import ResourceServer
 from bookbuilderpy.shell import shell
-from bookbuilderpy.strings import enforce_non_empty_str, \
-    enforce_non_empty_str_without_ws, regex_sub
+from bookbuilderpy.strings import (
+    enforce_non_empty_str,
+    enforce_non_empty_str_without_ws,
+    regex_sub,
+)
 from bookbuilderpy.temp import TempFile
 from bookbuilderpy.versions import TOOL_PANDOC, has_tool
 
-
 #: The meanings of the pandoc exit codes.
-__EXIT_CODES: Dict[int, str] = {
+__EXIT_CODES: dict[int, str] = {
     3: "PandocFailOnWarningError",
     4: "PandocAppError",
     5: "PandocTemplateError",
@@ -44,11 +46,11 @@ __EXIT_CODES: Dict[int, str] = {
     93: "PandocIpynbDecodingError",
     94: "PandocUnsupportedCharsetError",
     97: "PandocCouldNotFindDataFileError",
-    99: "PandocResourceNotFound"
+    99: "PandocResourceNotFound",
 }
 
 
-def __pandoc_check_stderr(stderr: str) -> Optional[BaseException]:
+def __pandoc_check_stderr(stderr: str) -> BaseException | None:
     """
     Check the standard error output of pandoc.
 
@@ -67,17 +69,17 @@ def pandoc(source_file: str,
            dest_file: str,
            format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
            format_out: str = bc.PANDOC_FORMAT_LATEX,
-           locale: Optional[str] = None,
+           locale: str | None = None,
            standalone: bool = True,
-           tabstops: Optional[int] = 2,
+           tabstops: int | None = 2,
            toc_print: bool = True,
            toc_depth: int = 3,
            crossref: bool = True,
            bibliography: bool = True,
-           template: Optional[str] = None,
-           csl: Optional[str] = None,
+           template: str | None = None,
+           csl: str | None = None,
            number_sections: bool = True,
-           args: Optional[List[str]] = None,
+           args: list[str] | None = None,
            resolve_resources: Callable = lambda x: None,
            overwrite: bool = False) -> File:
     """
@@ -135,7 +137,7 @@ def pandoc(source_file: str,
                               "implicit_figures",
                               "pipe_tables",
                               "raw_attribute"])
-    cmd: Final[List[str]] = [TOOL_PANDOC,
+    cmd: Final[list[str]] = [TOOL_PANDOC,
                              f"--from={format_in}",
                              f"--write={format_out}",
                              f"--output={output_file}",
@@ -160,7 +162,7 @@ def pandoc(source_file: str,
                 raise ValueError(f"toc_depth cannot be {toc_depth}.")
             cmd.append(f"--toc-depth={toc_depth}")
 
-    template_file: Optional[Path] = None
+    template_file: Path | None = None
     if template is not None:
         template = enforce_non_empty_str_without_ws(template)
         template_file = resolve_resources(template, input_dir)
@@ -172,7 +174,7 @@ def pandoc(source_file: str,
     if crossref:
         cmd.append("--filter=pandoc-crossref")
 
-    csl_file: Optional[Path] = None
+    csl_file: Path | None = None
     if bibliography:
         cmd.append("--citeproc")
         if csl is not None:
@@ -211,9 +213,9 @@ def pandoc(source_file: str,
 def latex(source_file: str,
           dest_file: str,
           format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
-          locale: Optional[str] = None,
+          locale: str | None = None,
           standalone: bool = True,
-          tabstops: Optional[int] = 2,
+          tabstops: int | None = 2,
           toc_print: bool = True,
           toc_depth: int = 3,
           crossref: bool = True,
@@ -247,8 +249,7 @@ def latex(source_file: str,
     args = []
     if locale is not None:
         locale = enforce_non_empty_str_without_ws(locale)
-        if (locale == "zh") or (locale.startswith("zh-")) or \
-                (locale.startswith("zh_")):
+        if locale == "zh" or locale.startswith(("zh-", "zh_")):
             args.append("--pdf-engine=xelatex")
     top_level_division = enforce_non_empty_str_without_ws(top_level_division)
     args.append(f"--top-level-division={top_level_division}")
@@ -281,9 +282,9 @@ def latex(source_file: str,
 def html(source_file: str,
          dest_file: str,
          format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
-         locale: Optional[str] = None,
+         locale: str | None = None,
          standalone: bool = True,
-         tabstops: Optional[int] = 2,
+         tabstops: int | None = 2,
          toc_print: bool = True,
          toc_depth: int = 3,
          crossref: bool = True,
@@ -311,11 +312,11 @@ def html(source_file: str,
     :return: the Path to the generated output file and it size
     :rtype: File
     """
-    endresult: Optional[Path] = None  # nosem  # type: ignore  # nolint
+    endresult: Path | None = None  # nosem  # type: ignore  # nolint
     try:
         with TempFile.create(suffix=".html") as tmp:
             # noinspection PyUnusedLocal
-            inner_file: Optional[Path] = None  # nosem  # type: ignore
+            inner_file: Path | None = None  # nosem  # type: ignore
             try:
                 with ResourceServer() as serv:
                     inner_file = pandoc(
@@ -343,10 +344,12 @@ def html(source_file: str,
                     if inner_file is not None:
                         inner_file.enforce_file()
             except BaseException as ve:
-                raise ve if isinstance(ve, ValueError) else ValueError(ve)
+                if isinstance(ve, ValueError):
+                    raise
+                raise ValueError from ve
 
             if inner_file is None:
-                raise ValueError("Huh? pandoc did not return a file?")
+                raise ValueError("Huh? pandoc did not return a file?")  # noqa
 
             if bibliography:
                 # For some reason, the id and the text of each bibliography
@@ -355,7 +358,7 @@ def html(source_file: str,
                 # spans and add some vertical spacing.
                 text = enforce_non_empty_str(
                     inner_file.read_all_str().strip())
-                end = text.rfind("<div id=\"refs\"")
+                end = text.rfind('<div id="refs"')
                 if end > 0:
                     text_1 = text[:end]
                     text_2 = text[end:]
@@ -389,7 +392,9 @@ def html(source_file: str,
                                          canonicalize_ids=True,
                                          overwrite=False)
     except BaseException as be:
-        raise be if isinstance(be, ValueError) else ValueError(be)
+        if isinstance(be, ValueError):
+            raise
+        raise ValueError from be
 
     if endresult is None:
         raise ValueError("end result is still None?")
@@ -399,9 +404,9 @@ def html(source_file: str,
 def epub(source_file: str,
          dest_file: str,
          format_in: str = bc.PANDOC_FORMAT_MARKDOWN,
-         locale: Optional[str] = None,
+         locale: str | None = None,
          standalone: bool = True,
-         tabstops: Optional[int] = 2,
+         tabstops: int | None = 2,
          toc_print: bool = True,
          toc_depth: int = 3,
          crossref: bool = True,

@@ -1,20 +1,18 @@
 """Test the interaction with the file system."""
 
-from typing import List
 
 from bookbuilderpy.format_python import format_python, preprocess_python
 
 
-# noinspection PyPackageRequirements
-
-def test_format_python_1():
+def test_format_python_1() -> None:
+    """Test the python code formatting."""
     s = ["",
          "    def solve(self, process: Process) -> None:",
-         "        \"\"\"",
+         '        """',
          "        Apply the hill climber to the given black-box process.",
          "",
          "        :param moptipy.api.Process process: the process object",
-         "        \"\"\"",
+         '        """',
          "        best_x: Final = process.create()",
          "        new_x: Final = process.create()",
          "        random: Final[Generator] = process.get_random()",
@@ -38,16 +36,16 @@ def test_format_python_1():
          "                best_x)",
          "    @staticmethod",
          "    def get_name(self) -> str:",
-         "        \"\"\"",
+         '        """',
          "        Get the name of this hill climber.",
          "",
-         "        :return: \"hc\" + any non-standard operator suffixes",
+         '        :return: "hc" + any non-standard operator suffixes',
          "        :rtype: str",
-         "        \"\"\"",
+         '        """',
          "        name: Final[str] = super().get_name()",
-         "        return f\"hc_{name}\" if (len(name) > 0) else \"hc\""]
+         '        return f"hc_{name}" if (len(name) > 0) else "hc"']
     ret = format_python(s)
-    assert isinstance(ret, List)
+    assert isinstance(ret, list)
 
     t = ["def solve(self, process):",
          "    best_x = process.create()",
@@ -71,14 +69,15 @@ def test_format_python_1():
          "@staticmethod",
          "def get_name(self):",
          "    name = super().get_name()",
-         "    return f\"hc_{name}\" if (len(name) > 0) else \"hc\""]
+         '    return f"hc_{name}" if (len(name) > 0) else "hc"']
     assert ret == t
 
     ret2 = preprocess_python(s)
     assert ret2 == ("\n".join(t) + "\n")
 
 
-def test_preprocess_python_1():
+def test_preprocess_python_1() -> None:
+    """Test python preprocessing 1."""
     code = ["# start book",
             "def test_func() -> None:",
             "    a = 12",
@@ -104,7 +103,8 @@ def test_preprocess_python_1():
     assert result == merged
 
 
-def test_preprocess_python_2():
+def test_preprocess_python_2() -> None:
+    """Test python preprocessing 2."""
     code = ["a = 5",
             "# start x",
             "b = 7",
@@ -121,7 +121,8 @@ def test_preprocess_python_2():
     assert result == merged
 
 
-def test_preprocess_python_3():
+def test_preprocess_python_3() -> None:
+    """Test python preprocessing 3."""
     code = ["# start y",
             "def cyber():",
             "    #: this is a comment",
@@ -135,7 +136,8 @@ def test_preprocess_python_3():
     assert result == merged
 
 
-def test_preprocess_python_4():
+def test_preprocess_python_4() -> None:
+    """Test python preprocessing 4."""
     code = ["# start y",
             "def cyber():",
             '    """',
@@ -152,7 +154,8 @@ def test_preprocess_python_4():
     assert result == merged
 
 
-def test_preprocess_python_5():
+def test_preprocess_python_5() -> None:
+    """Test python preprocessing 5."""
     code = ["b = 2",
             "# start y",
             "c = 3",
@@ -170,7 +173,8 @@ def test_preprocess_python_5():
     assert result == merged
 
 
-def test_preprocess_python_6():
+def test_preprocess_python_6() -> None:
+    """Test python preprocessing 6."""
     code = ["# start y",
             "def cyber():",
             '    """',
@@ -198,7 +202,8 @@ def test_preprocess_python_6():
     assert result == merged
 
 
-def test_preprocess_python_7():
+def test_preprocess_python_7() -> None:
+    """Test python preprocessing 7."""
     code = ["def cyber():",
             '    """',
             "    This method does cyber",
@@ -271,7 +276,8 @@ class Instance(Component):
 """
 
 
-def test_preprocess_python_8():
+def test_preprocess_python_8() -> None:
+    """Test python preprocessing 8."""
     code = be.splitlines()
     result = preprocess_python(code, labels=["book"],
                                args={"comments", "doc", "hints"})
@@ -293,7 +299,8 @@ class Instance(Component):
 """
 
 
-def test_preprocess_python_9():
+def test_preprocess_python_9() -> None:
+    """Test python preprocessing 9."""
     code = be.splitlines()
     result = preprocess_python(code, labels=["book"],
                                args={"comments", "hints"})
@@ -314,7 +321,8 @@ class Instance(Component):
 """
 
 
-def test_preprocess_python_10():
+def test_preprocess_python_10() -> None:
+    """Test python preprocessing 10."""
     code = be.splitlines()
     result = preprocess_python(code, labels=["book"],
                                args={"hints"})
@@ -335,7 +343,8 @@ class Instance(Component):
 """
 
 
-def test_preprocess_python_11():
+def test_preprocess_python_11() -> None:
+    """Test python preprocessing 11."""
     code = be.splitlines()
     result = preprocess_python(code, labels=["book"],
                                args={"comments"})
@@ -355,7 +364,8 @@ class Instance(Component):
 """
 
 
-def test_preprocess_python_12():
+def test_preprocess_python_12() -> None:
+    """Test python preprocessing 12."""
     code = be.splitlines()
     result = preprocess_python(code, labels=["book"])
     exp = bex5.strip() + "\n"

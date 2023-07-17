@@ -1,11 +1,12 @@
 """A collection for build results."""
 import os.path
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 from bookbuilderpy.path import Path
-from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
-    enforce_non_empty_str
+from bookbuilderpy.strings import (
+    enforce_non_empty_str,
+    enforce_non_empty_str_without_ws,
+)
 from bookbuilderpy.types import type_error
 
 
@@ -46,19 +47,19 @@ class LangResult:
     """All the results created for one language."""
 
     #: the language code
-    lang: Optional[str]
+    lang: str | None
     #: the language name
-    lang_name: Optional[str]
+    lang_name: str | None
     #: the directory containing the results
     directory: Path
     #: the generated files
-    results: Tuple[File, ...]
+    results: tuple[File, ...]
 
     def __init__(self,
-                 lang: Optional[str],
-                 lang_name: Optional[str],
+                 lang: str | None,
+                 lang_name: str | None,
                  directory: Path,
-                 results: Tuple[File, ...]):
+                 results: tuple[File, ...]):
         """
         Create the build result of a given language.
 
@@ -87,7 +88,7 @@ class LangResult:
         object.__setattr__(self, "directory", directory)
 
         if not isinstance(results, tuple):
-            raise type_error(results, "results", Tuple)
+            raise type_error(results, "results", tuple)
         if len(results) <= 0:
             raise ValueError("results list cannot be empty.")
         for f in results:

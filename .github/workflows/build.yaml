@@ -12,14 +12,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 # set up python
-    - name: set up Python ${{ matrix.python-version }}
+    - name: set up python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-# execute the actual build process
-    - name: execute the make Build
+# execute the actual make build process
+    - name: execute the make build
       run: make
-# remove bookbuilderpy
+# remove mopitpy
     - name: purge local bookbuilderpy installation
       run: |
         pip uninstall -y bookbuilderpy
@@ -36,7 +36,7 @@ jobs:
         touch /home/runner/work/bookbuilderpy/bookbuilderpy/docs/build/.nojekyll
 # deploy to github pages
     - name: deploy documentation
-      uses: JamesIves/github-pages-deploy-action@v4
+      uses: JamesIves/github-pages-deploy-action@a1ea191d508feb8485aceba848389d49f80ca2dc
       with:
         branch: gh-pages
         folder: /home/runner/work/bookbuilderpy/bookbuilderpy/docs/build/

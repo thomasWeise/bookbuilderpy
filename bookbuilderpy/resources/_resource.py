@@ -1,14 +1,16 @@
 """The package for loading text templates and resources."""
 import os.path
 from importlib import resources  # nosem
-from typing import Optional
+
 from bookbuilderpy.path import Path, copy_pure
-from bookbuilderpy.strings import enforce_non_empty_str, \
-    enforce_non_empty_str_without_ws
+from bookbuilderpy.strings import (
+    enforce_non_empty_str,
+    enforce_non_empty_str_without_ws,
+)
 
 
 def load_resource(name: str, source_dir: str, dest_dir: str) -> \
-        Optional[Path]:
+        Path | None:
     """
     Load a text resource or template for the use with pandoc.
 
@@ -23,9 +25,7 @@ def load_resource(name: str, source_dir: str, dest_dir: str) -> \
     input_dir.enforce_neither_contains(output_dir)
     name = enforce_non_empty_str_without_ws(name)
 
-    if name.startswith("http://") or \
-            name.startswith("https://") or \
-            ("//" in name):
+    if name.startswith(("http://", "https://")) or "//" in name:
         return None
 
     output_file = output_dir.resolve_inside(name)

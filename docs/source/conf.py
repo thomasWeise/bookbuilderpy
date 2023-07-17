@@ -27,12 +27,13 @@ with io.open(os.path.join(root_path, "README.md"),
 # We discard the top-level heading as well as the badge for the build status.
 # We need to move all sub-headings one step up.
 # Furthermore, we can turn all absolute URLs starting with
-# http://thomasweise.github.io/bookbuilderpy/xxx to local references, i.e.,
-# ./xxx. Finally, it seems that the myst parser now again drops the
-# numerical prefixes of links, i.e., it tags `## 1.2. Hello` with id `hello`
-# instead of `12-hello`. This means that we need to fix all references
-# following the pattern `[xxx](#12-hello)` to `[xxx](#hello)`. We do this with
-# a regular expression `regex_search`.
+# http://thomasweise.github.io/bookbuilderpy/xxx to local references,
+# i.e., ./xxx.
+# Finally, it seems that the myst parser now again drops the numerical
+# prefixes of links, i.e., it tags `## 1.2. Hello` with id `hello` instead of
+# `12-hello`. This means that we need to fix all references following the
+# pattern `[xxx](#12-hello)` to `[xxx](#hello)`. We do this with a regular
+# expression `regex_search`.
 new_lines = []
 in_code: bool = False  # we only process non-code lines
 skip: bool = True
@@ -46,6 +47,7 @@ for line in old_lines:
     if skip:  # we skip everything until the introduction section
         if line.lstrip().startswith("## 1. Introduction"):
             skip = False
+            new_lines.append(line[1:])
         elif line.startswith("[![") and can_add_anyway:
             needs_newline = True
             new_lines.append(line)
@@ -99,7 +101,7 @@ myst_all_links_external = True
 release = {}
 with open(os.path.abspath(os.path.sep.join([
         root_path, "bookbuilderpy", "version.py"]))) as fp:
-    exec(fp.read(), release)  # nosec # nosemgrep
+    exec(fp.read(), release)  # nosec # nosemgrep # noqa: DUO105
 release = release["__version__"]
 
 # The Sphinx extension modules that we use.
@@ -115,6 +117,9 @@ extensions = ['myst_parser',  # for processing README.md
 intersphinx_mapping = {
     'python': ("https://docs.python.org/3/", None),
 }
+
+# inherit docstrings in autodoc
+autodoc_inherit_docstrings = True
 
 # add default values after comma
 typehints_defaults = "comma"

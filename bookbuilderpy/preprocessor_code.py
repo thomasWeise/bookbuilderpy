@@ -1,18 +1,20 @@
 """A preprocessor for loading code."""
 
 from os.path import basename
-from typing import List, Optional, Set, Final
+from typing import Final
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.format_python import preprocess_python
 from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
-from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
-    lines_to_str
+from bookbuilderpy.strings import (
+    enforce_non_empty_str_without_ws,
+    lines_to_str,
+)
 from bookbuilderpy.types import type_error
 
 
-def get_programming_language(path: str) -> Optional[str]:
+def get_programming_language(path: str) -> str | None:
     """
     Get the programming language corresponding to a path.
 
@@ -40,15 +42,15 @@ def load_code(path: str, lines: str, labels: str, args: str) -> str:
     src = Path.file(path)
     logger(f"Now loading code from '{src}'.")
 
-    keep_lines: Optional[List[int]] = None
+    keep_lines: list[int] | None = None
     if lines is not None:
         if not isinstance(lines, str):
             raise type_error(lines, "lines", str)
 
         if len(lines) > 0:
             keep_lines = []
-            for line in lines.split(","):
-                line = line.strip()
+            for the_line in lines.split(","):
+                line = the_line.strip()
                 if "-" in line:
                     ab = line.split("-")
                     if len(ab) != 2:
@@ -57,7 +59,7 @@ def load_code(path: str, lines: str, labels: str, args: str) -> str:
                 else:
                     keep_lines.append(int(line) - 1)
 
-    keep_labels: Optional[Set[str]] = None
+    keep_labels: set[str] | None = None
     if labels is not None:
         if not isinstance(labels, str):
             raise type_error(labels, "labels", str)
@@ -71,7 +73,7 @@ def load_code(path: str, lines: str, labels: str, args: str) -> str:
             if len(keep_labels) <= 0:
                 raise ValueError(f"labels='{labels}'.")
 
-    arg_set: Final[Set[str]] = set()
+    arg_set: Final[set[str]] = set()
     if args is not None:
         if not isinstance(args, str):
             raise type_error(args, "args", str)
@@ -82,7 +84,7 @@ def load_code(path: str, lines: str, labels: str, args: str) -> str:
                     raise ValueError(f"duplicate argument: '{aa}'")
                 arg_set.add(aa)
 
-    text: Final[List[str]] = src.read_all_list()
+    text: Final[list[str]] = src.read_all_list()
     if len(text) <= 0:
         raise ValueError(f"File '{path}' is empty.")
 

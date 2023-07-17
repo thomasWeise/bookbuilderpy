@@ -5,9 +5,9 @@ import gzip
 import io
 import os.path
 import shutil
-from typing import cast, Optional, List, Iterable, Final, Union, Tuple, \
-    Pattern
-from re import compile as _compile, MULTILINE
+from re import MULTILINE
+from re import compile as _compile
+from typing import Final, Iterable, Pattern, cast
 
 from bookbuilderpy.strings import enforce_non_empty_str_without_ws, regex_sub
 from bookbuilderpy.types import type_error
@@ -35,41 +35,49 @@ def _canonicalize_path(path: str) -> str:
     if len(path) <= 0:
         raise ValueError("Canonicalization must yield non-empty string, "
                          f"but returned '{path}'.")
-    if path in ['.', '..']:
+    if path in [".", ".."]:
         raise ValueError(f"Canonicalization cannot yield '{path}'.")
     return path
 
 
-def copy_pure(path_in: str, path_out: str):
+def copy_pure(path_in: str, path_out: str) -> "Path":
     """
     Perform the internal method to copy a file.
 
     :param path_in: the path to the input file
     :param path_out: the path to the output file
+    :returns: the path to the new file
     """
-    shutil.copyfile(path_in, path_out)
+    return Path.file(str(shutil.copyfile(path_in, path_out)))
 
 
-def move_pure(path_in: str, path_out: str):
+def move_pure(path_in: str, path_out: str) -> "Path":
     """
     Copy a file.
 
     :param path_in: the path to the input file
     :param path_out: the path to the output file
+    :returns: the path to the new file
     """
-    shutil.move(path_in, path_out)
+    po = Path.path(path_out)
+    shutil.move(path_in, po)
+    po.enforce_file()
+    return po
 
 
-def _copy_un_gzip(path_in: str, path_out: str):
+def _copy_un_gzip(path_in: str, path_out: str) -> "Path":
     """
     Copy a gzip-compressed file.
 
     :param path_in: the path to the input file
     :param path_out: the path to the output file
+    :returns: the path to the new file
     """
-    with gzip.open(path_in, 'rb') as f_in:
-        with open(path_out, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
+    po = Path.path(path_out)
+    with gzip.open(path_in, "rb") as f_in, open(po, "wb") as f_out:
+        shutil.copyfileobj(f_in, f_out)
+    po.enforce_file()
+    return po
 
 
 #: a pattern used to clean up training white space
@@ -78,13 +86,13 @@ _PATTERN_TRAILING_WHITESPACE: Final[Pattern] = \
 
 
 #: the UTF-8 encoding
-UTF8: Final[str] = 'utf-8-sig'
+UTF8: Final[str] = "utf-8-sig"
 
 #: The list of possible text encodings
-__ENCODINGS: Final[Tuple[Tuple[Tuple[bytes, ...], str], ...]] = \
+__ENCODINGS: Final[tuple[tuple[tuple[bytes, ...], str], ...]] = \
     (((codecs.BOM_UTF8,), UTF8),
-     ((codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE,), 'utf-32'),
-     ((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE), 'utf-16'))
+     ((codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE), "utf-32"),
+     ((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE), "utf-16"))
 
 
 def _get_text_encoding(filename: str) -> str:
@@ -96,7 +104,7 @@ def _get_text_encoding(filename: str) -> str:
     :param filename: the filename
     :return: the encoding
     """
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         header = f.read(4)  # Read just the first four bytes.
     for boms, encoding in __ENCODINGS:
         for bom in boms:
@@ -109,7 +117,7 @@ class Path(str):
     """An immutable representation of a path."""
 
     #: the common path version of this path, if any
-    __common: Optional[str]
+    __common: str | None
     #: the internal state: 0=don't know, 1=file, 2=dir
     __state: int
 
@@ -119,7 +127,7 @@ class Path(str):
 
         :param value: the string value
         """
-        ret = super(Path, cls).__new__(cls, _canonicalize_path(value))
+        ret = super().__new__(cls, _canonicalize_path(value))
         ret.__common = None
         ret.__state = 0
         return ret
@@ -130,9 +138,8 @@ class Path(str):
 
         :raises ValueError:  if `path` does not reference an existing file
         """
-        if self.__state == 0:
-            if os.path.isfile(self):
-                self.__state = 1
+        if self.__state == 0 and os.path.isfile(self):
+            self.__state = 1
         if self.__state != 1:
             raise ValueError(f"Path '{self}' does not identify a file.")
 
@@ -142,9 +149,8 @@ class Path(str):
 
         :raises ValueError:  if `path` does not reference an existing directory
         """
-        if self.__state == 0:
-            if os.path.isdir(self):
-                self.__state = 2
+        if self.__state == 0 and os.path.isdir(self):
+            self.__state = 2
         if self.__state != 2:
             raise ValueError(f"Path '{self}' does not identify a directory.")
 
@@ -205,7 +211,7 @@ class Path(str):
         return enforce_non_empty_str_without_ws(
             os.path.relpath(self, opath))
 
-    def resolve_inside(self, relative_path: str) -> 'Path':
+    def resolve_inside(self, relative_path: str) -> "Path":
         """
         Resolve a relative path to an absolute path inside this path.
 
@@ -259,11 +265,11 @@ class Path(str):
 
         :return: the file open for reading
         """
-        return cast(io.TextIOWrapper, io.open(
-            self, mode="rt", encoding=_get_text_encoding(self),
-            errors="strict"))
+        return cast(io.TextIOWrapper, open(  # noqa
+            self, encoding=_get_text_encoding(self),  # noqa
+            errors="strict"))  # noqa
 
-    def read_all_list(self) -> List[str]:
+    def read_all_list(self) -> list[str]:
         """
         Read all the lines in a file.
 
@@ -272,8 +278,8 @@ class Path(str):
         self.enforce_file()
         with self.__open_for_read() as reader:
             ret = reader.readlines()
-        if not isinstance(ret, List):
-            raise type_error(ret, "ret", List)
+        if not isinstance(ret, list):
+            raise type_error(ret, "ret", list)
         if len(ret) <= 0:
             raise ValueError(f"File '{self}' contains no text.")
         return ret
@@ -299,17 +305,17 @@ class Path(str):
 
         :return: the text io wrapper for writing
         """
-        return cast(io.TextIOWrapper, io.open(
-            self, mode="wt", encoding="utf-8", errors="strict"))
+        return cast(io.TextIOWrapper, open(  # noqa
+            self, mode="w", encoding="utf-8", errors="strict"))  # noqa
 
-    def write_all(self, contents: Union[str, Iterable[str]]) -> None:
+    def write_all(self, contents: str | Iterable[str]) -> None:
         """
         Read all the lines in a file.
 
         :param contents: the contents to write
         """
         self.ensure_file_exists()
-        if not isinstance(contents, (str, Iterable)):
+        if not isinstance(contents, str | Iterable):
             raise type_error(contents, "contents", (str, Iterable))
         with self.__open_for_write() as writer:
             all_text = contents if isinstance(contents, str) \
@@ -325,7 +331,7 @@ class Path(str):
             if all_text[-1] != "\n":
                 writer.write("\n")
 
-    def as_directory(self) -> 'Path':
+    def as_directory(self) -> "Path":
         """
         Return the closest directory along this path.
 
@@ -342,7 +348,7 @@ class Path(str):
 
     def resolve_input_file(self,
                            relative_path: str,
-                           lang: Optional[str] = None) -> 'Path':
+                           lang: str | None = None) -> "Path":
         """
         Resolve a path to an input file relative to this path.
 
@@ -370,7 +376,7 @@ class Path(str):
 
     @staticmethod
     def split_prefix_suffix(name: str,
-                            enforce_suffix: bool = True) -> Tuple[str, str]:
+                            enforce_suffix: bool = True) -> tuple[str, str]:
         """
         Split the file name 'name' into a prefix and a suffix.
 
@@ -386,14 +392,13 @@ class Path(str):
 
         # check for stuff such as tar.xz and tar.gz
         dot2: Final[int] = name.rfind(".", 0, dot - 1)
-        if 0 < dot2 < dot:
-            if name[dot2 + 1:dot] == "tar":
-                dot = dot2
+        if 0 < dot2 < dot and name[dot2 + 1:dot] == "tar":
+            dot = dot2
         return enforce_non_empty_str_without_ws(name[:dot]), \
             enforce_non_empty_str_without_ws(name[dot + 1:])
 
     @staticmethod
-    def path(path: str) -> 'Path':
+    def path(path: str) -> "Path":
         """
         Get a canonical path.
 
@@ -405,7 +410,7 @@ class Path(str):
         return Path(path)
 
     @staticmethod
-    def file(path: str) -> 'Path':
+    def file(path: str) -> "Path":
         """
         Get a path identifying a file.
 
@@ -417,7 +422,7 @@ class Path(str):
         return fi
 
     @staticmethod
-    def directory(path: str) -> 'Path':
+    def directory(path: str) -> "Path":
         """
         Get a path identifying a directory.
 
@@ -430,7 +435,7 @@ class Path(str):
 
     @staticmethod
     def copy_file(source: str,
-                  dest: str) -> 'Path':
+                  dest: str) -> "Path":
         """
         Copy one file to another one, doing gz-unzipping if necessary.
 
@@ -463,7 +468,7 @@ class Path(str):
     @staticmethod
     def copy_resource(source_dir: str,
                       input_file: str,
-                      dest_dir: str) -> 'Path':
+                      dest_dir: str) -> "Path":
         """
         Copy an input file to an destination directory.
 

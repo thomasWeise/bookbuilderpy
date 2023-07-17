@@ -1,6 +1,6 @@
 """Post-process PDF files."""
 
-from os.path import exists, dirname
+from os.path import dirname, exists
 
 from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path

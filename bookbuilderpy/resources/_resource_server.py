@@ -1,11 +1,10 @@
 """An internal web server for serving persistent resources."""
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from importlib import resources  # nosem
 from threading import Thread
-from typing import Optional
 
 
-def _get_file(name: str) -> Optional[bytes]:
+def _get_file(name: str) -> bytes | None:
     """
     Get a file from the resource server.
 
@@ -46,7 +45,7 @@ class _SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     """The internal server for obtaining resources."""
 
     # noinspection PyPep8Naming
-    def do_GET(self) -> None:
+    def do_GET(self) -> None:  # noqa
         """Get the resource."""
         # noinspection PyUnresolvedReferences
         res = _get_file(self.path)
@@ -64,11 +63,11 @@ class ResourceServer:
 
     def __init__(self):
         """Initialize the server."""
-        self.__httpd = HTTPServer(('localhost', 0),
+        self.__httpd = HTTPServer(("localhost", 0),
                                   _SimpleHTTPRequestHandler)
         self.__thread = Thread(target=self.__serve)
 
-    def __serve(self):
+    def __serve(self) -> None:
         """Start the server and serve."""
         self.__httpd.serve_forever()
 

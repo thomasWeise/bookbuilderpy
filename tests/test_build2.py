@@ -7,17 +7,16 @@ import shutil
 import struct
 import zlib
 from tempfile import mkstemp
-from typing import Final, Tuple, List, Optional, cast, Set
+from typing import Final, cast
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.build import Build
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import logger
-from bookbuilderpy.temp import Path
-from bookbuilderpy.temp import TempDir
+from bookbuilderpy.temp import Path, TempDir
 
 
-def get_local_repo() -> Optional[Repo]:
+def get_local_repo() -> Repo | None:
     """
     Get the local repository.
 
@@ -44,7 +43,7 @@ def get_local_repo() -> Optional[Repo]:
 #: should we use git?
 USE_GIT: bool = True
 if "GITHUB_JOB" not in os.environ:
-    __inner_repo: Final[Optional[Repo]] = get_local_repo()
+    __inner_repo: Final[Repo | None] = get_local_repo()
     if __inner_repo is None:
         logger("cannot patch repository loader")
         USE_GIT = False
@@ -61,16 +60,16 @@ if "GITHUB_JOB" not in os.environ:
         logger("repository loader patched")
 
 #: the list of repositories to use for testing
-REPO_LIST: Final[Tuple[Tuple[str, str], ...]] = (
+REPO_LIST: Final[tuple[tuple[str, str], ...]] = (
     ("bb", "https://github.com/thomasWeise/bookbuilderpy.git"),
     ("mp", "https://github.com/thomasWeise/moptipy.git"))
 
 #: the list of languages
-LANG_LIST: Final[Tuple[Tuple[str, str], ...]] = (
+LANG_LIST: Final[tuple[tuple[str, str], ...]] = (
     ("en", "English"),
     ("zh", "中文"))
 
-#: the meta data file name
+#: the metadata file name
 META_NAME: Final[str] = "metadata.yaml"
 
 #: the bibliography data file name
@@ -80,24 +79,24 @@ BIBLIOGRAPHY_NAME: Final[str] = "bibliography.bib"
 ROOT_NAME: Final[str] = "book.md"
 
 
-def create_website_templates(dest: str) -> Tuple[Path, Path]:
+def create_website_templates(dest: str) -> tuple[Path, Path]:
     """
     Create a template for a website.
+
     :param str dest: the destination directory
     :return: the paths to the outer and inner website
-    :rtype: Tuple[Path, Path]
     """
     output = Path.directory(dest)
     html = output.resolve_inside("index.html")
     html.write_all([
         "<!DOCTYPE html>",
-        "<html dir=\"ltr\" lang=\"en\">",
+        '<html dir="ltr" lang="en">',
         "<head>",
-        "<meta charset=\"utf-8\">",
+        '<meta charset="utf-8">',
         "<title>\\meta{title}</title>",
         "</head><body>", bc.WEBSITE_OUTER_TAG,
         "<p>Build date: \\meta{date}. "
-        "Copyright 2021-\\meta{year}, Thomas Weise.</p></body></html>"
+        "Copyright 2021-\\meta{year}, Thomas Weise.</p></body></html>",
     ])
     markdown = output.resolve_inside("README.md")
 
@@ -110,15 +109,15 @@ def create_website_templates(dest: str) -> Tuple[Path, Path]:
         "- item 1\n- item 2\n- item 3",
         bc.WEBSITE_BODY_TAG_2,
         "## Further Discussions",
-        "Blabla."
+        "Blabla.",
     ])
 
     return html, markdown
 
 
 def create_metadata(dest: Path,
-                    bib_file: Optional[Path] = None,
-                    website: Optional[Tuple[Path, Path]] = None,
+                    bib_file: Path | None = None,
+                    website: tuple[Path, Path] | None = None,
                     with_git: bool = True) -> Path:
     """
     Create the metadata of the build.
@@ -128,10 +127,9 @@ def create_metadata(dest: Path,
     :param website: the website templates
     :param bool with_git: should github repositories be used?
     :return: the path to the metadata file
-    :rtype: Path
     """
     f: Final[Path] = dest.resolve_inside(META_NAME)
-    txt: List[str] = [
+    txt: list[str] = [
         "---",
         "title: The Great Book of Many Things",
         "author: [Thomas Weise]",
@@ -149,24 +147,24 @@ def create_metadata(dest: Path,
         "CJKmainfont: Noto Sans CJK SC",
         "cref: true",
         "chapters: true",
-        'figPrefix:',
+        "figPrefix:",
         '  - "Figure"',
         '  - "Figures"',
-        'eqnPrefix:',
+        "eqnPrefix:",
         '  - "Equation"',
         '  - "Equations"',
-        'tblPrefix:',
+        "tblPrefix:",
         '  - "Table"',
         '  - "Tables"',
-        'lstPrefix:',
+        "lstPrefix:",
         '  - "Listing"',
         '  - "Listings"',
-        'secPrefix:',
+        "secPrefix:",
         '  - "Section"',
         '  - "Sections"',
-        'linkReferences: true',
-        'listings: false',
-        'codeBlockCaptions: true']
+        "linkReferences: true",
+        "listings: false",
+        "codeBlockCaptions: true"]
 
     if website:
         txt.append(f"{bc.META_WEBSITE_OUTER}: {website[0].relative_to(dest)}")
@@ -184,15 +182,15 @@ def create_metadata(dest: Path,
 
     txt.extend([
         f"{bc.PANDOC_TEMPLATE_LATEX}: eisvogel.tex",
-        'titlepage: true',
+        "titlepage: true",
         'titlepage-color: "9F2925"',
         'titlepage-text-color: "FFFFFF"',
         'titlepage-rule-color: "E67015"',
-        'toc-own-page: true',
-        'linkcolor: blue!50!black',
-        'citecolor: blue!50!black',
-        'urlcolor: blue!50!black',
-        'toccolor: black'])
+        "toc-own-page: true",
+        "linkcolor: blue!50!black",
+        "citecolor: blue!50!black",
+        "urlcolor: blue!50!black",
+        "toccolor: black"])
 
     txt.append(f"{bc.PANDOC_TEMPLATE_HTML5}: GitHub.html5")
     if bib_file:
@@ -208,17 +206,16 @@ def create_metadata(dest: Path,
     return f
 
 
-def create_bibliography(dest: Path) -> Tuple[Path, Tuple[str, ...]]:
+def create_bibliography(dest: Path) -> tuple[Path, tuple[str, ...]]:
     """
     Generate a bibliography into the given folder.
 
     :param Path dest: the destination folder
     :return: a tuple with the path to the bibliography and a tuple of the
         available bibliographic keys
-    :rtype: Tuple[Path, Tuple[str, ...]]
     """
     f: Final[Path] = dest.resolve_inside(BIBLIOGRAPHY_NAME)
-    with open(f, "wt") as fd:
+    with open(f, "w") as fd:
         fd.write("@incollection{A,\n  title = {The Query Complexity of "
                  "Finding a Hidden Permutation},\n  author = {Peyman "
                  "Afshani and Manindra Agrawal and Benjamin Doerr and "
@@ -254,21 +251,21 @@ def create_bibliography(dest: Path) -> Tuple[Path, Tuple[str, ...]]:
                  "Programming},\n  publisher = {Princeton University Press},"
                  "\n  address = {Princeton, NJ, USA},\n  series = dbom,\n  "
                  "year = {1957},\n  isbn = {0486428095}\n}")
-    return f, ("A", "B", "C", "D", "E",)
+    return f, ("A", "B", "C", "D", "E")
 
 
-def find_local_files() -> Tuple[str, ...]:
+def find_local_files() -> tuple[str, ...]:
     """
     Find proper files that can be used as external references.
+
     :return: the list of paths
-    :rtype: Tuple[Path, ...]
     """
     tests = Path.file(__file__)
 
     package: Final[Path] = Path.directory(os.path.dirname(os.path.dirname(
         tests))).resolve_inside("bookbuilderpy")
     package.enforce_dir()
-    result: List[Path] = list()
+    result: list[Path] = []
     for file in os.listdir(package):
         if "_" in file:
             continue
@@ -299,18 +296,18 @@ def find_local_files() -> Tuple[str, ...]:
     return tuple(result)
 
 
-def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
+def find_repo_files(repo: tuple[str, str]) -> tuple[str, ...]:
     """
     Find files in a repo.
+
     :return: the list of paths
-    :rtype: Tuple[Path, ...]
     """
     with TempDir.create() as td:
         r: Final[Repo] = Repo.download(repo[1], td)
         res = list(pathlib.Path(r.path).rglob("*.py"))
         if len(res) <= 0:
             raise ValueError(f"Repo {repo} is empty.")
-        result: List[str] = list()
+        result: list[str] = []
         for full in [Path.file(str(f)) for f in res]:
             f = full.relative_to(r.path)
             if "_" in f:
@@ -342,21 +339,22 @@ def find_repo_files(repo: Tuple[str, str]) -> Tuple[str, ...]:
 
 #: The possible code files to include
 def get_possible_code_files(with_git: bool) -> \
-        Tuple[Tuple[Optional[str], Tuple[str, ...]], ...]:
+        tuple[tuple[str | None, tuple[str, ...]], ...]:
     """
     Find the possible code files.
-    :param bool with_git: should github repositories be used?
+
+    :param bool with_git: should github repositories be used?.
     """
     if with_git:
-        res = cast(Tuple[Tuple[Optional[str], Tuple[str, ...]], ...], tuple(
+        res = cast(tuple[tuple[str | None, tuple[str, ...]], ...], tuple(
             f for g in
-            [[tuple([None, find_local_files()])],
-             [tuple([r[0], find_repo_files(r)]) for r in REPO_LIST]] for f in g
+            [[(None, find_local_files())],
+             [(r[0], find_repo_files(r)) for r in REPO_LIST]] for f in g
         ))
         assert isinstance(res, tuple)
         assert len(res) == (len(REPO_LIST) + 1)
     else:
-        res = tuple([tuple([None, find_local_files()])])
+        res = ((None, find_local_files()),)
 
     for i in range(len(res)):
         f = res[i]
@@ -379,13 +377,12 @@ def make_gray_png(data) -> bytes:
 
     :param data: the pixel data
     :return: the png data
-    :rtype: bytes
     """
 
-    def i1(value):
+    def i1(value) -> bytes:
         return struct.pack("!B", value & (2 ** 8 - 1))
 
-    def i4(value):
+    def i4(value) -> bytes:
         return struct.pack("!I", value & (2 ** 32 - 1))
 
     # compute width&height from data if not explicit
@@ -395,7 +392,7 @@ def make_gray_png(data) -> bytes:
     make_ihdr = True
     make_idat = True
     make_iend = True
-    png = b"\x89" + "PNG\r\n\x1A\n".encode('ascii')
+    png = b"\x89" + "PNG\r\n\x1A\n".encode("ascii")
     if make_ihdr:
         colortype = 0  # true gray image (no palette)
         bitdepth = 8  # with one byte per pixel (0..255)
@@ -405,7 +402,7 @@ def make_gray_png(data) -> bytes:
         ihdr = i4(width) + i4(height) + i1(bitdepth)
         ihdr += i1(colortype) + i1(compression)
         ihdr += i1(filtertype) + i1(interlaced)
-        block = "IHDR".encode('ascii') + ihdr
+        block = "IHDR".encode("ascii") + ihdr
         png += i4(len(ihdr)) + block + i4(zlib.crc32(block))
     if make_idat:
         raw = b""
@@ -419,24 +416,24 @@ def make_gray_png(data) -> bytes:
         compressor = zlib.compressobj()
         compressed = compressor.compress(raw)
         compressed += compressor.flush()  # !!
-        block = "IDAT".encode('ascii') + compressed
+        block = "IDAT".encode("ascii") + compressed
         png += i4(len(compressed)) + block + i4(zlib.crc32(block))
     if make_iend:
-        block = "IEND".encode('ascii')
+        block = "IEND".encode("ascii")
         png += i4(0) + block + i4(zlib.crc32(block))
     return png
 
 
 def create_random_png(destdir: Path,
-                      name: Optional[str],
-                      lang: Optional[str]) -> str:
+                      name: str | None,
+                      lang: str | None) -> str:
     """
-    Create a random png image
+    Create a random png image.
+
     :param destdir: the destrination directory
     :param name: the optional name
     :param lang: the language
     :return: the path to the image
-    :rtype: Path
     """
     destdir.enforce_dir()
     suffix = ".png"
@@ -451,11 +448,11 @@ def create_random_png(destdir: Path,
     if not os.path.isfile(path):
         h = int(random.uniform(0, 100)) + 1
         w = int(random.uniform(0, 100)) + 1
-        d = list()
-        for i in range(h):
-            lll = list()
+        d = []
+        for _i in range(h):
+            lll = []
             d.append(lll)
-            for j in range(w):
+            for _j in range(w):
                 lll.append(int(random.uniform(0, 256)))
         with open(path, "wb") as f:
             f.write(make_gray_png(d))
@@ -471,21 +468,18 @@ def make_label(base: str) -> str:
     :returns: the label
     """
     attr: Final[str] = "_cnt_"
-    if hasattr(make_label, attr):
-        cnt = getattr(make_label, attr) + 1
-    else:
-        cnt = 0
+    cnt = getattr(make_label, attr) + 1 if hasattr(make_label, attr) else 0
     setattr(make_label, attr, cnt)
     xl = base.replace("/", "_").replace(".", "_").lower()
     return f"{xl}_{cnt}"
 
 
-def make_name(names: Set[str]) -> str:
+def make_name(names: set[str]) -> str:
     """
     Make a random name.
+
     :param names:  the set of names
     :return: the name
-    :rtype: str
     """
     name = ""
     choices = [[ord("0"), 10],
@@ -500,20 +494,19 @@ def make_name(names: Set[str]) -> str:
     return name
 
 
-def make_structure() -> Tuple[str, Tuple, Tuple[str]]:
+def make_structure() -> tuple[str, tuple, tuple[str]]:
     """
     Create a structure for a hierarchical document.
 
     :return: A tuple of the document name, the list of sub-documents, and a
         tuple of picture names
-    :rtype: the tuple
     """
 
-    def __make_structure(names: Set,
-                         maxdepth: int) -> Tuple[str, Tuple, Tuple[str]]:
+    def __make_structure(names: set,
+                         maxdepth: int) -> tuple[str, tuple, tuple[str]]:
         root = make_name(names)
-        sub = list()
-        pics = list()
+        sub = []
+        pics = []
         while (maxdepth > 0) and (random.uniform(0, 1) > 0.5):
             sub.append(__make_structure(names, maxdepth - 1))
         while random.uniform(0, 1) > 0.5:
@@ -527,9 +520,10 @@ def make_text(text, dotlinebreaks: bool = True,
               max_sentences: int = 1000) -> None:
     """
     Make a random text.
+
     :param text: the text destination
     :param dotlinebreaks: add line break after dot?
-    :param max_sentences: the maximum number of sentences
+    :param max_sentences: the maximum number of sentences.
     """
     sentences = 0
     uc = ord("A")
@@ -555,24 +549,24 @@ def make_text(text, dotlinebreaks: bool = True,
 
 
 def generate_example_lang(
-        struc: Tuple[str, Tuple, Tuple[str]],
+        struc: tuple[str, tuple, tuple[str]],
         lang: str, dest: Path,
-        bib_keys: Tuple[str, ...],
-        repos: Tuple[Tuple[Optional[str], Tuple[str, ...]], ...]) -> Path:
+        bib_keys: tuple[str, ...],
+        repos: tuple[tuple[str | None, tuple[str, ...]], ...]) -> Path:
     """
-    Generate an example for a given language
+    Generate an example for a given language.
+
     :param struc: the structure
     :param lang: the language
     :param bib_keys: the available bibliographic keys
     :param repos: the repos
     :param dest: the destination directory
     :return: the path to the root file
-    :rtype: Path
     """
     file = dest.resolve_inside(f"{struc[0]}_{lang}.md")
-    with open(file, mode="wt") as fd:
+    with open(file, mode="w") as fd:
         make_text(fd, True)
-        done = list()
+        done = []
         done.extend(struc[1])
         done.extend(struc[2])
         done.extend([True for _ in range(int(
@@ -583,7 +577,8 @@ def generate_example_lang(
             random.uniform(1, 3)))])
         max_inner = 0
         random.shuffle(done)
-        for sub in done:
+        for the_sub in done:
+            sub = the_sub
             if isinstance(sub, tuple):
                 d = dest.resolve_inside(sub[0])
                 d.ensure_dir_exists()
@@ -625,27 +620,26 @@ def generate_example_lang(
                                  f"{{{repo[0]}}}{{{label}}}{{")
                         make_text(fd, False, 1)
                         fd.write(f"}}{{{spath}}}{{}}{{}}{{}}\n\n")
-                else:
-                    if len(bib_keys) > 0:
-                        st = set()
-                        for i in range(int(random.uniform(1, 5))):
-                            st.add(bib_keys[int(
-                                random.uniform(0, len(bib_keys)))])
-                        make_text(fd, False, 1)
-                        before = " ["
-                        for key in st:
-                            fd.write(before)
-                            fd.write("@")
-                            fd.write(key)
-                            before = ";"
-                        fd.write("]")
-                        make_text(fd, False, 1)
+                elif len(bib_keys) > 0:
+                    st = set()
+                    for _i in range(int(random.uniform(1, 5))):
+                        st.add(bib_keys[int(
+                            random.uniform(0, len(bib_keys)))])
+                    make_text(fd, False, 1)
+                    before = " ["
+                    for key in st:
+                        fd.write(before)
+                        fd.write("@")
+                        fd.write(key)
+                        before = ";"
+                    fd.write("]")
+                    make_text(fd, False, 1)
                 make_text(fd, True)
             elif isinstance(sub, int):
                 make_text(fd, True)
                 fd.write("\n\n")
                 sub = min(max_inner + 1, sub)
-                for i in range(sub):
+                for _i in range(sub):
                     fd.write("#")
                 max_inner = sub
                 fd.write(" ")
@@ -663,13 +657,13 @@ def generate_example_lang(
     return file
 
 
-def generate_example(dest: Path,
-                     with_git: bool) -> Path:
+def generate_example(dest: Path, with_git: bool) -> Path:
     """
-    Generate an example directory strucure
+    Generate an example directory structure.
+
     :param dest: the destination directory
     :param bool with_git: should git repos be used?
-    :return: the path to the root file
+    :return: the path to the root file.
     """
     dest.enforce_dir()
     website = create_website_templates(dest)
@@ -682,7 +676,7 @@ def generate_example(dest: Path,
     struc = make_structure()
 
     root: Final[Path] = dest.resolve_inside(ROOT_NAME)
-    with open(root, mode="wt") as fd:
+    with open(root, mode="w") as fd:
         fd.write(f"\\{bc.CMD_INPUT}{{{META_NAME}}}\n")
         fd.write(f"\\{bc.CMD_INPUT}{{{struc[0]}.md}}\n")
 
@@ -697,9 +691,7 @@ def generate_example(dest: Path,
 
 
 def build_example(source_dir: str, dest_dir: str) -> None:
-    """
-    Test the generation of an example folder structure.
-    """
+    """Test the generation of an example folder structure."""
     in_dir = Path.path(source_dir)
     in_dir.ensure_dir_exists()
     out_dir = Path.path(dest_dir)
@@ -713,10 +705,7 @@ def build_example(source_dir: str, dest_dir: str) -> None:
                 raise
 
 
-def test_build_examples():
-    """
-    Test the generation of an example folder structure.
-    """
-    with TempDir.create() as source:
-        with TempDir.create() as dest:
-            build_example(source, dest)
+def test_build_examples() -> None:
+    """Test the generation of an example folder structure."""
+    with TempDir.create() as source, TempDir.create() as dest:
+        build_example(source, dest)

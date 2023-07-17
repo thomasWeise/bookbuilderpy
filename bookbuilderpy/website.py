@@ -1,22 +1,24 @@
 """The routine for building the website for the book."""
 import os.path
-from typing import Dict
-from typing import Iterable, Final, Callable, Optional
+from typing import Callable, Final, Iterable
 
 import markdown  # type: ignore
 
 import bookbuilderpy.constants as bc
-from bookbuilderpy.build_result import LangResult, File
+from bookbuilderpy.build_result import File, LangResult
 from bookbuilderpy.html import html_postprocess
 from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
-from bookbuilderpy.strings import file_size, enforce_non_empty_str, \
-    lang_to_locale
+from bookbuilderpy.strings import (
+    enforce_non_empty_str,
+    file_size,
+    lang_to_locale,
+)
 from bookbuilderpy.temp import TempFile
 
 #: Explanations of file suffixes.
-__SUFFIXES: Final[Dict[str, Dict[str, str]]] = \
+__SUFFIXES: Final[dict[str, dict[str, str]]] = \
     {"en": {
         "pdf": 'The &quot;portable document format&quot; (<code>'
                '<a href="https://www.iso.org/standard/75839.html">pdf</a>'
@@ -40,7 +42,7 @@ __SUFFIXES: Final[Dict[str, Dict[str, str]]] = \
                   'html_node/Standard.html">tar</a>.<a href="https://tukaani.'
                   'org/xz/format.html">xz</a></code> archive containing the '
                   'book in all the formats mentioned above for convenient '
-                  'download.'
+                  'download.',
     }, "de": {
         "pdf": 'Das &quot;portable document format&quot; (<code><a href='
                '"https://www.iso.org/standard/75839.html">pdf</a></code>) ist'
@@ -64,27 +66,27 @@ __SUFFIXES: Final[Dict[str, Dict[str, str]]] = \
                   'org/xz/format.html">xz</a></code> Archiv mit allen '
                   'oben genannten Formaten des Buchs.',
     }, "zh": {
-        "pdf": '便携式文档格式（<code><a href="https://www.iso.org/standard/'
-               '75839.html">pdf</a></code>）最适合在PC上阅读和打印文档。',
-        "html": '无论是在手机上还是在PC上，都可以很好地查看独立的网页（<code>'
-                '<a href="https://www.w3.org/TR/html5/">html</a></code>）。',
-        "epub": '电子书格式（<code><a href="https://www.w3.org/publishing/epub32/">'
-                'epub</a></code>）为许多电子书阅读器和手机提供了便利。',
-        "azw3": '亚马逊Kindle电子书格式（<code><a href="http://'
+        "pdf": '便携式文档格式(<code><a href="https://www.iso.org/standard/'
+               '75839.html">pdf</a></code>)最适合在PC上阅读和打印文档。',
+        "html": '无论是在手机上还是在PC上,都可以很好地查看独立的网页(<code>'
+                '<a href="https://www.w3.org/TR/html5/">html</a></code>)。',
+        "epub": '电子书格式(<code><a href="https://www.w3.org/publishing/epub32/">'
+                'epub</a></code>)为许多电子书阅读器和手机提供了便利。',
+        "azw3": '亚马逊Kindle电子书格式(<code><a href="http://'
                 'kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.'
-                'pdf">azw3</a></code>）是一种适合在Kindle设备上阅读的专有格式。',
+                'pdf">azw3</a></code>)是一种适合在Kindle设备上阅读的专有格式。',
         "zip": '一个<code><a href="https://www.loc.gov/preservation/digital/'
-               'formats/fdd/fdd000354.shtml">zip</a></code>存档，包含上述所有格式的书籍，'
+               'formats/fdd/fdd000354.shtml">zip</a></code>存档,包含上述所有格式的书籍,'
                '便于下载。',
         "tar.xz": '一个<code><a href="https://www.gnu.org/software/tar/manual/'
                   'html_node/Standard.html">tar</a>.<a href="https://tukaani.'
-                  'org/xz/format.html">xz</a></code>存档，包含上述所有格式的书籍，便于下载。',
+                  'org/xz/format.html">xz</a></code>存档,包含上述所有格式的书籍,便于下载。',
     }}
 
 
 def build_website(docs: Iterable[LangResult],
                   outer_file: str,
-                  body_file: Optional[str],
+                  body_file: str | None,
                   dest_dir: str,
                   input_dir: str,
                   get_meta: Callable) -> File:
@@ -141,16 +143,16 @@ def build_website(docs: Iterable[LangResult],
         ldocs = list(docs)
         has_lang_ul = len(ldocs) > 1
         if has_lang_ul:
-            data.append(f'<ul{bc.WEBSITE_LANGS_UL_ARG}>')
+            data.append(f"<ul{bc.WEBSITE_LANGS_UL_ARG}>")
 
         for lang in ldocs:
             if has_lang_ul:
                 enforce_non_empty_str(lang.lang_name)
                 data.append(
-                    f'<li{bc.WEBSITE_LANGS_LI_ARG}>'
-                    f'<span{bc.WEBSITE_LANGS_NAME_SPAN_ARG}>'
-                    f'{lang.lang_name}</span>')
-            data.append(f'<ul{bc.WEBSITE_DOWNLOAD_UL_ARG}>')
+                    f"<li{bc.WEBSITE_LANGS_LI_ARG}>"
+                    f"<span{bc.WEBSITE_LANGS_NAME_SPAN_ARG}>"
+                    f"{lang.lang_name}</span>")
+            data.append(f"<ul{bc.WEBSITE_DOWNLOAD_UL_ARG}>")
             locale = "en" if not lang.lang else \
                 lang_to_locale(lang.lang).split("_")[0]
             suffixes = __SUFFIXES[locale] if locale in __SUFFIXES else None
@@ -167,18 +169,18 @@ def build_website(docs: Iterable[LangResult],
                     f'<span{bc.WEBSITE_DOWNLOAD_SIZE_SPAN_ARG}>'
                     f'({size})</span></span>')
 
-                if suffixes and (res.suffix in suffixes.keys()):
+                if suffixes and (res.suffix in suffixes):
                     desc = suffixes[res.suffix]
                     data.append(
-                        f'<br><span{bc.WEBSITE_DOWNLOAD_FILE_DESC_SPAN_ARG}>'
-                        f'{desc}</span>')
+                        f"<br><span{bc.WEBSITE_DOWNLOAD_FILE_DESC_SPAN_ARG}>"
+                        f"{desc}</span>")
 
-                data.append('</li>')
-            data.append('</ul>')
+                data.append("</li>")
+            data.append("</ul>")
             if has_lang_ul:
-                data.append('</li>')
+                data.append("</li>")
         if has_lang_ul:
-            data.append('</ul>')
+            data.append("</ul>")
         data.append(html[(div_2 + len(bc.WEBSITE_BODY_TAG_2)):].strip())
         html = "".join(data).strip()
         del data

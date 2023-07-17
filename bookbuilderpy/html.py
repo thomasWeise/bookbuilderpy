@@ -3,22 +3,24 @@ import base64
 import os
 import string
 from os.path import exists
-from re import compile as _compile, MULTILINE
-from typing import Final, List, Tuple, Dict, Pattern
+from re import MULTILINE
+from re import compile as _compile
+from typing import Final, Pattern
 
 import bs4  # type: ignore
 import minify_html  # type: ignore
 import regex as reg  # type: ignore
 from selenium import webdriver  # type: ignore
+from selenium.webdriver.firefox.service import Service
 
 from bookbuilderpy.logger import logger
-from bookbuilderpy.path import Path, UTF8, move_pure
+from bookbuilderpy.path import UTF8, Path, move_pure
 from bookbuilderpy.strings import enforce_non_empty_str, regex_sub
 from bookbuilderpy.temp import TempDir
 from bookbuilderpy.versions import TOOL_FIREFOX, TOOL_FIREFOX_DRIVER, has_tool
 
 #: the regexes for java script
-__REGEXES_URI_JAVASCRIPT: Final[Tuple[reg.Regex, ...]] = tuple(
+__REGEXES_URI_JAVASCRIPT: Final[tuple[reg.Regex, ...]] = tuple(
     [reg.compile(  # nosemgrep
         f'<script src=\"data:application/{x}'  # nosemgrep
         '(;\\s*charset=utf-8)?;base64,'  # nosemgrep
@@ -29,11 +31,11 @@ __REGEXES_URI_JAVASCRIPT: Final[Tuple[reg.Regex, ...]] = tuple(
         f'{y}',  # nosemgrep
         flags=reg.V1 | reg.MULTILINE)  # pylint: disable=E1101
         for x in ["octet-stream", "javascript"]
-        for y in ["\\s*/>", ">\\s*</script>"]]
+        for y in ["\\s*/>", ">\\s*</script>"]],
 )
 
 #: the regexes for css
-__REGEXES_URI_CSS: Final[Tuple[reg.Regex, ...]] = tuple(
+__REGEXES_URI_CSS: Final[tuple[reg.Regex, ...]] = tuple(
     [reg.compile(  # nosemgrep
         '<link rel=\"stylesheet\" '  # nosemgrep
         f'href=\"data:application/{x}(;'  # nosemgrep
@@ -45,7 +47,7 @@ __REGEXES_URI_CSS: Final[Tuple[reg.Regex, ...]] = tuple(
         f'{y}',  # nosemgrep
         flags=reg.V1 | reg.MULTILINE)  # pylint: disable=E1101
         for x in ["octet-stream"]
-        for y in ["\\s*/>", ">\\s*</link>"]]
+        for y in ["\\s*/>", ">\\s*</link>"]],
 )
 
 
@@ -59,7 +61,7 @@ def __base64_unpacker(args, start: str, end: str) -> str:
     :return: the text
     """
     decoded = base64.b64decode(str(args.groups()[1]).strip()).decode(UTF8)
-    res = f'{start}{decoded.strip()}{end}'
+    res = f"{start}{decoded.strip()}{end}"
     if len(res) <= (args.end() - args.start()):
         return res
     return str(args).strip()
@@ -75,7 +77,7 @@ def __base64_unpacker_js(args) -> str:
     :return: the text
     """
     return __base64_unpacker(args, '<script type="text/javascript">',
-                             '</script>')
+                             "</script>")
 
 
 def __base64_unpacker_css(args) -> str:
@@ -87,7 +89,7 @@ def __base64_unpacker_css(args) -> str:
     :param args: the arguments
     :return: the text
     """
-    return __base64_unpacker(args, '<style type="text/css">', '</style>')
+    return __base64_unpacker(args, '<style type="text/css">', "</style>")
 
 
 def __unpack_data_uris(text: str) -> str:
@@ -164,15 +166,17 @@ def html_postprocess(in_file: str,
         if fully_evaluate_html:  # flatten scripts and html
             if has_tool(TOOL_FIREFOX_DRIVER) and has_tool(TOOL_FIREFOX):
                 options = webdriver.FirefoxOptions()
-                options.headless = True
                 options.add_argument("--enable-javascript")
+                options.add_argument("-headless")
+                service = Service(log_path=os.path.devnull)
+
                 try:
                     browser = webdriver.Firefox(
-                        options=options, service_log_path=os.path.devnull)
+                        options=options, service=service)
                 except BaseException:
+                    options.binary_location = TOOL_FIREFOX
                     browser = webdriver.Firefox(
-                        options=options, firefox_binary=TOOL_FIREFOX,
-                        service_log_path=os.path.devnull)
+                        options=options, service=service)
 
                 if needs_file_out:
                     current_file = temp.resolve_inside("1.html")
@@ -181,7 +185,7 @@ def html_postprocess(in_file: str,
                 current_file.enforce_file()
                 logger(f"invoking '{TOOL_FIREFOX_DRIVER}' via selenium on "
                        f"'{current_file}' to evaluate HTML.")
-                browser.get('file:///' + current_file)
+                browser.get("file:///" + current_file)
                 browser.implicitly_wait(1)
                 html = browser.page_source
                 browser.quit()
@@ -243,12 +247,11 @@ def __inner_minify(parsed: bs4.BeautifulSoup) -> None:
             tagid = tag.attrs["id"]
             if tag.contents:
                 child = tag.contents[0]
-                if child.name == "a":
-                    if "href" in child.attrs:
-                        ref = child.attrs["href"]
-                        if ref.startswith("#") and (ref[1:] == tagid):
-                            if not (child.contents or child.string):
-                                del child.attrs["href"]
+                if child.name == "a" and "href" in child.attrs:
+                    ref = child.attrs["href"]
+                    if ref.startswith("#") and (ref[1:] == tagid) \
+                            and (not (child.contents or child.string)):
+                        del child.attrs["href"]
 
     # replace tags with their children if they have no attributes
     # or other contents
@@ -361,16 +364,15 @@ def __html_crusher(text: str,
             styles[0].string = all_styles
         # remove the generator meta data, as it is not needed
         for tag in parsed("meta"):
-            if "name" in tag.attrs:
-                if tag.attrs["name"] == "generator":
-                    tag.decompose()
+            if "name" in tag.attrs and tag.attrs["name"] == "generator":
+                tag.decompose()
 
         __inner_minify(parsed)
 
     # replace all ids with shorter ids
     if canonicalize_ids:
         # first, we try to minify the element IDs
-        id_counts: Dict[str, int] = {}
+        id_counts: dict[str, int] = {}
         # find all IDs
         for ref in ["id", "name"]:
             for tag in parsed.findAll(lambda tg, rr=ref: rr in tg.attrs):
@@ -402,7 +404,7 @@ def __html_crusher(text: str,
 
         # create smaller IDs
         id_list.sort(key=lambda x: -x[1])
-        ids: Dict[str, str] = {}
+        ids: dict[str, str] = {}
         cnt: int = 0
         for idx in id_list:
             ids[idx[0]] = __int2str(cnt)
@@ -449,7 +451,6 @@ def __html_crusher(text: str,
                 ensure_spec_compliant_unquoted_attribute_values=True,
                 remove_bangs=True,
                 remove_processing_instructions=True,
-                # keep_closing_tags=True,
                 keep_html_and_head_opening_tags=True,
                 keep_spaces_between_attributes=True,
                 minify_css=True,
@@ -476,11 +477,11 @@ def __int2str(x: int) -> str:
     """
     if x == 0:
         return __DIGITS_START[0]
-    digits: List[str] = []
+    digits: list[str] = []
     use_digits = __DIGITS_START
     while x:
         base = len(use_digits)
         digits.append(use_digits[x % base])
         x = x // base
         use_digits = __DIGITS
-    return ''.join(digits)
+    return "".join(digits)

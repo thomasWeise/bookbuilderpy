@@ -1,6 +1,6 @@
 """The basic preprocessor command strings."""
 
-from typing import Final, Optional
+from typing import Final
 
 #: the command for loading the input data
 #: \rel.inputpath}
@@ -114,7 +114,7 @@ META_WEBSITE_BODY: Final[str] = "website_body"
 #: The begin of the tag to be replaced.
 WEBSITE_BODY_TAG_1: Final[str] = '<div id="files">'
 #: The end of the tag to be replaced.
-WEBSITE_BODY_TAG_2: Final[str] = '</div>'
+WEBSITE_BODY_TAG_2: Final[str] = "</div>"
 #: A meta-data property identifying the HTML website wrapper file.
 # If this file contains the string "{body}" somewhere, then we will load
 # the markdown data identified by the "website_body" attribute, compile
@@ -131,7 +131,7 @@ META_AUTHOR: Final[str] = "author"
 LANG_PYTHON: Final[str] = "python"
 
 #: the undefined programming language
-LANG_UNDEFINED: Optional[str] = None
+LANG_UNDEFINED: str | None = None
 
 #: the pandoc markdown format
 PANDOC_FORMAT_MARKDOWN: Final[str] = "markdown"

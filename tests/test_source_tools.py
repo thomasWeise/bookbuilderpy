@@ -1,11 +1,10 @@
 """Test the interaction with the file system."""
 
-from bookbuilderpy.source_tools import select_lines, format_empty_lines
-
-# noinspection PyPackageRequirements
+from bookbuilderpy.source_tools import format_empty_lines, select_lines
 
 
-def test_select_lines_1():
+def test_select_lines_1() -> None:
+    """Test other tools."""
     code = ["# start y",
             "def cyber():",
             "    #: this is a comment",
@@ -19,7 +18,8 @@ def test_select_lines_1():
     assert result == expected
 
 
-def test_select_lines_2():
+def test_select_lines_2() -> None:
+    """Test other tools."""
     code = ["# start y",
             "def cyber():",
             '    """',
@@ -39,7 +39,8 @@ def test_select_lines_2():
     assert result == expected
 
 
-def test_select_lines_3():
+def test_select_lines_3() -> None:
+    """Test other tools."""
     code = ["b = 2",
             "# start y",
             "c = 3",
@@ -57,7 +58,8 @@ def test_select_lines_3():
     assert result == expected
 
 
-def test_select_lines_4():
+def test_select_lines_4() -> None:
+    """Test other tools."""
     code = ["# start y",
             "def cyber():",
             '    """',
@@ -89,7 +91,8 @@ def test_select_lines_4():
     assert result == expected
 
 
-def test_select_lines_5():
+def test_select_lines_5() -> None:
+    """Test other tools."""
     code = ["# +x",
             "a = 5",
             "b = 6  # +x",
@@ -106,7 +109,8 @@ def test_select_lines_5():
     assert result == expected
 
 
-def test_format_empty_lines():
+def test_format_empty_lines() -> None:
+    """Test other tools."""
     code = ["", "a", "", "b", "", "", "c", "", "", "", "d", "e", ""]
     assert format_empty_lines(code, max_consecutive_empty_lines=3) == \
            ["a", "", "b", "", "", "c", "", "", "", "d", "e"]
@@ -187,7 +191,8 @@ class Instance(Component):
 """
 
 
-def test_select_lines_6():
+def test_select_lines_6() -> None:
+    """Test other tools."""
     code = be.splitlines()
     result = select_lines(code, labels=["book"])
     exp = bex.strip().splitlines()

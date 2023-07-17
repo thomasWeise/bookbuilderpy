@@ -1,8 +1,8 @@
 """Some basic type handling routines."""
-from typing import Any, Type, Iterable, Union, Final
+from typing import Any, Final, Iterable
 
 
-def type_name(tpe: Type) -> str:
+def type_name(tpe: type) -> str:
     """
     Convert a type to a string.
 
@@ -49,7 +49,7 @@ def type_name_of(obj) -> str:
         return "None"
     c1: Final[str] = type_name(type(obj))
     if hasattr(obj, "__class__"):
-        cls: Final[Type] = obj.__class__
+        cls: Final[type] = obj.__class__
         c2: str = type_name(cls)
 
         if hasattr(cls, "__qualname__"):
@@ -68,8 +68,8 @@ def type_name_of(obj) -> str:
 
 def type_error(obj: Any,
                name: str,
-               expected: Union[None, Type, Iterable[Type]] = None,
-               call: bool = False) -> Union[ValueError, TypeError]:
+               expected: None | type | Iterable[type] = None,
+               call: bool = False) -> ValueError | TypeError:
     """
     Create an error to raise if a type did not fit.
 
@@ -92,7 +92,7 @@ def type_error(obj: Any,
     """
     exp: str = ""
     if isinstance(expected, Iterable):
-        exp = ', '.join(sorted([type_name(e) for e in expected]))
+        exp = ", ".join(sorted([type_name(e) for e in expected]))
         exp = f"an instance of any in {{{exp}}}"
     elif expected is not None:
         exp = f"an instance of {type_name(expected)}"

@@ -5,13 +5,16 @@ from dataclasses import dataclass
 from shutil import rmtree
 from subprocess import TimeoutExpired  # nosec
 from typing import Final
-from typing import Optional
 
 from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.shell import shell
-from bookbuilderpy.strings import enforce_non_empty_str_without_ws, \
-    enforce_non_empty_str, datetime_to_datetime_str, enforce_url
+from bookbuilderpy.strings import (
+    datetime_to_datetime_str,
+    enforce_non_empty_str,
+    enforce_non_empty_str_without_ws,
+    enforce_url,
+)
 from bookbuilderpy.types import type_error
 from bookbuilderpy.versions import TOOL_GIT, has_tool
 
@@ -64,7 +67,7 @@ class Repo:
 
     @staticmethod
     def download(url: str,
-                 dest_dir: str) -> 'Repo':
+                 dest_dir: str) -> "Repo":
         """
         Download a git repository.
 
@@ -104,7 +107,7 @@ class Repo:
 
     @staticmethod
     def from_local(path: str,
-                   url: Optional[str] = None) -> 'Repo':
+                   url: str | None = None) -> "Repo":
         """
         Load all the information from an local repository.
 

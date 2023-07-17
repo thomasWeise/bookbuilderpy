@@ -3,16 +3,18 @@ import io
 import sys
 import token
 import tokenize
-from typing import Iterable, Tuple, Set, Optional, \
-    List
+from typing import Iterable
 
 import regex as reg  # type: ignore
 import strip_hints as sh  # type: ignore
 import yapf  # type: ignore
 
-from bookbuilderpy.source_tools import select_lines, format_empty_lines, \
-    strip_common_whitespace_prefix
-from bookbuilderpy.strings import str_to_lines, lines_to_str
+from bookbuilderpy.source_tools import (
+    format_empty_lines,
+    select_lines,
+    strip_common_whitespace_prefix,
+)
+from bookbuilderpy.strings import lines_to_str, str_to_lines
 from bookbuilderpy.types import type_error
 
 
@@ -35,8 +37,7 @@ def __no_empty_after(line: str) -> bool:
     >>> __no_empty_after("from")
     False
     """
-    return line.startswith("def ") or line.startswith("import ") \
-        or line.startswith("from ")
+    return line.startswith(("def ", "import ", "from "))
 
 
 def __empty_before(line: str) -> bool:
@@ -54,7 +55,7 @@ def __empty_before(line: str) -> bool:
     >>> __empty_before("class ")
     True
     """
-    return line.startswith("def ") or line.startswith("class ")
+    return line.startswith(("def ", "class "))
 
 
 def __force_no_empty_after(line: str) -> bool:
@@ -98,7 +99,7 @@ def __format_lines(code: str) -> str:
 
 #: the regexes stripping comments that occupy a complete line
 __REGEX_STRIP_LINE_COMMENT: reg.Regex = reg.compile(
-    '\\n[ \\t]*?#.*?\\n',
+    "\\n[ \\t]*?#.*?\\n",
     flags=reg.V1 | reg.MULTILINE)  # pylint: disable=E1101
 
 
@@ -127,13 +128,13 @@ def __strip_hints(code: str,
         new_text2 = None
         while new_text2 != new_text:
             new_text2 = new_text
-            new_text = reg.sub(__REGEX_STRIP_LINE_COMMENT, '\n', new_text)
+            new_text = reg.sub(__REGEX_STRIP_LINE_COMMENT, "\n", new_text)
         return new_text
 
     # If we should preserve normal comments, all we can do is trying to
     # find these "new" comments in a very pedestrian fashion.
-    orig_lines: List[str] = code.splitlines()
-    new_lines: List[str] = new_text.splitlines()
+    orig_lines: list[str] = code.splitlines()
+    new_lines: list[str] = new_text.splitlines()
     for i in range(min(len(orig_lines), len(new_lines)) - 1, -1, -1):
         t1: str = orig_lines[i].strip()
         t2: str = new_lines[i].strip()
@@ -169,7 +170,7 @@ def __strip_docstrings_and_comments(code: str,
         code2 = None
         while code2 != code:
             code2 = code
-            code = reg.sub(__REGEX_STRIP_LINE_COMMENT, '\n', code)
+            code = reg.sub(__REGEX_STRIP_LINE_COMMENT, "\n", code)
         del code2
 
     # Now we strip the doc strings and remaining comments.
@@ -179,8 +180,10 @@ def __strip_docstrings_and_comments(code: str,
     eat_newline: int = 0
     with io.StringIO() as output:
         with io.StringIO(code) as reader:
-            for toktype, ttext, (slineno, scol), (elineno, ecol), _ in \
+            for toktype, tttext, (slineno, scol), (telineno, ecol), _ in \
                     tokenize.generate_tokens(reader.readline):
+                elineno = telineno
+                ttext = tttext
                 eat_newline -= 1
                 if slineno > last_lineno:
                     last_col = 0
@@ -194,10 +197,9 @@ def __strip_docstrings_and_comments(code: str,
                 elif toktype == tokenize.COMMENT:
                     if strip_comments:
                         ttext = ""
-                elif toktype == tokenize.NEWLINE:
-                    if eat_newline >= 0:
-                        ttext = ""
-                        elineno += 1
+                elif toktype == tokenize.NEWLINE and eat_newline >= 0:
+                    ttext = ""
+                    elineno += 1
                 output.write(ttext)
                 prev_toktype = toktype
                 last_col = ecol
@@ -219,7 +221,7 @@ def __strip_docstrings_and_comments(code: str,
 def format_python(code: Iterable[str],
                   strip_docstrings: bool = True,
                   strip_comments: bool = True,
-                  strip_hints: bool = True) -> List[str]:
+                  strip_hints: bool = True) -> list[str]:
     """
     Format a python code fragment.
 
@@ -238,10 +240,10 @@ def format_python(code: Iterable[str],
     if not isinstance(strip_hints, bool):
         raise type_error(strip_hints, "strip_hints", bool)
 
-    old_len: Tuple[int, int] = (sys.maxsize, sys.maxsize)
+    old_len: tuple[int, int] = (sys.maxsize, sys.maxsize)
 
-    shortest: List[str] = list(code)
-    rcode: List[str] = shortest
+    shortest: list[str] = list(code)
+    rcode: list[str] = shortest
     not_first_run: bool = False
     while True:
         rcode = strip_common_whitespace_prefix(format_empty_lines(
@@ -254,7 +256,7 @@ def format_python(code: Iterable[str],
             raise ValueError("Code becomes empty.")
 
         text = lines_to_str(rcode)
-        new_len: Tuple[int, int] = (text.count("\n"), len(text))
+        new_len: tuple[int, int] = (text.count("\n"), len(text))
         if not_first_run and (old_len <= new_len):
             break
         shortest = rcode
@@ -289,10 +291,10 @@ def format_python(code: Iterable[str],
     return shortest
 
 
-def preprocess_python(code: List[str],
-                      lines: Optional[List[int]] = None,
-                      labels: Optional[Iterable[str]] = None,
-                      args: Optional[Set[str]] = None) -> str:
+def preprocess_python(code: list[str],
+                      lines: list[int] | None = None,
+                      labels: Iterable[str] | None = None,
+                      args: set[str] | None = None) -> str:
     r"""
     Preprocess Python code.
 

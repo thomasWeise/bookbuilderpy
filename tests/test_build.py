@@ -1,15 +1,15 @@
 """Test the interaction with the build system."""
 import os.path
 import shutil
-from typing import Final, Optional
+from typing import Final
 
 from bookbuilderpy.build import Build
 from bookbuilderpy.git import Repo
 from bookbuilderpy.logger import logger
-from bookbuilderpy.temp import TempDir, Path
+from bookbuilderpy.temp import Path, TempDir
 
 
-def get_local_repo() -> Optional[Repo]:
+def get_local_repo() -> Repo | None:
     """
     Get the local repository.
 
@@ -35,8 +35,9 @@ def get_local_repo() -> Optional[Repo]:
 
 #: should we use git?
 USE_GIT: bool = True
+
 if "GITHUB_JOB" not in os.environ:
-    __inner_repo: Final[Optional[Repo]] = get_local_repo()
+    __inner_repo: Final[Repo | None] = get_local_repo()
     if __inner_repo is None:
         logger("cannot patch repository loader")
         USE_GIT = False
@@ -53,45 +54,43 @@ if "GITHUB_JOB" not in os.environ:
         logger("repository loader patched")
 
 
-# noinspection PyPackageRequirements
-
-def test_in_out_path():
-    with TempDir.create() as src:
-        with TempDir.create() as dst:
-            f = Path.path(os.path.join(src, "test.md"))
-            f.write_all("\\relative.input{metadata.yaml}")
-            f = Path.path(os.path.join(src, "metadata.yaml"))
-            txt = ["---",
-                   "title: The Great Book of Many Things",
-                   "author: Thomas Weise"]
-            if USE_GIT:
-                txt.extend([
-                    "repos:",
-                    "  - id: bp",
-                    "    url: "
-                    "https://github.com/thomasWeise/bookbuilderpy.git",
-                    "  - id: mp",
-                    "    url: https://github.com/thomasWeise/moptipy.git"])
+def test_in_out_path() -> None:
+    """Test the input/out path."""
+    with TempDir.create() as src, TempDir.create() as dst:
+        f = Path.path(os.path.join(src, "test.md"))
+        f.write_all("\\relative.input{metadata.yaml}")
+        f = Path.path(os.path.join(src, "metadata.yaml"))
+        txt = ["---",
+               "title: The Great Book of Many Things",
+               "author: Thomas Weise"]
+        if USE_GIT:
             txt.extend([
-                "langs:",
-                "  - id: en",
-                "    name: English",
-                "  - id: de",
-                "    name: Deutsch (German)",
-                "..."])
+                "repos:",
+                "  - id: bp",
+                "    url: "
+                "https://github.com/thomasWeise/bookbuilderpy.git",
+                "  - id: mp",
+                "    url: https://github.com/thomasWeise/moptipy.git"])
+        txt.extend([
+            "langs:",
+            "  - id: en",
+            "    name: English",
+            "  - id: de",
+            "    name: Deutsch (German)",
+            "..."])
 
-            f.write_all(txt)
+        f.write_all(txt)
 
-            with Build(f, dst, False) as build:
-                assert build.input_file is not None
+        with Build(f, dst, False) as build:
+            assert build.input_file is not None
 
-                try:
-                    build.build()
-                except ValueError as ve:
-                    if str(ve) != "Did not build any results.":
-                        raise
-                if USE_GIT:
-                    assert build.get_repo("bp").url == \
-                           "https://github.com/thomasWeise/bookbuilderpy.git"
-                    assert build.get_repo("mp").url == \
-                           "https://github.com/thomasWeise/moptipy.git"
+            try:
+                build.build()
+            except ValueError as ve:
+                if str(ve) != "Did not build any results.":
+                    raise
+            if USE_GIT:
+                assert build.get_repo("bp").url == \
+                    "https://github.com/thomasWeise/bookbuilderpy.git"
+                assert build.get_repo("mp").url == \
+                    "https://github.com/thomasWeise/moptipy.git"

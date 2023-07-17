@@ -2,7 +2,7 @@
 import io
 import os.path
 import re
-from typing import Dict, Any, Final
+from typing import Any, Final
 
 import yaml  # type: ignore
 
@@ -12,12 +12,11 @@ from bookbuilderpy.preprocessor_commands import create_preprocessor
 from bookbuilderpy.strings import enforce_non_empty_str
 from bookbuilderpy.types import type_error
 
-
 #: the full metadata command
 __FULL_META_CMD: Final[str] = f"\\{bc.CMD_GET_META}"
 
 
-def parse_metadata(text: str) -> Dict[str, Any]:
+def parse_metadata(text: str) -> dict[str, Any]:
     """
     Extract the metadata of a string and parse it.
 
@@ -99,7 +98,7 @@ def __raw_load(in_file: Path,
 
 
 def load_initial_metadata(in_file: Path,
-                          in_dir: Path) -> Dict[str, Any]:
+                          in_dir: Path) -> dict[str, Any]:
     """
     Load the initial metadata.
 

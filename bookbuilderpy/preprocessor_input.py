@@ -1,13 +1,13 @@
 """A preprocessor that loads one root file and resolves are relative inputs."""
 
 from os.path import dirname
-from typing import Optional, Final
+from typing import Final
 
 import bookbuilderpy.constants as bc
 from bookbuilderpy.logger import logger
 from bookbuilderpy.path import Path
 from bookbuilderpy.preprocessor_commands import create_preprocessor
-from bookbuilderpy.strings import get_prefix_str, enforce_non_empty_str
+from bookbuilderpy.strings import enforce_non_empty_str, get_prefix_str
 
 #: the common prefix
 __REL_PREFIX: Final[str] = "\\" + get_prefix_str([bc.CMD_RELATIVE_CODE,
@@ -17,7 +17,7 @@ __REL_PREFIX: Final[str] = "\\" + get_prefix_str([bc.CMD_RELATIVE_CODE,
 
 def __load_input(input_file: str,
                  input_dir: str,
-                 lang_id: Optional[str]) -> str:
+                 lang_id: str | None) -> str:
     """
     Recursively load an input file.
 
@@ -38,7 +38,7 @@ def __load_input(input_file: str,
 
     def __relative_input(_in_file: str,
                          _in_dir: Path = in_dir,
-                         _lang: Optional[str] = lang_id) -> str:
+                         _lang: str | None = lang_id) -> str:
         the_file = _in_dir.resolve_input_file(_in_file, _lang)
         the_dir = Path.directory(dirname(the_file))
         _in_dir.enforce_contains(the_dir)
@@ -57,10 +57,10 @@ def __load_input(input_file: str,
                         _labels: str,
                         _args: str,
                         _in_dir: Path = in_dir,
-                        _lang: Optional[str] = lang_id) -> str:
+                        _lang: str | None = lang_id) -> str:
         f = _in_dir.resolve_input_file(_in_file, _lang)
-        return f"\\{bc.CMD_ABSOLUTE_CODE}{{{_label}}}{{{_caption}}}" \
-               f"{{{f}}}{{{_lines}}}{{{_labels}}}{{{_args}}}"
+        return (f"\\{bc.CMD_ABSOLUTE_CODE}{{{_label}}}{{{_caption}}}"
+                f"{{{f}}}{{{_lines}}}{{{_labels}}}{{{_args}}}")
 
     rel_code = create_preprocessor(name=bc.CMD_RELATIVE_CODE,
                                    func=__relative_code,
@@ -72,10 +72,10 @@ def __load_input(input_file: str,
                           _in_file: str,
                           _args: str,
                           _in_dir: Path = in_dir,
-                          _lang: Optional[str] = lang_id) -> str:
+                          _lang: str | None = lang_id) -> str:
         f = _in_dir.resolve_input_file(_in_file, _lang)
-        return f"\\{bc.CMD_ABSOLUTE_FIGURE}{{{_label}}}{{{_caption}}}" \
-               f"{{{f}}}{{{_args}}}"
+        return (f"\\{bc.CMD_ABSOLUTE_FIGURE}{{{_label}}}{{{_caption}}}"
+                f"{{{f}}}{{{_args}}}")
 
     rel_fig = create_preprocessor(name=bc.CMD_RELATIVE_FIGURE,
                                   func=__relative_figure,
@@ -87,7 +87,7 @@ def __load_input(input_file: str,
 
 def load_input(input_file: str,
                input_dir: str,
-               lang_id: Optional[str]) -> str:
+               lang_id: str | None) -> str:
     """
     Recursively load an input file.
 
