@@ -1,0 +1,202 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.parse_metadata &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/parse_metadata.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.parse_metadata</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.parse_metadata</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;An internal package for loading metadata.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Final</span>
+
+<span class="kn">import</span> <span class="nn">yaml</span>  <span class="c1"># type: ignore</span>
+
+<span class="kn">import</span> <span class="nn">bookbuilderpy.constants</span> <span class="k">as</span> <span class="nn">bc</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.path</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.preprocessor_commands</span> <span class="kn">import</span> <span class="n">create_preprocessor</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.strings</span> <span class="kn">import</span> <span class="n">enforce_non_empty_str</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.types</span> <span class="kn">import</span> <span class="n">type_error</span>
+
+<span class="c1">#: the full metadata command</span>
+<span class="n">__FULL_META_CMD</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="si">{</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_GET_META</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<div class="viewcode-block" id="parse_metadata"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.parse_metadata.parse_metadata">[docs]</a><span class="k">def</span> <span class="nf">parse_metadata</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract the metadata of a string and parse it.</span>
+
+<span class="sd">    :param text: the text</span>
+<span class="sd">    :return: the metadata</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^\s*-{3,}\s*$&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No metadata start mark (---) found.&quot;</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^\s*\.{3,}\s*$&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No metadata end mark (...) found.&quot;</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">end</span><span class="p">()</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">end</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;=</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;End of start mark </span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2"> is &gt;= than start of end mark </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">text</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Metadata is &#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">__FULL_META_CMD</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">t</span><span class="p">])</span>
+
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid metadata &#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Metadata should not be empty, but is &#39;</span><span class="si">{</span><span class="n">res</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<span class="c1">#: the full input command</span>
+<span class="n">__FULL_INPUT_CMD</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="si">{</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_INPUT</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">__raw_load</span><span class="p">(</span><span class="n">in_file</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+               <span class="n">in_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+               <span class="n">resolve_cmd_only_once</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform a raw version of the recursive path resolution.</span>
+
+<span class="sd">    :param in_file: the input file path</span>
+<span class="sd">    :param in_dir: the input directory</span>
+<span class="sd">    :param resolve_cmd_only_once: should only one include be resolved?</span>
+<span class="sd">    :return: the loaded string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">in_file</span><span class="o">.</span><span class="n">read_all_str</span><span class="p">()</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">__FULL_INPUT_CMD</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">text</span>
+    <span class="k">if</span> <span class="n">resolve_cmd_only_once</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">__FULL_INPUT_CMD</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">__FULL_INPUT_CMD</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__side_load</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                    <span class="n">_in_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">in_file</span><span class="p">,</span>
+                    <span class="n">_in_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">in_dir</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">_in_dir</span><span class="o">.</span><span class="n">resolve_input_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">src</span><span class="o">.</span><span class="n">enforce_file</span><span class="p">()</span>
+        <span class="n">_new_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">directory</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">src</span><span class="p">))</span>
+        <span class="n">_in_dir</span><span class="o">.</span><span class="n">enforce_contains</span><span class="p">(</span><span class="n">_new_dir</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">__raw_load</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">_new_dir</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_INPUT</span><span class="p">,</span>
+                              <span class="n">func</span><span class="o">=</span><span class="n">__side_load</span><span class="p">,</span>
+                              <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                              <span class="n">strip_white_space</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">wrap_in_newlines</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cmd</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="load_initial_metadata"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.parse_metadata.load_initial_metadata">[docs]</a><span class="k">def</span> <span class="nf">load_initial_metadata</span><span class="p">(</span><span class="n">in_file</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                          <span class="n">in_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load the initial metadata.</span>
+
+<span class="sd">    This function does not process the complete document structure but only</span>
+<span class="sd">    resolves at most one include. It also does not expand other commands and</span>
+<span class="sd">    it does not perform any language-based resolution. It is only there to</span>
+<span class="sd">    gain access to the raw metadata which should be the same over all builds</span>
+<span class="sd">    of a book. This means things such as shared source code repositories.</span>
+
+<span class="sd">    :param in_file: the input file</span>
+<span class="sd">    :param in_dir: the input directory</span>
+<span class="sd">    :return: the map with the meta-data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">parse_metadata</span><span class="p">(</span><span class="n">__raw_load</span><span class="p">(</span><span class="n">in_file</span><span class="p">,</span> <span class="n">in_dir</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.parse_metadata</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

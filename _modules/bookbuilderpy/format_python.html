@@ -1,0 +1,424 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.format_python &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/format_python.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.format_python</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.format_python</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A formatter for python code.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">token</span>
+<span class="kn">import</span> <span class="nn">tokenize</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="kn">import</span> <span class="nn">regex</span> <span class="k">as</span> <span class="nn">reg</span>  <span class="c1"># type: ignore</span>
+<span class="kn">import</span> <span class="nn">strip_hints</span> <span class="k">as</span> <span class="nn">sh</span>  <span class="c1"># type: ignore</span>
+<span class="kn">import</span> <span class="nn">yapf</span>  <span class="c1"># type: ignore</span>
+
+<span class="kn">from</span> <span class="nn">bookbuilderpy.source_tools</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">format_empty_lines</span><span class="p">,</span>
+    <span class="n">select_lines</span><span class="p">,</span>
+    <span class="n">strip_common_whitespace_prefix</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.strings</span> <span class="kn">import</span> <span class="n">lines_to_str</span><span class="p">,</span> <span class="n">str_to_lines</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.types</span> <span class="kn">import</span> <span class="n">type_error</span>
+
+
+<span class="k">def</span> <span class="nf">__no_empty_after</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    No empty line is permitted after definition.</span>
+
+<span class="sd">    :param line: the line</span>
+<span class="sd">    :return: a boolean value</span>
+<span class="sd">    &gt;&gt;&gt; __no_empty_after(&quot;def &quot;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; __no_empty_after(&quot;import &quot;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; __no_empty_after(&quot;from &quot;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; __no_empty_after(&quot;def&quot;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; __no_empty_after(&quot;import&quot;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; __no_empty_after(&quot;from&quot;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">&quot;def &quot;</span><span class="p">,</span> <span class="s2">&quot;import &quot;</span><span class="p">,</span> <span class="s2">&quot;from &quot;</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">__empty_before</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether an empty line is needed before this one.</span>
+
+<span class="sd">    :param line: the line</span>
+<span class="sd">    :return: a boolean value</span>
+<span class="sd">    &gt;&gt;&gt; __empty_before(&quot;def&quot;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; __empty_before(&quot;def &quot;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; __empty_before(&quot;class&quot;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; __empty_before(&quot;class &quot;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">&quot;def &quot;</span><span class="p">,</span> <span class="s2">&quot;class &quot;</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">__force_no_empty_after</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Really no empty line is permitted after definition.</span>
+
+<span class="sd">    :param line: the line</span>
+<span class="sd">    :return: a boolean value</span>
+<span class="sd">    &gt;&gt;&gt; __force_no_empty_after(&quot;@&quot;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)</span>
+
+
+<span class="c1">#: the internal style for formatting Python code</span>
+<span class="n">__YAPF_STYLE</span> <span class="o">=</span> <span class="n">yapf</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">CreatePEP8Style</span><span class="p">()</span>
+<span class="n">__YAPF_STYLE</span><span class="p">[</span><span class="s2">&quot;ARITHMETIC_PRECEDENCE_INDICATION&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">__YAPF_STYLE</span><span class="p">[</span><span class="s2">&quot;BLANK_LINES_AROUND_TOP_LEVEL_DEFINITION&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">__YAPF_STYLE</span><span class="p">[</span><span class="s2">&quot;BLANK_LINE_BEFORE_NESTED_CLASS_OR_DEF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">__YAPF_STYLE</span><span class="p">[</span><span class="s2">&quot;COALESCE_BRACKETS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">__YAPF_STYLE</span><span class="p">[</span><span class="s2">&quot;COLUMN_LIMIT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">74</span>
+<span class="n">__YAPF_STYLE</span><span class="p">[</span><span class="s2">&quot;EACH_DICT_ENTRY_ON_SEPARATE_LINE&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">__YAPF_STYLE</span><span class="p">[</span><span class="s2">&quot;SPLIT_BEFORE_NAMED_ASSIGNS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">__format_lines</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Format Python code lines.</span>
+
+<span class="sd">    :param code: the original code</span>
+<span class="sd">    :return: the formatted lines.</span>
+
+<span class="sd">    &gt;&gt;&gt; __format_lines(&quot;\ndef a():\n   return 7-   45\n\n&quot;)</span>
+<span class="sd">    &#39;def a():\n    return 7 - 45&#39;</span>
+<span class="sd">    &gt;&gt;&gt; __format_lines(&quot;\n\n   \nclass b:\n   def bb(self):      x  =3/a()&quot;)</span>
+<span class="sd">    &#39;class b:\n    def bb(self):\n        x = 3 / a()&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">yapf</span><span class="o">.</span><span class="n">yapf_api</span><span class="o">.</span><span class="n">FormatCode</span><span class="p">(</span><span class="n">code</span><span class="p">,</span>
+                                    <span class="n">style_config</span><span class="o">=</span><span class="n">__YAPF_STYLE</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+
+
+<span class="c1">#: the regexes stripping comments that occupy a complete line</span>
+<span class="n">__REGEX_STRIP_LINE_COMMENT</span><span class="p">:</span> <span class="n">reg</span><span class="o">.</span><span class="n">Regex</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">n[ </span><span class="se">\\</span><span class="s2">t]*?#.*?</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">,</span>
+    <span class="n">flags</span><span class="o">=</span><span class="n">reg</span><span class="o">.</span><span class="n">V1</span> <span class="o">|</span> <span class="n">reg</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>  <span class="c1"># pylint: disable=E1101</span>
+
+
+<span class="k">def</span> <span class="nf">__strip_hints</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                  <span class="n">strip_comments</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Strip all type hints from the given code string.</span>
+
+<span class="sd">    :param code: the code string</span>
+<span class="sd">    :return: the stripped code string</span>
+<span class="sd">    &gt;&gt;&gt; __format_lines(__strip_hints(</span>
+<span class="sd">    ...     &quot;a: int = 7\ndef b(c: int) -&gt; List[int]:\n    return [4]&quot;))</span>
+<span class="sd">    &#39;a = 7\n\ndef b(c):\n    return [4]&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">sh</span><span class="o">.</span><span class="n">strip_string_to_string</span><span class="p">(</span><span class="n">code</span><span class="p">,</span>
+                                              <span class="n">strip_nl</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                              <span class="n">to_empty</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># If we have single lines with type hints only, the above will turn</span>
+    <span class="c1"># them into line comments. We need to get rid of those.</span>
+
+    <span class="k">if</span> <span class="n">strip_comments</span><span class="p">:</span>
+        <span class="c1"># In the ideal case, we want to strip all comments anyway.</span>
+        <span class="c1"># Then we do not need to bother with anything complex and can</span>
+        <span class="c1"># directly use a regular expression getting rid of them.</span>
+        <span class="n">new_text2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">while</span> <span class="n">new_text2</span> <span class="o">!=</span> <span class="n">new_text</span><span class="p">:</span>
+            <span class="n">new_text2</span> <span class="o">=</span> <span class="n">new_text</span>
+            <span class="n">new_text</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">__REGEX_STRIP_LINE_COMMENT</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">new_text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_text</span>
+
+    <span class="c1"># If we should preserve normal comments, all we can do is trying to</span>
+    <span class="c1"># find these &quot;new&quot; comments in a very pedestrian fashion.</span>
+    <span class="n">orig_lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">code</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+    <span class="n">new_lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_text</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">orig_lines</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_lines</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">t1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">orig_lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">t2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">new_lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">t2</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">t1</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">))</span> \
+                <span class="ow">and</span> <span class="n">t2</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">t1</span><span class="p">):</span>
+            <span class="k">del</span> <span class="n">new_lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">lines_to_str</span><span class="p">(</span><span class="n">new_lines</span><span class="p">,</span> <span class="n">trailing_newline</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">__strip_docstrings_and_comments</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                                    <span class="n">strip_docstrings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                    <span class="n">strip_comments</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove all docstrings and comments from a string.</span>
+
+<span class="sd">    :param code: the code</span>
+<span class="sd">    :param strip_docstrings: should we delete docstrings?</span>
+<span class="sd">    :param strip_comments: should we delete comments?</span>
+<span class="sd">    :return: the stripped string</span>
+
+<span class="sd">    &gt;&gt;&gt; __strip_docstrings_and_comments(&quot;a = 5# bla\n&quot;, False, False)</span>
+<span class="sd">    &#39;a = 5# bla\n&#39;</span>
+<span class="sd">    &gt;&gt;&gt; __strip_docstrings_and_comments(&quot;a = 5# bla\n&quot;, False, True)</span>
+<span class="sd">    &#39;a = 5\n&#39;</span>
+<span class="sd">    &gt;&gt;&gt; __strip_docstrings_and_comments(&#39;def b():\n  \&quot;\&quot;\&quot;bla!\&quot;\&quot;\&quot;&#39;, True)</span>
+<span class="sd">    &#39;def b():\n  &#39;</span>
+<span class="sd">    &gt;&gt;&gt; __strip_docstrings_and_comments(&#39;# 1\na = 5\n# 2\nb = 6\n&#39;)</span>
+<span class="sd">    &#39;a = 5\nb = 6\n&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># First, we strip line comments that are hard to catch correctly with</span>
+    <span class="c1"># the tokenization approach later.</span>
+    <span class="k">if</span> <span class="n">strip_comments</span><span class="p">:</span>
+        <span class="n">code2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">while</span> <span class="n">code2</span> <span class="o">!=</span> <span class="n">code</span><span class="p">:</span>
+            <span class="n">code2</span> <span class="o">=</span> <span class="n">code</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">__REGEX_STRIP_LINE_COMMENT</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">code2</span>
+
+    <span class="c1"># Now we strip the doc strings and remaining comments.</span>
+    <span class="n">prev_toktype</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">INDENT</span>
+    <span class="n">last_lineno</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">last_col</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">eat_newline</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span> <span class="k">as</span> <span class="n">output</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">code</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">toktype</span><span class="p">,</span> <span class="n">tttext</span><span class="p">,</span> <span class="p">(</span><span class="n">slineno</span><span class="p">,</span> <span class="n">scol</span><span class="p">),</span> <span class="p">(</span><span class="n">telineno</span><span class="p">,</span> <span class="n">ecol</span><span class="p">),</span> <span class="n">_</span> <span class="ow">in</span> \
+                    <span class="n">tokenize</span><span class="o">.</span><span class="n">generate_tokens</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">readline</span><span class="p">):</span>
+                <span class="n">elineno</span> <span class="o">=</span> <span class="n">telineno</span>
+                <span class="n">ttext</span> <span class="o">=</span> <span class="n">tttext</span>
+                <span class="n">eat_newline</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">slineno</span> <span class="o">&gt;</span> <span class="n">last_lineno</span><span class="p">:</span>
+                    <span class="n">last_col</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">scol</span> <span class="o">&gt;</span> <span class="n">last_col</span><span class="p">:</span>
+                    <span class="n">output</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">scol</span> <span class="o">-</span> <span class="n">last_col</span><span class="p">))</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">toktype</span> <span class="o">==</span> <span class="n">token</span><span class="o">.</span><span class="n">STRING</span><span class="p">)</span> <span class="ow">and</span> \
+                        <span class="p">(</span><span class="n">prev_toktype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">INDENT</span><span class="p">,</span> <span class="n">token</span><span class="o">.</span><span class="n">NEWLINE</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">strip_docstrings</span><span class="p">:</span>
+                        <span class="n">ttext</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                        <span class="n">eat_newline</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">toktype</span> <span class="o">==</span> <span class="n">tokenize</span><span class="o">.</span><span class="n">COMMENT</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">strip_comments</span><span class="p">:</span>
+                        <span class="n">ttext</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="k">elif</span> <span class="n">toktype</span> <span class="o">==</span> <span class="n">tokenize</span><span class="o">.</span><span class="n">NEWLINE</span> <span class="ow">and</span> <span class="n">eat_newline</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">ttext</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                    <span class="n">elineno</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">output</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ttext</span><span class="p">)</span>
+                <span class="n">prev_toktype</span> <span class="o">=</span> <span class="n">toktype</span>
+                <span class="n">last_col</span> <span class="o">=</span> <span class="n">ecol</span>
+                <span class="n">last_lineno</span> <span class="o">=</span> <span class="n">elineno</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+    <span class="c1"># remove leading newlines</span>
+    <span class="k">while</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">continue</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;code </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2"> becomes empty after docstring &quot;</span>
+                     <span class="s2">&quot;and comment stripping!&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="format_python"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.format_python.format_python">[docs]</a><span class="k">def</span> <span class="nf">format_python</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                  <span class="n">strip_docstrings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                  <span class="n">strip_comments</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                  <span class="n">strip_hints</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Format a python code fragment.</span>
+
+<span class="sd">    :param code: the code fragment</span>
+<span class="sd">    :param strip_docstrings: should we delete docstrings?</span>
+<span class="sd">    :param strip_comments: should we delete comments?</span>
+<span class="sd">    :param strip_hints: should we delete type hints?</span>
+<span class="sd">    :return: the formatted code</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strip_docstrings</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">strip_docstrings</span><span class="p">,</span> <span class="s2">&quot;strip_docstrings&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strip_comments</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">strip_comments</span><span class="p">,</span> <span class="s2">&quot;strip_comments&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strip_hints</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">strip_hints</span><span class="p">,</span> <span class="s2">&quot;strip_hints&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="n">old_len</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">)</span>
+
+    <span class="n">shortest</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+    <span class="n">rcode</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">shortest</span>
+    <span class="n">not_first_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">rcode</span> <span class="o">=</span> <span class="n">strip_common_whitespace_prefix</span><span class="p">(</span><span class="n">format_empty_lines</span><span class="p">(</span>
+            <span class="n">lines</span><span class="o">=</span><span class="n">rcode</span><span class="p">,</span>
+            <span class="n">empty_before</span><span class="o">=</span><span class="n">__empty_before</span><span class="p">,</span>
+            <span class="n">no_empty_after</span><span class="o">=</span><span class="n">__no_empty_after</span><span class="p">,</span>
+            <span class="n">force_no_empty_after</span><span class="o">=</span><span class="n">__force_no_empty_after</span><span class="p">,</span>
+            <span class="n">max_consecutive_empty_lines</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rcode</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Code becomes empty.&quot;</span><span class="p">)</span>
+
+        <span class="n">text</span> <span class="o">=</span> <span class="n">lines_to_str</span><span class="p">(</span><span class="n">rcode</span><span class="p">)</span>
+        <span class="n">new_len</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">not_first_run</span> <span class="ow">and</span> <span class="p">(</span><span class="n">old_len</span> <span class="o">&lt;=</span> <span class="n">new_len</span><span class="p">):</span>
+            <span class="k">break</span>
+        <span class="n">shortest</span> <span class="o">=</span> <span class="n">rcode</span>
+        <span class="n">old_len</span> <span class="o">=</span> <span class="n">new_len</span>
+
+        <span class="n">text</span> <span class="o">=</span> <span class="n">__format_lines</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">ntext</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="k">if</span> <span class="n">strip_docstrings</span> <span class="ow">or</span> <span class="n">strip_comments</span><span class="p">:</span>
+            <span class="n">ntext</span> <span class="o">=</span> <span class="n">__strip_docstrings_and_comments</span><span class="p">(</span>
+                <span class="n">text</span><span class="p">,</span> <span class="n">strip_docstrings</span><span class="o">=</span><span class="n">strip_docstrings</span><span class="p">,</span>
+                <span class="n">strip_comments</span><span class="o">=</span><span class="n">strip_comments</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">strip_hints</span><span class="p">:</span>
+            <span class="n">ntext</span> <span class="o">=</span> <span class="n">__strip_hints</span><span class="p">(</span><span class="n">ntext</span><span class="p">,</span>
+                                  <span class="n">strip_comments</span><span class="o">=</span><span class="n">strip_comments</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ntext</span> <span class="o">!=</span> <span class="n">text</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">__format_lines</span><span class="p">(</span><span class="n">ntext</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">ntext</span>
+
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="n">new_len</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">not_first_run</span> <span class="ow">and</span> <span class="p">(</span><span class="n">old_len</span> <span class="o">&lt;=</span> <span class="n">new_len</span><span class="p">):</span>
+            <span class="k">break</span>
+
+        <span class="n">rcode</span> <span class="o">=</span> <span class="n">str_to_lines</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">shortest</span> <span class="o">=</span> <span class="n">rcode</span>
+        <span class="n">old_len</span> <span class="o">=</span> <span class="n">new_len</span>
+        <span class="n">not_first_run</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shortest</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">old_len</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Text cannot become </span><span class="si">{</span><span class="n">shortest</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">shortest</span></div>
+
+
+<div class="viewcode-block" id="preprocess_python"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.format_python.preprocess_python">[docs]</a><span class="k">def</span> <span class="nf">preprocess_python</span><span class="p">(</span><span class="n">code</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                      <span class="n">lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                      <span class="n">labels</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                      <span class="n">args</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Preprocess Python code.</span>
+
+<span class="sd">    First, we select all lines of the code we want to keep.</span>
+<span class="sd">    If labels are defined, then lines can be kept as ranges or as single</span>
+<span class="sd">    lines.</span>
+<span class="sd">    Otherwise, all lines are selected in this step.</span>
+
+<span class="sd">    Then, if line numbers are provided, we selected the lines based on the</span>
+<span class="sd">    line numbers from the lines we have preserved.</span>
+
+<span class="sd">    Finally, the Python formatter is applied.</span>
+
+<span class="sd">    :param code: the code loaded from a file</span>
+<span class="sd">    :param lines: the lines to keep, or `None` if we keep all</span>
+<span class="sd">    :param labels: a list of labels marking start and end of code snippets</span>
+<span class="sd">        to include</span>
+<span class="sd">    :param args: the arguments for the code formatter</span>
+<span class="sd">    :return: the formatted code string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">keep_lines</span> <span class="o">=</span> <span class="n">select_lines</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="n">code</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">lines</span><span class="o">=</span><span class="n">lines</span><span class="p">)</span>
+
+    <span class="c1"># set up arguments</span>
+    <span class="n">strip_docstrings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">strip_comments</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">strip_hints</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">do_format</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
+        <span class="n">do_format</span> <span class="o">=</span> <span class="s2">&quot;format&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span>
+        <span class="n">strip_docstrings</span> <span class="o">=</span> <span class="s2">&quot;doc&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span>
+        <span class="n">strip_comments</span> <span class="o">=</span> <span class="s2">&quot;comments&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span>
+        <span class="n">strip_hints</span> <span class="o">=</span> <span class="s2">&quot;hints&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">args</span>
+
+    <span class="k">if</span> <span class="n">do_format</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">lines_to_str</span><span class="p">(</span><span class="n">format_python</span><span class="p">(</span><span class="n">keep_lines</span><span class="p">,</span>
+                                          <span class="n">strip_docstrings</span><span class="o">=</span><span class="n">strip_docstrings</span><span class="p">,</span>
+                                          <span class="n">strip_comments</span><span class="o">=</span><span class="n">strip_comments</span><span class="p">,</span>
+                                          <span class="n">strip_hints</span><span class="o">=</span><span class="n">strip_hints</span><span class="p">),</span>
+                            <span class="n">trailing_newline</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lines_to_str</span><span class="p">(</span><span class="n">keep_lines</span><span class="p">,</span> <span class="n">trailing_newline</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.format_python</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

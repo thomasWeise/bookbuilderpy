@@ -1,0 +1,7 @@
+bookbuilderpy
+=============
+
+.. toctree::
+   :maxdepth: 4
+
+   bookbuilderpy

@@ -1,0 +1,7 @@
+bookbuilderpy.resources package
+===============================
+
+.. automodule:: bookbuilderpy.resources
+   :members:
+   :undoc-members:
+   :show-inheritance:

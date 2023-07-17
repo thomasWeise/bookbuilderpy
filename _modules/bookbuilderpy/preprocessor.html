@@ -1,0 +1,254 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.preprocessor &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/preprocessor.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.preprocessor</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.preprocessor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;The preprocessor commands to be applied once the text has been loaded.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Final</span>
+
+<span class="kn">import</span> <span class="nn">bookbuilderpy.constants</span> <span class="k">as</span> <span class="nn">bc</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.git</span> <span class="kn">import</span> <span class="n">Repo</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.path</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.preprocessor_code</span> <span class="kn">import</span> <span class="n">get_programming_language</span><span class="p">,</span> <span class="n">load_code</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.preprocessor_commands</span> <span class="kn">import</span> <span class="n">create_preprocessor</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.strings</span> <span class="kn">import</span> <span class="n">enforce_non_empty_str</span>
+
+
+<div class="viewcode-block" id="preprocess"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.preprocessor.preprocess">[docs]</a><span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+               <span class="n">input_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+               <span class="n">get_meta</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+               <span class="n">get_repo</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+               <span class="n">repo</span><span class="p">:</span> <span class="n">Repo</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply all the preprocessor commands to the given text.</span>
+
+<span class="sd">    :param text: the text of the book to be preprocessed.</span>
+<span class="sd">    :param input_dir: the input director</span>
+<span class="sd">    :param get_meta: a command for obtaining meta information.</span>
+<span class="sd">    :param get_repo: a command for obtaining a repository</span>
+<span class="sd">    :param repo: the root repository of the project</span>
+<span class="sd">    :param output_dir: the output directory</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">src</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">directory</span><span class="p">(</span><span class="n">input_dir</span><span class="p">)</span>
+    <span class="n">dst</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">directory</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">src</span><span class="o">.</span><span class="n">enforce_neither_contains</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span>
+
+    <span class="c1"># execute all meta-data commands</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="n">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_GET_META</span><span class="p">,</span>
+                                <span class="n">func</span><span class="o">=</span><span class="n">get_meta</span><span class="p">,</span>
+                                <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                <span class="n">strip_white_space</span><span class="o">=</span><span class="kc">False</span><span class="p">))(</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__get_repo</span><span class="p">(</span><span class="n">repo_id</span><span class="p">,</span> <span class="n">info_id</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">gitrepo</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Repo</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_repo</span><span class="p">(</span><span class="n">repo_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">info_id</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_URL</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gitrepo</span><span class="o">.</span><span class="n">get_base_url</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">info_id</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_DATE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gitrepo</span><span class="o">.</span><span class="n">date_time</span>
+        <span class="k">if</span> <span class="n">info_id</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_COMMIT</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gitrepo</span><span class="o">.</span><span class="n">commit</span>
+        <span class="k">if</span> <span class="n">info_id</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_NAME</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gitrepo</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid repo query &#39;</span><span class="si">{</span><span class="n">info_id</span><span class="si">}</span><span class="s2">&#39; for repo &#39;</span><span class="si">{</span><span class="n">repo_id</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># execute all repo-info commands</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="n">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_GET_REPO</span><span class="p">,</span>
+                                <span class="n">func</span><span class="o">=</span><span class="n">__get_repo</span><span class="p">,</span>
+                                <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                                <span class="n">strip_white_space</span><span class="o">=</span><span class="kc">False</span><span class="p">))(</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="c1"># make the definitions</span>
+    <span class="n">def_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">def_count</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">__make_def</span><span class="p">(</span><span class="n">deftype</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                   <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                   <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">nonlocal</span> <span class="n">def_map</span>
+        <span class="k">nonlocal</span> <span class="n">def_count</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">get_meta</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">deftype</span><span class="si">}</span><span class="s2">Title&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">def_count</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">deftype</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">def_count</span><span class="p">[</span><span class="n">deftype</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span>
+        <span class="n">anchor</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">&amp;nbsp;</span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">def_map</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Redefined label &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; of type &#39;</span><span class="si">{</span><span class="n">deftype</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="n">label_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;_def:</span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">def_map</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">anchor</span><span class="si">}</span><span class="s2">](#</span><span class="si">{</span><span class="n">label_name</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;div id=&quot;</span><span class="si">{</span><span class="n">label_name</span><span class="si">}</span><span class="s1">&quot;&gt;**</span><span class="si">{</span><span class="n">anchor</span><span class="si">}</span><span class="s1">.**&amp;nbsp;</span><span class="si">{</span><span class="n">body</span><span class="si">}</span><span class="s1">&lt;/div&gt;&#39;</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="n">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_DEFINITION</span><span class="p">,</span>
+                                <span class="n">func</span><span class="o">=</span><span class="n">__make_def</span><span class="p">,</span>
+                                <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                <span class="n">strip_white_space</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                <span class="n">wrap_in_newlines</span><span class="o">=</span><span class="mi">3</span><span class="p">))(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">def_count</span><span class="p">,</span> <span class="n">__make_def</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="n">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_DEF_REF</span><span class="p">,</span>
+                                <span class="n">func</span><span class="o">=</span><span class="n">def_map</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">,</span>
+                                <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                <span class="n">strip_white_space</span><span class="o">=</span><span class="kc">False</span><span class="p">))(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">def_map</span>
+
+    <span class="c1"># create all figures</span>
+    <span class="k">def</span> <span class="nf">__make_absolute_figure</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                               <span class="n">caption</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                               <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                               <span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">nonlocal</span> <span class="n">src</span>
+        <span class="k">nonlocal</span> <span class="n">dst</span>
+        <span class="n">new_path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">copy_resource</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+        <span class="n">caption</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">caption</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">use_path</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">new_path</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">enforce_non_empty_str</span><span class="p">(</span>
+            <span class="n">label</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span> <span class="n">args</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;![</span><span class="si">{</span><span class="n">caption</span><span class="si">}</span><span class="s2">](</span><span class="si">{</span><span class="n">use_path</span><span class="si">}</span><span class="s2">)</span><span class="se">{{</span><span class="s2">#fig:</span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="n">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_ABSOLUTE_FIGURE</span><span class="p">,</span>
+                                <span class="n">func</span><span class="o">=</span><span class="n">__make_absolute_figure</span><span class="p">,</span>
+                                <span class="n">n</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">strip_white_space</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                <span class="n">wrap_in_newlines</span><span class="o">=</span><span class="mi">2</span><span class="p">))(</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="c1"># make a code section</span>
+    <span class="k">def</span> <span class="nf">__make_code</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">caption</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                    <span class="n">userepo</span><span class="p">:</span> <span class="n">Repo</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">code</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">label</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">code</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">plang</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">get_programming_language</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">plang</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">plang</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot; .</span><span class="si">{</span><span class="n">plang</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">caption</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">caption</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">spacer</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">caption</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">caption</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Below, we check first whether the text ends in a Chinese punctuation</span>
+        <span class="c1"># mark and if it does not, if it ends in a Western one.</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;</span><span class="se">\u3001\u3002\u3003\u3009\u300b\u300d\u3011\u3015\u3017</span><span class="s2">&quot;</span>
+                   <span class="s2">&quot;</span><span class="se">\u3019\u301b\u301e\ufe16\ufe57\uff01\uff1f\uff61\uff64</span><span class="s2">&quot;</span><span class="p">):</span>
+            <span class="n">spacer</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">elif</span> <span class="n">end</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s2">&quot;.;!?)]}</span><span class="se">\&quot;</span><span class="s2">&#39;</span><span class="se">\u00a1\u00b7\u00bf\u037e\u0387</span><span class="s2">&quot;</span><span class="p">:</span>
+            <span class="n">caption</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">caption</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">if</span> <span class="n">userepo</span><span class="p">:</span>
+            <span class="n">userepo</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">enforce_contains</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">userepo</span><span class="o">.</span><span class="n">make_url</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">userepo</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">caption</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">caption</span><span class="si">}{</span><span class="n">spacer</span><span class="si">}</span><span class="s2">([src](</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">))&quot;</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Listing: </span><span class="si">{</span><span class="n">caption</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;```</span><span class="se">{{</span><span class="s2">#lst:</span><span class="si">{</span><span class="n">label</span><span class="si">}{</span><span class="n">plang</span><span class="si">}</span><span class="s2"> .numberLines</span><span class="se">}}\n</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="se">\n</span><span class="s2">```&quot;</span><span class="p">)</span>
+
+    <span class="c1"># create all local code</span>
+    <span class="k">def</span> <span class="nf">__make_absolute_code</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">caption</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                             <span class="n">labels</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">nonlocal</span> <span class="n">src</span>
+        <span class="n">file</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">src</span><span class="o">.</span><span class="n">enforce_contains</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">load_code</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">lines</span><span class="o">=</span><span class="n">lines</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">__make_code</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">caption</span><span class="o">=</span><span class="n">caption</span><span class="p">,</span>
+                           <span class="n">code</span><span class="o">=</span><span class="n">code</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">,</span> <span class="n">userepo</span><span class="o">=</span><span class="n">repo</span><span class="p">)</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="n">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_ABSOLUTE_CODE</span><span class="p">,</span>
+                                <span class="n">func</span><span class="o">=</span><span class="n">__make_absolute_code</span><span class="p">,</span>
+                                <span class="n">n</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">strip_white_space</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                <span class="n">wrap_in_newlines</span><span class="o">=</span><span class="mi">2</span><span class="p">))(</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="c1"># create all git code</span>
+    <span class="k">def</span> <span class="nf">__make_git_code</span><span class="p">(</span><span class="n">repoid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">caption</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                        <span class="n">lines</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">userepo</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Repo</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_repo</span><span class="p">(</span><span class="n">repoid</span><span class="p">)</span>
+        <span class="n">file</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">userepo</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">enforce_file</span><span class="p">()</span>
+        <span class="n">userepo</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">enforce_contains</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="n">load_code</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">lines</span><span class="o">=</span><span class="n">lines</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">__make_code</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">caption</span><span class="o">=</span><span class="n">caption</span><span class="p">,</span>
+                           <span class="n">code</span><span class="o">=</span><span class="n">code</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">,</span> <span class="n">userepo</span><span class="o">=</span><span class="n">userepo</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">CMD_GIT_CODE</span><span class="p">,</span>
+                                <span class="n">func</span><span class="o">=</span><span class="n">__make_git_code</span><span class="p">,</span>
+                                <span class="n">n</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">strip_white_space</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                <span class="n">wrap_in_newlines</span><span class="o">=</span><span class="mi">2</span><span class="p">))(</span><span class="n">text</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.preprocessor</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

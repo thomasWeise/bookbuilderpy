@@ -1,0 +1,680 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.build &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/build.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.build</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.build</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;The build process: The main class of the book building tool chain.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">traceback</span> <span class="k">as</span> <span class="nn">tb</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">AbstractContextManager</span><span class="p">,</span> <span class="n">ExitStack</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">basename</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">Iterable</span>
+
+<span class="kn">import</span> <span class="nn">bookbuilderpy.constants</span> <span class="k">as</span> <span class="nn">bc</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.build_result</span> <span class="kn">import</span> <span class="n">File</span><span class="p">,</span> <span class="n">LangResult</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.compress</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">can_xz_compress</span><span class="p">,</span>
+    <span class="n">can_zip_compress</span><span class="p">,</span>
+    <span class="n">compress_xz</span><span class="p">,</span>
+    <span class="n">compress_zip</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.git</span> <span class="kn">import</span> <span class="n">Repo</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.logger</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.pandoc</span> <span class="kn">import</span> <span class="n">azw3</span><span class="p">,</span> <span class="n">epub</span><span class="p">,</span> <span class="n">html</span><span class="p">,</span> <span class="n">latex</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.parse_metadata</span> <span class="kn">import</span> <span class="n">load_initial_metadata</span><span class="p">,</span> <span class="n">parse_metadata</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.path</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.preprocessor</span> <span class="kn">import</span> <span class="n">preprocess</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.preprocessor_input</span> <span class="kn">import</span> <span class="n">load_input</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.resources</span> <span class="kn">import</span> <span class="n">load_resource</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.strings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">datetime_to_date_str</span><span class="p">,</span>
+    <span class="n">datetime_to_datetime_str</span><span class="p">,</span>
+    <span class="n">enforce_non_empty_str</span><span class="p">,</span>
+    <span class="n">enforce_non_empty_str_without_ws</span><span class="p">,</span>
+    <span class="n">lang_to_locale</span><span class="p">,</span>
+    <span class="n">to_string</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.temp</span> <span class="kn">import</span> <span class="n">TempDir</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.types</span> <span class="kn">import</span> <span class="n">type_error</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.versions</span> <span class="kn">import</span> <span class="n">TOOL_PANDOC</span><span class="p">,</span> <span class="n">get_versions</span><span class="p">,</span> <span class="n">has_tool</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.website</span> <span class="kn">import</span> <span class="n">build_website</span>
+
+
+<div class="viewcode-block" id="Build"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.Build">[docs]</a><span class="k">class</span> <span class="nc">Build</span><span class="p">(</span><span class="n">AbstractContextManager</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class to keep and access information about the build process.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">input_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">fail_without_pandoc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set up the build.</span>
+
+<span class="sd">        :param input_file: the input file</span>
+<span class="sd">        :param output_dir: the output dir</span>
+<span class="sd">        :param fail_without_pandoc: fail if pandoc is not available?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1">#: the start time</span>
+        <span class="n">tz</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__start</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz</span><span class="p">)</span>
+        <span class="c1">#: the internal exit stack</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__exit</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">ExitStack</span><span class="p">]</span> <span class="o">=</span> <span class="n">ExitStack</span><span class="p">()</span>
+        <span class="c1">#: the input file path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="c1">#: the input directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span><span class="o">.</span><span class="n">as_directory</span><span class="p">()</span>
+        <span class="c1">#: the output directory path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span><span class="o">.</span><span class="n">ensure_dir_exists</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span><span class="o">.</span><span class="n">enforce_neither_contains</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="p">)</span>
+        <span class="c1">#: are we open for business?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1">#: the start date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__start_date</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime_to_date_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__start</span><span class="p">)</span>
+        <span class="c1">#: the start date and time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__start_time</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime_to_datetime_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__start</span><span class="p">)</span>
+        <span class="c1">#: the start year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__start_year</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__start</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y&quot;</span><span class="p">)</span>
+        <span class="c1">#: the raw metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_raw</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1">#: the language-specific metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1">#: the mapping of urls to repositories</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__repo_urls</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Repo</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1">#: the mapping of repo IDs to repositories</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__repo_ids</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Repo</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1">#: the internal collection of build results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">LangResult</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#: the own repository information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__repo</span><span class="p">:</span> <span class="n">Repo</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1">#: fail if pandoc is not available?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__fail_without_pandoc</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">fail_without_pandoc</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">input_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the input directory.</span>
+
+<span class="sd">        :return: the input directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">input_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the input file.</span>
+
+<span class="sd">        :return: the input file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the output directory.</span>
+
+<span class="sd">        :return: the output directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span>
+
+    <span class="k">def</span> <span class="nf">__get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">raise_on_none</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a meta-data element.</span>
+
+<span class="sd">        :param key: the key</span>
+<span class="sd">        :param raise_on_none: should we raise an error if the property</span>
+<span class="sd">            was not found (True) or return None (False)?</span>
+<span class="sd">        :return: the meta-data element</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;key&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_DATE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__start_date</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_DATE_TIME</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__start_time</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_YEAR</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__start_year</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_raw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_raw</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_raw</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="c1"># If no meta data language properties are set: return default values.</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_LANG</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;en&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_LOCALE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">lang_to_locale</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LANG</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LANG_NAME</span><span class="p">,</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_CUR_LANG_NAME</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s2">&quot;English&quot;</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_URL</span><span class="p">,</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_DATE</span><span class="p">,</span>
+                   <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_COMMIT</span><span class="p">,</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_NAME</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">raise_on_none</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Cannot access </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> if build is not based on repo.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_URL</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo</span><span class="o">.</span><span class="n">get_base_url</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_DATE</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo</span><span class="o">.</span><span class="n">date_time</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_INFO_COMMIT</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo</span><span class="o">.</span><span class="n">commit</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo</span><span class="o">.</span><span class="n">get_name</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">raise_on_none</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Metadata key &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__get_meta_no_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a metadata element without raising an error if it is not present.</span>
+
+<span class="sd">        :param key: the key</span>
+<span class="sd">        :return: the metadata element, or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_meta</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Build.get_meta"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.Build.get_meta">[docs]</a>    <span class="k">def</span> <span class="nf">get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a meta-data element.</span>
+
+<span class="sd">        :param key: the key</span>
+<span class="sd">        :return: the meta-data element</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_meta</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Build.get_meta_str"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.Build.get_meta_str">[docs]</a>    <span class="k">def</span> <span class="nf">get_meta_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a meta-data element as a string.</span>
+
+<span class="sd">        :param key: the key</span>
+<span class="sd">        :return: the meta-data element</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">to_string</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_meta</span><span class="p">(</span><span class="n">key</span><span class="p">),</span>
+                         <span class="n">locale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LOCALE</span><span class="p">),</span>
+                         <span class="n">use_seq_and</span><span class="o">=</span><span class="n">key</span> <span class="o">==</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_AUTHOR</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__load_repo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Make the repository at the specified url available under the given id.</span>
+
+<span class="sd">        :param name: the repository name</span>
+<span class="sd">        :param url: the repository url</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo_ids</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo_ids</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">url</span> <span class="o">==</span> <span class="n">url</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo_ids</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">url</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo_urls</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__repo_ids</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo_urls</span><span class="p">[</span><span class="n">url</span><span class="p">]</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="n">TempDir</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__exit</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">Repo</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__repo_ids</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__repo_urls</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+
+    <span class="k">def</span> <span class="nf">__load_repos_from_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load the repositories listed in the metadata.</span>
+
+<span class="sd">        :param meta: the metadata</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="s2">&quot;meta&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;checking metadata for repositories.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPOS</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
+            <span class="n">repo_list</span> <span class="o">=</span> <span class="n">meta</span><span class="p">[</span><span class="n">bc</span><span class="o">.</span><span class="n">META_REPOS</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">repo_list</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span>
+                    <span class="n">repo_list</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;meta[</span><span class="si">{</span><span class="n">bc</span><span class="o">.</span><span class="n">META_REPOS</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">repo</span> <span class="ow">in</span> <span class="n">repo_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_ID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">repo</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;repo </span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2"> must include &#39;</span><span class="si">{</span><span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_ID</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_URL</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">repo</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;repo </span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2"> must include &#39;</span><span class="si">{</span><span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_URL</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__load_repo</span><span class="p">(</span><span class="n">repo</span><span class="p">[</span><span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_ID</span><span class="p">],</span>
+                                 <span class="n">repo</span><span class="p">[</span><span class="n">bc</span><span class="o">.</span><span class="n">META_REPO_URL</span><span class="p">])</span>
+
+<div class="viewcode-block" id="Build.get_repo"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.Build.get_repo">[docs]</a>    <span class="k">def</span> <span class="nf">get_repo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Repo</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a repository of the given name.</span>
+
+<span class="sd">        :param name: the repository name</span>
+<span class="sd">        :return: the repository structure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo_ids</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown repository &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repo_ids</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">Repo</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;invalid repository &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;?&quot;</span><span class="p">,</span> <span class="n">Repo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r</span></div>
+
+    <span class="k">def</span> <span class="nf">__get_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get an internal build resource to a directory.</span>
+
+<span class="sd">        :param name: the resource name</span>
+<span class="sd">        :param directory: the destination path</span>
+<span class="sd">        :return: the path to the resource, or None if none was copied</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">load_resource</span><span class="p">(</span><span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">name</span><span class="p">),</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="p">,</span> <span class="n">directory</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__pandoc_build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                       <span class="n">input_file</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                       <span class="n">output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                       <span class="n">lang_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+                       <span class="n">lang_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+                       <span class="n">has_bibliography</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply pandoc and build the input file to the output dir.</span>
+
+<span class="sd">        :param input_file: the path to the input file</span>
+<span class="sd">        :param output_dir: the path to the output directory</span>
+<span class="sd">        :param lang_id: the language ID</span>
+<span class="sd">        :param lang_name: the language name</span>
+<span class="sd">        :param has_bibliography: is there a bibliography?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_tool</span><span class="p">(</span><span class="n">TOOL_PANDOC</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fail_without_pandoc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pandoc not installed.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;now invoking pandoc build steps to file &#39;</span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;with target director &#39;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&#39; for lang-id &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">lang_id</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="n">input_file</span><span class="o">.</span><span class="n">enforce_file</span><span class="p">()</span>
+        <span class="n">output_dir</span><span class="o">.</span><span class="n">enforce_dir</span><span class="p">()</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">split_prefix_suffix</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">input_file</span><span class="p">))</span>
+        <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">File</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LOCALE</span><span class="p">)</span>
+
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">latex</span><span class="p">(</span>
+            <span class="n">source_file</span><span class="o">=</span><span class="n">input_file</span><span class="p">,</span>
+            <span class="n">dest_file</span><span class="o">=</span><span class="n">output_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.pdf&quot;</span><span class="p">),</span>
+            <span class="n">locale</span><span class="o">=</span><span class="n">locale</span><span class="p">,</span>
+            <span class="n">bibliography</span><span class="o">=</span><span class="n">has_bibliography</span><span class="p">,</span>
+            <span class="n">get_meta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">,</span>
+            <span class="n">resolve_resources</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_resource</span><span class="p">))</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">html</span><span class="p">(</span>
+            <span class="n">source_file</span><span class="o">=</span><span class="n">input_file</span><span class="p">,</span>
+            <span class="n">dest_file</span><span class="o">=</span><span class="n">output_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.html&quot;</span><span class="p">),</span>
+            <span class="n">locale</span><span class="o">=</span><span class="n">locale</span><span class="p">,</span>
+            <span class="n">bibliography</span><span class="o">=</span><span class="n">has_bibliography</span><span class="p">,</span>
+            <span class="n">get_meta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">,</span>
+            <span class="n">resolve_resources</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_resource</span><span class="p">))</span>
+        <span class="n">epub_res</span> <span class="o">=</span> <span class="n">epub</span><span class="p">(</span>
+            <span class="n">source_file</span><span class="o">=</span><span class="n">input_file</span><span class="p">,</span>
+            <span class="n">dest_file</span><span class="o">=</span><span class="n">output_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.epub&quot;</span><span class="p">),</span>
+            <span class="n">locale</span><span class="o">=</span><span class="n">locale</span><span class="p">,</span>
+            <span class="n">bibliography</span><span class="o">=</span><span class="n">has_bibliography</span><span class="p">,</span>
+            <span class="n">get_meta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">,</span>
+            <span class="n">resolve_resources</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__get_resource</span><span class="p">)</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epub_res</span><span class="p">)</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">azw3</span><span class="p">(</span><span class="n">epub_res</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+
+        <span class="c1"># now trying to create compressed versions</span>
+        <span class="k">if</span> <span class="n">can_xz_compress</span><span class="p">():</span>
+            <span class="n">tar_xz</span> <span class="o">=</span> <span class="n">compress_xz</span><span class="p">(</span><span class="n">results</span><span class="p">,</span>
+                                 <span class="n">output_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.tar.xz&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tar_xz</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">can_zip_compress</span><span class="p">():</span>
+            <span class="n">zipf</span> <span class="o">=</span> <span class="n">compress_zip</span><span class="p">(</span><span class="n">results</span><span class="p">,</span>
+                                <span class="n">output_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">zipf</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">tar_xz</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tar_xz</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">zipf</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">zipf</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;finished pandoc build steps to file &#39;</span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;with target director &#39;</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&#39; for lang-id &#39;</span><span class="si">{</span><span class="n">lang_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;, produced </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span><span class="si">}</span><span class="s2"> files.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LangResult</span><span class="p">(</span><span class="n">lang_id</span><span class="p">,</span> <span class="n">lang_name</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span>
+                                         <span class="nb">tuple</span><span class="p">(</span><span class="n">results</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">__build_one_lang</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">lang_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+                         <span class="n">lang_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+                         <span class="n">use_lang_id_as_suffix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform the book build for one language.</span>
+
+<span class="sd">        :param lang_id: the language ID</span>
+<span class="sd">        :param lang_name: the language name</span>
+<span class="sd">        :param use_lang_id_as_suffix: should we use the language id as</span>
+<span class="sd">            file name suffix?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Start up and define the output directory.</span>
+        <span class="k">if</span> <span class="n">lang_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;beginning build with no language set.&quot;</span><span class="p">)</span>
+            <span class="n">base_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span>
+            <span class="k">if</span> <span class="n">lang_name</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot have language name &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">lang_name</span><span class="si">}</span><span class="s2">&#39; but no language id!&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">use_lang_id_as_suffix</span><span class="p">:</span>
+            <span class="n">lang_id</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">lang_id</span><span class="p">)</span>
+            <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;beginning multi-language build for language </span><span class="si">{</span><span class="n">lang_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">base_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="n">lang_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lang_name</span><span class="p">:</span>
+                <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">lang_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;beginning single-language build in language </span><span class="si">{</span><span class="n">lang_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">base_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span>
+            <span class="k">if</span> <span class="n">lang_name</span><span class="p">:</span>
+                <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">lang_name</span><span class="p">)</span>
+        <span class="n">base_dir</span><span class="o">.</span><span class="n">ensure_dir_exists</span><span class="p">()</span>
+
+        <span class="c1"># First obtain the full language-specific input text.</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span>
+            <span class="n">load_input</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="p">,</span> <span class="n">lang_id</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+
+        <span class="c1"># Then we extract the meta-data.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span> <span class="o">=</span> <span class="n">parse_metadata</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;done parsing metadata.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lang_id</span><span class="p">:</span>
+            <span class="c1"># We set up the language id and lange name meta data properties.</span>
+            <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_LANG</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span><span class="p">[</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LANG</span><span class="p">]</span> <span class="o">=</span> <span class="n">lang_id</span>
+            <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_CUR_LANG_NAME</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span><span class="p">[</span><span class="n">bc</span><span class="o">.</span><span class="n">META_CUR_LANG_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="n">lang_name</span>
+
+        <span class="c1"># Then load the repositories from the meta data.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__load_repos_from_meta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">TempDir</span><span class="o">.</span><span class="n">create</span><span class="p">()</span> <span class="k">as</span> <span class="n">temp</span><span class="p">:</span>
+            <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;building in temp directory &#39;</span><span class="si">{</span><span class="n">temp</span><span class="si">}</span><span class="s2">&#39;: &quot;</span>
+                   <span class="s2">&quot;first applying preprocessor.&quot;</span><span class="p">)</span>
+
+            <span class="n">text</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">preprocess</span><span class="p">(</span>
+                <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">input_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dir</span><span class="p">,</span>
+                <span class="n">get_meta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_meta_str</span><span class="p">,</span> <span class="n">get_repo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_repo</span><span class="p">,</span>
+                <span class="n">repo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__repo</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">temp</span><span class="p">))</span>
+            <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;finished applying preprocessor.&quot;</span><span class="p">)</span>
+
+            <span class="n">has_bibliography</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">bib</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_BIBLIOGRAPHY</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bib</span><span class="p">:</span>
+                <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;found bibliography spec &#39;</span><span class="si">{</span><span class="n">bib</span><span class="si">}</span><span class="s2">&#39;, so we load it.&quot;</span><span class="p">)</span>
+                <span class="n">Path</span><span class="o">.</span><span class="n">copy_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="n">bib</span><span class="p">),</span>
+                                   <span class="n">temp</span><span class="p">)</span>
+                <span class="n">has_bibliography</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">prefix</span><span class="p">,</span> <span class="n">suffix</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">split_prefix_suffix</span><span class="p">(</span>
+                <span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">use_lang_id_as_suffix</span><span class="p">:</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">lang_id</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">end</span><span class="p">):</span>
+                    <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">end</span>
+            <span class="n">file</span> <span class="o">=</span> <span class="n">temp</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;finished applying preprocessor, now storing &quot;</span>
+                   <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters to file &#39;</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">write_all</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">suffix</span><span class="p">,</span> <span class="n">text</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__pandoc_build</span><span class="p">(</span><span class="n">input_file</span><span class="o">=</span><span class="n">file</span><span class="p">,</span>
+                                <span class="n">output_dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">,</span>
+                                <span class="n">lang_id</span><span class="o">=</span><span class="n">lang_id</span><span class="p">,</span>
+                                <span class="n">lang_name</span><span class="o">=</span><span class="n">lang_name</span><span class="p">,</span>
+                                <span class="n">has_bibliography</span><span class="o">=</span><span class="n">has_bibliography</span><span class="p">)</span>
+
+        <span class="c1"># Finalize the build.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_lang</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">lang_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;finished build with no language set.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;finished build in language </span><span class="si">{</span><span class="n">lang_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__load_self_repo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attempt to load the self repository information.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;checking if build process is based on git checkout.&quot;</span><span class="p">)</span>
+        <span class="n">check</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">check</span> <span class="o">==</span> <span class="s2">&quot;/&quot;</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">check</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">R_OK</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check</span><span class="p">,</span> <span class="s2">&quot;.git&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">test</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__repo</span> <span class="o">=</span> <span class="n">Repo</span><span class="o">.</span><span class="n">from_local</span><span class="p">(</span><span class="n">check</span><span class="p">)</span>
+                <span class="n">logger</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;build process is based on commit &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__repo</span><span class="o">.</span><span class="n">commit</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; of repo &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__repo</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="n">check</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">check</span><span class="p">,</span> <span class="s2">&quot;..&quot;</span><span class="p">))</span>
+        <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;build process is not based on git checkout.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__build_all_langs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform all the book build steps.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;beginning the build loop for all languages.&quot;</span><span class="p">)</span>
+        <span class="n">no_lang</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">META_LANGS</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_raw</span><span class="p">:</span>
+            <span class="n">langs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_raw</span><span class="p">[</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LANGS</span><span class="p">]</span>
+            <span class="n">done</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">langs</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span>
+                    <span class="n">langs</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;self.__metadata_raw[</span><span class="si">{</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LANGS</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+            <span class="n">llangs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">langs</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">lang</span> <span class="ow">in</span> <span class="n">llangs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lang</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">lang</span><span class="p">,</span> <span class="s2">&quot;item of llangs&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+                <span class="n">lang_id</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span>
+                    <span class="n">lang</span><span class="p">[</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LANG_ID</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">lang_id</span> <span class="ow">in</span> <span class="n">done</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate language id &#39;</span><span class="si">{</span><span class="n">lang_id</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+                <span class="n">done</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lang_id</span><span class="p">)</span>
+                <span class="n">lang_name</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">enforce_non_empty_str</span><span class="p">(</span>
+                    <span class="n">lang</span><span class="p">[</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LANG_NAME</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__build_one_lang</span><span class="p">(</span><span class="n">lang_id</span><span class="p">,</span> <span class="n">lang_name</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">llangs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">no_lang</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">no_lang</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_one_lang</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">META_LANG</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;finished the build loop for all languages.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__build_website</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the website, if any.&quot;&quot;&quot;</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">META_WEBSITE_OUTER</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">template</span><span class="p">:</span>
+            <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;found website template spec &#39;</span><span class="si">{</span><span class="n">template</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+            <span class="n">body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_meta_no_error</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">META_WEBSITE_BODY</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">body</span><span class="p">:</span>
+                <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;found website body spec &#39;</span><span class="si">{</span><span class="n">body</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+                <span class="n">body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dir</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+            <span class="n">build_website</span><span class="p">(</span><span class="n">docs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__results</span><span class="p">,</span>
+                          <span class="n">outer_file</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
+                          <span class="n">body_file</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+                          <span class="n">dest_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span><span class="p">,</span>
+                          <span class="n">input_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="p">,</span>
+                          <span class="n">get_meta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_meta_str</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Build.build"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.Build.build">[docs]</a>    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">LangResult</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform the build.</span>
+
+<span class="sd">        :returns: the results</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;starting the build process for input file &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span><span class="si">}</span><span class="s2">&#39;, input dir &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="si">}</span><span class="s2">&#39;, and &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;output dir &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span><span class="si">}</span><span class="s2">&#39; with the following tool &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;versions:</span><span class="se">\n</span><span class="si">{</span><span class="n">get_versions</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__load_self_repo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__metadata_raw</span> <span class="o">=</span> <span class="n">load_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">__input_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__load_repos_from_meta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__metadata_raw</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__build_all_langs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__build_website</span><span class="p">()</span>
+        <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;build process completed, created &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">results</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">__results</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;book files in total for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__results</span><span class="p">)</span><span class="si">}</span><span class="s2"> language(s).&quot;</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__results</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Did not build any results.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Build&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Nothing, just exists for `with`.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Build already closed.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;starting the build of &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;to &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete the temporary directory and everything in it.</span>
+
+<span class="sd">        :param exception_type: ignored</span>
+<span class="sd">        :param exception_value: ignored</span>
+<span class="sd">        :param traceback: ignored</span>
+<span class="sd">        :returns: `True` to suppress an exception, `False` to rethrow it</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">opn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">opn</span><span class="p">:</span>
+            <span class="n">logger</span><span class="p">(</span><span class="s2">&quot;cleaning up temporary files.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__exit</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;finished the build of &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__input_file</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+                   <span class="sa">f</span><span class="s2">&quot;to &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__output_dir</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">exception_value</span>
+        <span class="k">del</span> <span class="n">traceback</span>
+        <span class="k">return</span> <span class="n">exception_type</span> <span class="ow">is</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Build.run"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.Build.run">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">input_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">exit_on_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">LangResult</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run a build on an input file to an output directory.</span>
+
+<span class="sd">        :param input_file: the input file</span>
+<span class="sd">        :param output_dir: the output directory</span>
+<span class="sd">        :param exit_on_error: should we quit Python upon error?</span>
+<span class="sd">        :return: a tuple of results</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">Build</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">bd</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">bd</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">be</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="n">exinfo</span> <span class="o">=</span> <span class="s2">&quot;  &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">be</span><span class="p">),</span>
+                                                   <span class="n">value</span><span class="o">=</span><span class="n">be</span><span class="p">,</span>
+                                                   <span class="n">tb</span><span class="o">=</span><span class="n">be</span><span class="o">.</span><span class="n">__traceback__</span><span class="p">))</span>
+            <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The build process has FAILED with error &#39;</span><span class="si">{</span><span class="n">be</span><span class="si">}</span><span class="s2">&#39;:&quot;</span>
+                   <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  </span><span class="si">{</span><span class="n">exinfo</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">exit_on_error</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">be</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="k">raise</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span> <span class="kn">from</span> <span class="nn">be</span>
+        <span class="k">return</span> <span class="n">res</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.build</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,170 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.pdf &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/pdf.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.pdf</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.pdf</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Post-process PDF files.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">exists</span>
+
+<span class="kn">from</span> <span class="nn">bookbuilderpy.logger</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.path</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.shell</span> <span class="kn">import</span> <span class="n">shell</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.versions</span> <span class="kn">import</span> <span class="n">TOOL_GHOSTSCRIPT</span><span class="p">,</span> <span class="n">has_tool</span>
+
+
+<div class="viewcode-block" id="pdf_postprocess"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.pdf.pdf_postprocess">[docs]</a><span class="k">def</span> <span class="nf">pdf_postprocess</span><span class="p">(</span><span class="n">in_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                    <span class="n">out_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                    <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Post-process a pdf file.</span>
+
+<span class="sd">    :param in_file: the input file</span>
+<span class="sd">    :param out_file: the output file</span>
+<span class="sd">    :param overwrite: should the output file be overwritten if it exists?</span>
+<span class="sd">    :return: the output file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="n">in_file</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">overwrite</span><span class="p">)</span> <span class="ow">and</span> <span class="n">exists</span><span class="p">(</span><span class="n">output</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output file &#39;</span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&#39; already exists.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">source</span> <span class="o">==</span> <span class="n">output</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input and output file is the same: &#39;</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">has_tool</span><span class="p">(</span><span class="n">TOOL_GHOSTSCRIPT</span><span class="p">):</span>
+        <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Post-processing pdf file &#39;</span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">&#39; to &#39;</span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;by applying &#39;</span><span class="si">{</span><span class="n">TOOL_GHOSTSCRIPT</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="n">TOOL_GHOSTSCRIPT</span><span class="p">,</span>
+               <span class="s2">&quot;-q&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPrinted=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dEmbedAllFonts=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dSubsetFonts=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dCompressFonts=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dCompressStreams=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dOptimize=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dUNROLLFORMS&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dCompatibilityLevel=1.7&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dLZWEncodePages=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dCompressPages=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPassThroughJPEGImages=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPassThroughJPXImages=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dCannotEmbedFontPolicy=/Error&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPreserveCopyPage=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPreserveEPSInfo=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPreserveHalftoneInfo=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPreserveOPIComments=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPreserveOverprintSettings=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPreserveSeparation=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dPreserveDeviceN=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dMaxBitmap=2147483647&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dDownsampleMonoImages=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dDownsampleGrayImages=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dDownsampleColorImages=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dDetectDuplicateImages=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dHaveTransparency=true&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dAutoFilterColorImages=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dAutoFilterGrayImages=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dColorImageFilter=/FlateEncode&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dGrayImageFilter=/FlateEncode&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dColorConversionStrategy=/LeaveColorUnchanged&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dFastWebView=false&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dNOPAUSE&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dQUIET&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dBATCH&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dSAFER&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-sDEVICE=pdfwrite&quot;</span><span class="p">,</span>
+               <span class="s2">&quot;-dAutoRotatePages=/PageByPage&quot;</span><span class="p">,</span>
+               <span class="sa">f</span><span class="s1">&#39;-sOutputFile=&quot;</span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+               <span class="n">source</span><span class="p">,</span>
+               <span class="s1">&#39;-c &quot;&lt;&lt;/NeverEmbed [ ]&gt;&gt; setdistillerparams&quot;&#39;</span><span class="p">]</span>
+        <span class="n">shell</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">dirname</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">TOOL_GHOSTSCRIPT</span><span class="si">}</span><span class="s2">&#39; not installed, copying files directly.&quot;</span><span class="p">)</span>
+        <span class="n">Path</span><span class="o">.</span><span class="n">copy_file</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+
+    <span class="n">output</span><span class="o">.</span><span class="n">enforce_file</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.pdf</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

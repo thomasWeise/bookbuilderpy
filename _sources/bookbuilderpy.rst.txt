@@ -1,0 +1,218 @@
+bookbuilderpy package
+=====================
+
+.. automodule:: bookbuilderpy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   bookbuilderpy.resources
+
+Submodules
+----------
+
+bookbuilderpy.build module
+--------------------------
+
+.. automodule:: bookbuilderpy.build
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.build\_result module
+----------------------------------
+
+.. automodule:: bookbuilderpy.build_result
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.compress module
+-----------------------------
+
+.. automodule:: bookbuilderpy.compress
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.constants module
+------------------------------
+
+.. automodule:: bookbuilderpy.constants
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.format\_python module
+-----------------------------------
+
+.. automodule:: bookbuilderpy.format_python
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.git module
+------------------------
+
+.. automodule:: bookbuilderpy.git
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.html module
+-------------------------
+
+.. automodule:: bookbuilderpy.html
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.logger module
+---------------------------
+
+.. automodule:: bookbuilderpy.logger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.pandoc module
+---------------------------
+
+.. automodule:: bookbuilderpy.pandoc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.parse\_metadata module
+------------------------------------
+
+.. automodule:: bookbuilderpy.parse_metadata
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.path module
+-------------------------
+
+.. automodule:: bookbuilderpy.path
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.pdf module
+------------------------
+
+.. automodule:: bookbuilderpy.pdf
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.preprocessor module
+---------------------------------
+
+.. automodule:: bookbuilderpy.preprocessor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.preprocessor\_code module
+---------------------------------------
+
+.. automodule:: bookbuilderpy.preprocessor_code
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.preprocessor\_commands module
+-------------------------------------------
+
+.. automodule:: bookbuilderpy.preprocessor_commands
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.preprocessor\_input module
+----------------------------------------
+
+.. automodule:: bookbuilderpy.preprocessor_input
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.shell module
+--------------------------
+
+.. automodule:: bookbuilderpy.shell
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.source\_tools module
+----------------------------------
+
+.. automodule:: bookbuilderpy.source_tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.strings module
+----------------------------
+
+.. automodule:: bookbuilderpy.strings
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.temp module
+-------------------------
+
+.. automodule:: bookbuilderpy.temp
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.types module
+--------------------------
+
+.. automodule:: bookbuilderpy.types
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.url module
+------------------------
+
+.. automodule:: bookbuilderpy.url
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.version module
+----------------------------
+
+.. automodule:: bookbuilderpy.version
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.versions module
+-----------------------------
+
+.. automodule:: bookbuilderpy.versions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bookbuilderpy.website module
+----------------------------
+
+.. automodule:: bookbuilderpy.website
+   :members:
+   :undoc-members:
+   :show-inheritance:

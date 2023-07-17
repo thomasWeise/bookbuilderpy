@@ -1,0 +1,1027 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>1. Introduction &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="/bookbuilderpy/_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="/bookbuilderpy/_static/bizstyle.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="/bookbuilderpy/_static/documentation_options.js"></script>
+    <script src="/bookbuilderpy/_static/doctools.js"></script>
+    <script src="/bookbuilderpy/_static/sphinx_highlight.js"></script>
+    <script src="/bookbuilderpy/_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/README.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">1. Introduction</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <p><a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy/actions/workflows/build.yaml"><img alt="make build" src="https://github.com/thomasWeise/bookbuilderpy/actions/workflows/build.yaml/badge.svg" /></a>
+<a class="reference external" href="https://pypistats.org/packages/bookbuilderpy"><img alt="pypi downloads" src="https://img.shields.io/pypi/dw/bookbuilderpy.svg" /></a>
+<a class="reference external" href="https://thomasweise.github.io/bookbuilderpy/tc/index.html"><img alt="coverage report" src="https://thomasweise.github.io/bookbuilderpy/tc/badge.svg" /></a></p>
+<section id="introduction">
+<h1>1. Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">¶</a></h1>
+<p>The goal of this package is to provide you with a pipeline that can:</p>
+<ul class="simple">
+<li><p>automatically compile books written in <a class="reference external" href="https://pandoc.org/MANUAL.html#pandocs-markdown">markdown</a> to formats such as <a class="reference external" href="https://www.iso.org/standard/75839.html">pdf</a>, stand-alone <a class="reference external" href="https://www.w3.org/TR/html5/">html</a>,
+<a class="reference external" href="https://www.w3.org/publishing/epub32/">epub</a>, and <a class="reference external" href="https://kindlegen.s3.amazonaws.com/AmazonKindlePublishingGuidelines.pdf">azw3</a>,</p></li>
+<li><p>support a hierarchical file structure for the book sources, i.e., allow you divide the book into chapters in folders which can contain sub-folders with sections and sub-sub-folders with sub-sections,</p></li>
+<li><p>support the automatic download and inclusion of code snippets from <a class="reference external" href="https://git-scm.com">git repositories</a>,</p></li>
+<li><p>allow the book to be written in multiple languages, and finally</p></li>
+<li><p>automatically generate a website that lists all produced files so that you can copy everything to a web folder and offer your work for download without any further hassle.</p></li>
+</ul>
+<p>Let us say you are a university or college lecturer or a high school teacher.
+You want to write a lecture script or a book as teaching material for your students.
+What do you need to do?</p>
+<p>Well, you need to write the book in some form or another, maybe in <a class="reference external" href="https://www.latex-project.org">LaTeX</a> or with some other <a class="reference external" href="https://www.libreoffice.org/discover/writer">editor</a>.
+But usually your students would not want to read it like that, instead need to “compile” it to another format.
+OK, so you write the book and compile it to, say, <a class="reference external" href="https://www.iso.org/standard/75839.html">pdf</a>.
+Then you need to deliver the book, i.e., upload it to some website so that your students can access it.
+Thus, everytime you want to improve or change your book, you have to run the process <code class="docutils literal notranslate"><span class="pre">change</span> <span class="pre">the</span> <span class="pre">text</span> <span class="pre">-&gt;</span> <span class="pre">compile</span> <span class="pre">the</span> <span class="pre">text</span> <span class="pre">-&gt;</span> <span class="pre">upload</span> <span class="pre">the</span> <span class="pre">result</span></code>.
+The last two steps have nothing to do with actually writing the book, they just eat away your productive time.
+With our tool suite, they can be fully automated.</p>
+<p>But let us continue.
+We said above you want to compile to <a class="reference external" href="https://www.iso.org/standard/75839.html">pdf</a>.
+This format is maybe nice for printing, but maybe not so much for reading the book in a browser.
+For this, you would want to have <a class="reference external" href="https://www.w3.org/TR/html5/">html</a>.
+And if your student use hand-held devices or mobile phones, maybe you want to have your book also in <a class="reference external" href="https://www.w3.org/publishing/epub32/">a format</a> suitable for that.
+This means you have at least three or four compile chains to get the right output and probably will run into problems with the conversations, too.
+With our tool suite, all of this can be fully automated.</p>
+<p>Especially, in the field of computer science, teaching material may also include <a class="reference external" href="#bookbuilderpy-specific-commands">code snippets</a>.
+If you just write the code snippets into the book text, you will probably commit errors and produce examples that your students cannot execute.
+I am a fan of unit testing of code and of providing examples and software that the students can really look at and use and execute.
+What I want is to have one or multiple GitHub repositories with my example codes.
+This would allow to have unit testing and full-blown builds for the example codes.
+Then, in my book’s text, I just want to reference (pieces of) files from these repositories and the book build chain should copy them into the book.
+With our tool suite, <a class="reference external" href="#git-repositories">this can be done</a>.</p>
+<p>Actually, maybe I want to write the whole book on GitHub directly.
+The “full” realization of the idea of our tool chain is that also the book text itself would be located in a GitHub repository.
+You can write the text there, just as we did in our <a class="reference external" href="#examples">examples given later</a>.
+Whenever you commit a set of changes, the book will be compiled to the formats mentioned above and automatically uploaded to the book’s website.
+There, it is ready for download for your students and always in the most up-to-date version.
+If you do this, then you could also collaboratively work on a book, i.e., multiple authors could work on the text and commit to the same repository.
+Additionally, students could submit an “issue” to the repository if they find that something is unclear or discover an error.</p>
+<p>This is the way we want to use our tool chain (although you can also run it just locally on your own computer).
+Additionally, our tool chain supports writing the book in <a class="reference external" href="#language-specification-and-resolution">multiple languages</a> in parallel.
+But more about this later.</p>
+</section>
+<section id="installation-and-local-use">
+<h1>2. Installation and Local Use<a class="headerlink" href="#installation-and-local-use" title="Permalink to this heading">¶</a></h1>
+<p>The following examples are for <a class="reference external" href="https://ubuntu.com">Ubuntu</a> <a class="reference external" href="https://www.linux.org">Linux</a>.
+Under other Linux flavors, they may work differently and different commands may be required.
+Execute the examples at your own risk.</p>
+<section id="local-installation-and-use">
+<h2>2.1. Local Installation and Use<a class="headerlink" href="#local-installation-and-use" title="Permalink to this heading">¶</a></h2>
+<section id="installation-of-the-package">
+<h3>2.1.1. Installation of the Package<a class="headerlink" href="#installation-of-the-package" title="Permalink to this heading">¶</a></h3>
+<p>In order to use this package and to, e.g., run the example codes, you need to first install it using <a class="reference external" href="https://pypi.org/project/pip/"><code class="docutils literal notranslate"><span class="pre">pip</span></code></a>.
+You can install the newest version of this library from <a class="reference external" href="https://pypi.org/project/bookbuilderpy/">PyPi</a> using <a class="reference external" href="https://pypi.org/project/pip/"><code class="docutils literal notranslate"><span class="pre">pip</span></code></a> by doing</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>bookbuilderpy
+</pre></div>
+</div>
+<p>This will install the latest official release of our package.
+If you want to install the latest source code version from GitHub (which may not yet be officially released), you can do</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/thomasWeise/bookbuilderpy.git
+</pre></div>
+</div>
+<p>If you want to install the latest source code version from GitHub (which may not yet be officially released) and you have set up a private/public key for GitHub, you can also do:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>ssh://git@github.com/thomasWeise/bookbuilderpy
+git<span class="w"> </span>install<span class="w"> </span>bookbuilderpy
+</pre></div>
+</div>
+<p>This may sometimes work better if you are having trouble reaching GitHub via <code class="docutils literal notranslate"><span class="pre">https</span></code> or <code class="docutils literal notranslate"><span class="pre">http</span></code>.
+You can also clone the repository and then run a <code class="docutils literal notranslate"><span class="pre">make</span></code> build, which will automatically install all dependencies, run all the tests, and then install the package on your system, too.
+If this build completes successful, you can be sure that <code class="docutils literal notranslate"><span class="pre">bookbuilderpy</span></code> will work properly on your machine.</p>
+</section>
+<section id="installation-of-the-tool-chain">
+<h3>2.1.2. Installation of the Tool Chain<a class="headerlink" href="#installation-of-the-tool-chain" title="Permalink to this heading">¶</a></h3>
+<p>If you want the full tool chain, though, you also need <a class="reference external" href="https://pandoc.org/">pandoc</a>, <a class="reference external" href="https://tug.org/texlive/">TeX Live</a>, and <a class="reference external" href="https://calibre-ebook.com">calibre</a> must be installed.
+Additionally, you should have installed <code class="docutils literal notranslate"><span class="pre">git</span></code>, <a class="reference external" href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>, the <a class="reference external" href="https://github.com/mozilla/geckodriver">Firefox geckodriver</a>, and <a class="reference external" href="https://ghostscript.com/">ghostscript</a>.
+Most likely, this package will only work under <a class="reference external" href="https://www.linux.org">Linux</a> – at least I did not test it under Windows.
+All commands and examples in the following require <a class="reference external" href="https://www.linux.org">Linux</a>.</p>
+</section>
+</section>
+<section id="using-the-docker-image">
+<h2>2.2. Using the Docker Image<a class="headerlink" href="#using-the-docker-image" title="Permalink to this heading">¶</a></h2>
+<p>So it might be easier to just use the <a class="reference external" href="https://hub.docker.com/r/thomasweise/docker-bookbuilderpy/">docker container</a> that comes with everything pre-installed.
+You can then run it as:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;INPUT_DIR&quot;</span>:/input/:ro<span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>-v<span class="w"> </span><span class="s2">&quot;OUTPUT_DIR&quot;</span>:/output/<span class="w"> </span><span class="se">\</span>
+<span class="w">           </span>thomasweise/docker-bookbuilderpy<span class="w"> </span>BOOK_ROOT_MD_FILE
+</pre></div>
+</div>
+<p>Under many distributions, you need to run this command as <code class="docutils literal notranslate"><span class="pre">sudo</span></code>.
+Here, it is assumed that</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">INPUT_DIR</span></code> is the directory where your book sources reside, let’s say <code class="docutils literal notranslate"><span class="pre">/home/my/book/sources/</span></code>. (By adding <code class="docutils literal notranslate"><span class="pre">:ro</span></code>, we mount the input directory read-only, just in case.)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BOOK_ROOT_MD_FILE</span></code> is the root file of your book, say <code class="docutils literal notranslate"><span class="pre">book.md</span></code> (in which case, the full path of <code class="docutils literal notranslate"><span class="pre">book.md</span></code> would be <code class="docutils literal notranslate"><span class="pre">/home/my/book/sources/book.md</span></code>). Notice that you can specify only a single file, but this file can reference other files in sub-directories of <code class="docutils literal notranslate"><span class="pre">INPUT_DIR</span></code> by using commands such as  <code class="docutils literal notranslate"><span class="pre">\rel.input</span></code> (see <a class="reference external" href="#bookbuilderpy-specific-commands">below</a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OUTPUT_DIR</span></code> is the output directory where the compiled files should be placed, e.g., <code class="docutils literal notranslate"><span class="pre">/home/my/book/compiled/</span></code>. This is where the resulting files will be placed.</p></li>
+</ul>
+</section>
+<section id="examples">
+<h2>2.3. Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
+<p>If you are a learning-by-doing person, you can clone the “minimal working example” repository <a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy-mwe">thomasWeise/bookbuilderpy-mwe</a>.
+This repository contains a book template showcasing many of the important commands and features of the system.
+It is automatically compiled and published on each commit.
+The website, which then is re-generated automatically each time, is <a class="reference external" href="https://thomasweise.github.io/bookbuilderpy-mwe">https://thomasweise.github.io/bookbuilderpy-mwe</a>
+You can run the example under <a class="reference external" href="https://ubuntu.com">Ubuntu</a> Linux by cloning the repository executing the build process on this repository with <a class="reference external" href="https://www.docker.com/">docker</a> as follows, <strong>but execute the code below at your own risk!</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>example
+<span class="nb">cd</span><span class="w"> </span>example
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thomasWeise/bookbuilderpy-mwe.git
+mkdir<span class="w"> </span>result
+sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/bookbuilderpy-mwe&quot;</span>:/input/:ro<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/result&quot;</span>:/output/<span class="w"> </span>thomasweise/docker-bookbuilderpy<span class="w"> </span>book.md
+sudo<span class="w"> </span>chown<span class="w"> </span><span class="nv">$USER</span><span class="w"> </span>-R<span class="w"> </span>result
+</pre></div>
+</div>
+<p>Above, we create a folder called <code class="docutils literal notranslate"><span class="pre">example</span></code>.
+We then clone the repository <a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy-mwe">thomasWeise/bookbuilderpy-mwe</a>, creating the folder <code class="docutils literal notranslate"><span class="pre">bookbuilderpy-mwe</span></code> containing the example book sources.
+Then, directory <code class="docutils literal notranslate"><span class="pre">result</span></code> is created, into which we will build the book.
+With <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">run</span> <span class="pre">-v</span> <span class="pre">bookbuilderpy-mwe:/input/:ro</span> <span class="pre">-v</span> <span class="pre">result:/output/</span> <span class="pre">thomasweise/docker-bookbuilderpy</span> <span class="pre">book.md</span></code>, the build process is executed.
+Since it runs under <code class="docutils literal notranslate"><span class="pre">sudo</span></code>, the files will be generated with <code class="docutils literal notranslate"><span class="pre">sudo</span></code> permissions/ownership, so we transfer them to the user ownership via <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">chown</span> <span class="pre">$USER</span> <span class="pre">-R</span> <span class="pre">result</span></code>.
+You can now peek into the <code class="docutils literal notranslate"><span class="pre">result</span></code> folder.
+It will contain a file <code class="docutils literal notranslate"><span class="pre">index.html</span></code>, which is the automatically generated (bare minimum) book website, from which you can access all other generated files.</p>
+<p>Notice that you can also automate your whole book building <em>and publishing</em> process using our <a class="reference external" href="#github-pipeline">GitHub Pipeline</a> later discussed in <a class="reference external" href="#github-pipeline">Section 4</a>.
+Another example for the use of this pipeline is our book <a class="reference external" href="https://thomasweise.github.io/oa">Optimization Algorithms</a>.
+The source code of this book is in the GitHub repository <a class="reference external" href="https://github.com/thomasWeise/oa">thomasWeise/oa</a>.</p>
+</section>
+</section>
+<section id="provided-functionality">
+<h1>3. Provided Functionality<a class="headerlink" href="#provided-functionality" title="Permalink to this heading">¶</a></h1>
+<p>Our book building pipeline is based on <a class="reference external" href="https://pandoc.org/MANUAL.html#pandocs-markdown">pandoc flavored markdown</a> and the filters <a class="reference external" href="https://github.com/jgm/pandoc-citeproc"><code class="docutils literal notranslate"><span class="pre">pandoc-citeproc</span></code></a>, <a class="reference external" href="https://github.com/lierdakil/pandoc-crossref"><code class="docutils literal notranslate"><span class="pre">pandoc-crossref</span></code></a>, <a class="reference external" href="https://github.com/liamoc/latex-formulae"><code class="docutils literal notranslate"><span class="pre">latex-formulae-pandoc</span></code></a>, and <a class="reference external" href="https://github.com/spwhitton/pandoc-citeproc-preamble"><code class="docutils literal notranslate"><span class="pre">pandoc-citeproc-preamble</span></code></a>.
+It supports the commands and syntax given there, some of which is summarized below in <a class="reference external" href="#basic-commands-provided-by-pandoc-and-off-the-shelf-filters">Section 3.1</a>.
+However, we add several commands, such as a hierarchical file inclusion structure, a support for multi-language file resolution, a support for including program listings from git repositories, and so on.
+These extensions are discussed in <a class="reference external" href="#bookbuilderpy-specific-commands">Section 3.2</a>.</p>
+</section>
+<section id="basic-commands-provided-by-pandoc-and-off-the-shelf-filters">
+<h1>3.1. Basic commands provided by <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> and off-the-shelf filters<a class="headerlink" href="#basic-commands-provided-by-pandoc-and-off-the-shelf-filters" title="Permalink to this heading">¶</a></h1>
+<p>The following basic commands are already available in pandoc’s <a class="reference external" href="https://pandoc.org/MANUAL.html#pandocs-markdown">markdown</a> flavor and/or are provided by the existing pandoc plugins that we use:</p>
+<ul class="simple">
+<li><p>Chapters, sections, sub-sections etc. are created by putting their title on a single line preceded by <code class="docutils literal notranslate"><span class="pre">#</span></code>, <code class="docutils literal notranslate"><span class="pre">##</span></code>, or <code class="docutils literal notranslate"><span class="pre">###</span></code>, etc.
+For example, the line <code class="docutils literal notranslate"><span class="pre">##</span> <span class="pre">This</span> <span class="pre">is</span> <span class="pre">a</span> <span class="pre">section</span></code> (two <code class="docutils literal notranslate"><span class="pre">#</span></code>) starts a section with the given title, <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">This</span> <span class="pre">is</span> <span class="pre">a</span> <span class="pre">chapter</span></code> (one <code class="docutils literal notranslate"><span class="pre">#</span></code>) starts a chapter.
+You can add labels to sections, by writing <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">Chapter</span> <span class="pre">Title</span> <span class="pre">{#sec:myChap}</span></code> and reference them via <code class="docutils literal notranslate"><span class="pre">As</span> <span class="pre">already</span> <span class="pre">discussed</span> <span class="pre">in</span> <span class="pre">[&#64;sec:myChap],</span> <span class="pre">we</span> <span class="pre">found...</span></code>.
+The prefix <code class="docutils literal notranslate"><span class="pre">sec:</span></code> is required for such labels.
+Sections and chapters etc. are numbered automatically.
+If you want an unnumbered section, write <code class="docutils literal notranslate"><span class="pre">##</span> <span class="pre">Other</span> <span class="pre">Section</span> <span class="pre">{-}</span></code>.</p></li>
+<li><p>You can use LaTeX maths as inline formulae such <code class="docutils literal notranslate"><span class="pre">$\sqrt{5}+4^4$</span></code> and as stand-alone equations like <code class="docutils literal notranslate"><span class="pre">$$x=\frac{5}{6}$$</span></code>.
+A line such as <code class="docutils literal notranslate"><span class="pre">$$</span> <span class="pre">x</span> <span class="pre">=</span> <span class="pre">y</span> <span class="pre">+</span> <span class="pre">z</span> <span class="pre">$$</span> <span class="pre">{#eq:xyz}</span></code> will create an equation that can be referenced using <code class="docutils literal notranslate"><span class="pre">[&#64;eq:xyz]</span></code> in the text.
+Notice: It is best to use <code class="docutils literal notranslate"><span class="pre">\ldots</span></code> instead of <code class="docutils literal notranslate"><span class="pre">\dots</span></code> to avoid problems.</p></li>
+<li><p>References to bibliography can be done <code class="docutils literal notranslate"><span class="pre">[&#64;ABC;</span> <span class="pre">&#64;DEF]</span></code> where <code class="docutils literal notranslate"><span class="pre">ABC</span></code> and <code class="docutils literal notranslate"><span class="pre">DEF</span></code> would then be keys into your <a class="reference external" href="https://www.bibtex.com/g/bibtex-format/">BibTeX</a>) file, which, in turn, would be specified in the metadata as <code class="docutils literal notranslate"><span class="pre">bibliography:</span> <span class="pre">bibtexfile.bib</span></code>.</p></li>
+<li><p><em>Emphasized</em> text is written in between <code class="docutils literal notranslate"><span class="pre">*</span></code>s, e.g., <code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">word</span> <span class="pre">*text*</span> <span class="pre">is</span> <span class="pre">emphasized.</span></code>.</p></li>
+<li><p><strong>Double emphasized</strong> text is written in between double-<code class="docutils literal notranslate"><span class="pre">*</span></code>s, e.g. <code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">word</span> <span class="pre">**text**</span> <span class="pre">is</span> <span class="pre">very</span> <span class="pre">much</span> <span class="pre">emphasized.</span></code></p></li>
+<li><p>Short verbatim/code text is written in between `s, e.g., <em>The word `<code class="docutils literal notranslate"><span class="pre">text</span></code>` appears as code.</em></p></li>
+<li><p>Abbreviations and LaTeX-style commands can be created and called normally, as long as they do not clash with the <a class="reference external" href="#bookbuilderpy-specific-commands"><code class="docutils literal notranslate"><span class="pre">bookbuilderpy</span></code>-specific commands</a>.
+For example, you can do:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\newcommand{\mathSpace}[1]{\mathbb{#1}}
+\newcommand{\realNumbers}{\mathSpace{R}}
+
+Assume that $x\in\realNumbers$ is a value larger than $2$, then $\sqrt{x}&gt;1$ is also true.
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Tables can be created as follows:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">This</span> <span class="ow">is</span> <span class="n">some</span> <span class="n">normal</span> <span class="n">text</span><span class="o">.</span>
+
+<span class="o">|</span><span class="n">centered</span> <span class="n">column</span><span class="o">|</span><span class="n">right</span><span class="o">-</span><span class="n">aligned</span> <span class="n">column</span><span class="o">|</span><span class="n">left</span><span class="o">-</span><span class="n">aligned</span> <span class="n">column</span><span class="o">|</span>
+<span class="o">|</span><span class="p">:</span><span class="o">-</span><span class="p">:</span><span class="o">|--</span><span class="p">:</span><span class="o">|</span><span class="p">:</span><span class="o">--|</span>
+<span class="o">|</span><span class="n">bla</span><span class="o">|</span><span class="n">r</span><span class="o">|</span><span class="n">l</span><span class="o">|</span>
+<span class="o">|</span><span class="n">blub</span> <span class="n">blub</span> <span class="n">blub</span><span class="o">|</span><span class="n">abc</span><span class="o">|</span><span class="mi">123</span><span class="o">|</span>
+
+<span class="p">:</span> <span class="n">This</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">table</span> <span class="n">caption</span><span class="o">.</span> <span class="p">{</span><span class="c1">#tbl:mytable}</span>
+
+<span class="n">From</span> <span class="p">[</span><span class="nd">@tbl</span><span class="p">:</span><span class="n">mytable</span><span class="p">],</span> <span class="n">we</span> <span class="n">can</span> <span class="n">see</span> <span class="n">that</span><span class="o">...</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Figures should be included using the <a class="reference external" href="#bookbuilderpy-specific-commands"><code class="docutils literal notranslate"><span class="pre">bookbuilderpy</span></code>-specific</a> <code class="docutils literal notranslate"><span class="pre">\rel.figure{...}</span></code> command.</p></li>
+</ul>
+</section>
+<section id="bookbuilderpy-specific-commands">
+<h1>3.2. <code class="docutils literal notranslate"><span class="pre">bookbuilderpy</span></code>-specific commands<a class="headerlink" href="#bookbuilderpy-specific-commands" title="Permalink to this heading">¶</a></h1>
+<p>The following new commands are added:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">\rel.input{path}</span></code> recursively includes and processes the contents of the file identified by <code class="docutils literal notranslate"><span class="pre">path</span></code>. <code class="docutils literal notranslate"><span class="pre">path</span></code> must be in a sub-folder of the current folder. The deepest folder of the new full path will become the current folder for any (recursive) <code class="docutils literal notranslate"><span class="pre">\rel.input{path}</span></code> invocations in the new file as well as <code class="docutils literal notranslate"><span class="pre">\rel.code</span></code> and <code class="docutils literal notranslate"><span class="pre">\rel.figure</span></code> commands. <a class="reference external" href="#language-specification-and-resolution">Language-specific file resolution</a> will apply.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">\rel.code{label}{caption}{path}{lines}{labels}{args}</span></code> is used to include code (or portions of code) from a source code file located in the current folder (or any <code class="docutils literal notranslate"><span class="pre">path</span></code> beneath it).
+<a class="reference external" href="#language-specification-and-resolution">Language-specific file resolution</a> will apply.
+This command has the following arguments:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">label</span></code>: the label of the listing, e.g., <code class="docutils literal notranslate"><span class="pre">something</span></code>. Will automatically be prefixed by <code class="docutils literal notranslate"><span class="pre">lst:</span></code> and can then be referenced in the text, e.g., as <code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">algorithm</span> <span class="pre">is</span> <span class="pre">specified</span> <span class="pre">in</span> <span class="pre">[&#64;lst:something].</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">caption</span></code>: the caption of the listing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">path</span></code>: the relative path fragment to resolve</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lines</span></code>: the lines of the code to keep in the form <code class="docutils literal notranslate"><span class="pre">1-3,6</span></code>, or empty to keep all</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">labels</span></code>: the labels for selecting code pieces, or empty to keep all. For instance, specifying <code class="docutils literal notranslate"><span class="pre">a,b</span></code> will keep all code between line comments <code class="docutils literal notranslate"><span class="pre">start</span> <span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">end</span> <span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">start</span> <span class="pre">b</span></code> and <code class="docutils literal notranslate"><span class="pre">end</span> <span class="pre">b</span></code>. By ending a line outside the selected range with line comment <code class="docutils literal notranslate"><span class="pre">+a</span></code> (where <code class="docutils literal notranslate"><span class="pre">a</span></code> is again a label name), it will be included. If it is inside the selected range and ends with line comment <code class="docutils literal notranslate"><span class="pre">-a</span></code>, it is excluded.</p></li>
+<li><p>args: any additional, language-specific arguments to pass to the code renderer, as comma-separated strings.</p>
+<ul>
+<li><p>For Python, we automatically strip type hints, docstrings, and comments from the code and also re-format the code. The re-formatting ensures that lines are no longer than 73 characters, which is necessary to make the listings in PDFs to look nicely.
+With <code class="docutils literal notranslate"><span class="pre">doc</span></code> you keep the docstrings, with <code class="docutils literal notranslate"><span class="pre">comments</span></code> you keep the comments, with <code class="docutils literal notranslate"><span class="pre">hints</span></code> you keep the type hints.
+If you specify <code class="docutils literal notranslate"><span class="pre">format</span></code>, then the code is not reformatted at all (which automatically preserves docstrings, type hints, and comments, except for the code selection labels.)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">\git.code{repo}{label}{caption}{path}{lines}{labels}{args}</span></code> works the same as <code class="docutils literal notranslate"><span class="pre">\relative.code</span></code>, but uses code from the specified git repository instead (see <a class="reference external" href="#git-repositories">Metadata</a>).
+<a class="reference external" href="#language-specification-and-resolution">Language-specific file resolution</a> does <em>not</em> apply, however, you may specify repositories differently for each language in the metadata.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">\rel.figure{label}{caption}{path}{args}</span></code> includes a figure into the book. <a class="reference external" href="#language-specification-and-resolution">Language-specific file resolution</a> will apply.
+This command has the following arguments:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">label</span></code>: the label of the figure, e.g., <code class="docutils literal notranslate"><span class="pre">something</span></code>. It will be automatically prefixed by <code class="docutils literal notranslate"><span class="pre">fig:</span></code> can then be referenced in the text, e.g., as <code class="docutils literal notranslate"><span class="pre">As</span> <span class="pre">illustrated</span> <span class="pre">in</span> <span class="pre">[&#64;fig:something],</span> <span class="pre">...</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">caption</span></code>: the caption of the figure</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">path</span></code>: the relative path fragment to resolve</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">args</span></code>: other arguments, e.g., <code class="docutils literal notranslate"><span class="pre">width=XX%</span></code> for making the figure having a width corresponding to <code class="docutils literal notranslate"><span class="pre">XX%</span></code> of the available with.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">\definition{type}{label}{body}</span></code> creates a definition of the given type (where the metadata must somewhere specify <code class="docutils literal notranslate"><span class="pre">typeTitle</span></code>) that can be referenced via <code class="docutils literal notranslate"><span class="pre">\def.ref{label}</span></code> anywhere in the text.
+The body containing the actual definition of the definition is <code class="docutils literal notranslate"><span class="pre">body</span></code>.
+For example <code class="docutils literal notranslate"><span class="pre">\definition{def}{bla}{A</span> <span class="pre">*definition*</span> <span class="pre">is</span> <span class="pre">a</span> <span class="pre">text</span> <span class="pre">about</span> <span class="pre">something.}</span></code> with <code class="docutils literal notranslate"><span class="pre">defTitle:</span> <span class="pre">Definition</span></code> in the metadata would generate something like <code class="docutils literal notranslate"><span class="pre">**Definition</span> <span class="pre">1**:</span> <span class="pre">A</span> <span class="pre">*definition*</span> <span class="pre">is</span> <span class="pre">a</span> <span class="pre">text</span> <span class="pre">about</span> <span class="pre">something.</span></code> and <code class="docutils literal notranslate"><span class="pre">\def.ref{bla}</span></code> would then become <code class="docutils literal notranslate"><span class="pre">Definition</span> <span class="pre">1</span></code> (but as clickable hyperlink).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">\meta{key}</span></code> any metadata string you specify in your <a class="reference external" href="#metadata">metadata</a>, including <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">author</span></code>, etc., with the following additional keys:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">time</span></code>: the ISO date and time when the book building process was started,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">date</span></code>: the ISO date when the book building process was started,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">year</span></code>: the year when the book building process was started,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lang</span></code>: the current <a class="reference external" href="#language-specification-and-resolution">language</a> id, or <code class="docutils literal notranslate"><span class="pre">en</span></code> if none is specified</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">locale</span></code>: the locale inferred from the current language id</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lang.name</span></code>: the current language name, or <code class="docutils literal notranslate"><span class="pre">English</span></code> if none is specified</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">repo.name</span></code>: if it was detected that the build process is applied to a git repository checkout, then this is the repository name, e.g., <code class="docutils literal notranslate"><span class="pre">thomasweise/bookbuilderpy</span></code>; otherwise querying this property will fail the build process.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">repo.url</span></code>:  if it was detected that the build process is applied to a git repository check out, then this is the repository url, such as <code class="docutils literal notranslate"><span class="pre">https://github.com/thomasweise/bookbuilderpy</span></code>; otherwise querying this property will fail the build process.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">repo.commit</span></code>:  if it was detected that the build process is applied to a git repository checkout, then this is the commit id of the checkout; otherwise querying this property will fail the build process.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">repo.date</span></code>:  if it was detected that the build process is applied to a git repository checkout, then this is the date of the commit that was checked-out; otherwise querying this property will fail the build process.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="metadata">
+<h1>3.3. Metadata<a class="headerlink" href="#metadata" title="Permalink to this heading">¶</a></h1>
+<p>The metadata of your book is a very important portion that specifies not just its title and author, but also all the information for the build process.
+It should be located in a file <code class="docutils literal notranslate"><span class="pre">metadata.yaml</span></code> and the very first line of your main book file then must be a <code class="docutils literal notranslate"><span class="pre">\rel.input</span></code> of this metadata file.
+In the metadata section of your book, you can define things such as the book title and author etc.
+We added the following metadata items:</p>
+<section id="language-specification-and-resolution">
+<h2>3.3.1. Language Specification and Resolution<a class="headerlink" href="#language-specification-and-resolution" title="Permalink to this heading">¶</a></h2>
+<p>You can develop your book in multiple languages in parallel.
+These can be specified in the metadata following the pattern below:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">langs</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">en</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">English</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">de</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deutsch</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">zh</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">中文</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">langs</span></code> entry specifies a list, where each item must have an <code class="docutils literal notranslate"><span class="pre">id</span></code> and a <code class="docutils literal notranslate"><span class="pre">name</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">id</span></code> will be used to determine the <a class="reference external" href="https://cldr.unicode.org/">locale</a>  of the text.
+You can either use a <a class="reference external" href="https://cldr.unicode.org/">locale</a> directly, or one of the following shortcuts: <code class="docutils literal notranslate"><span class="pre">en</span></code> for <code class="docutils literal notranslate"><span class="pre">en_US</span></code>, <code class="docutils literal notranslate"><span class="pre">zh</span></code> or <code class="docutils literal notranslate"><span class="pre">cn</span></code> for <code class="docutils literal notranslate"><span class="pre">zh_CN</span></code>, <code class="docutils literal notranslate"><span class="pre">tw</span></code> for <code class="docutils literal notranslate"><span class="pre">zh_TW</span></code>, <code class="docutils literal notranslate"><span class="pre">de</span></code> for <code class="docutils literal notranslate"><span class="pre">de_DE</span></code>, <code class="docutils literal notranslate"><span class="pre">fr</span></code> for <code class="docutils literal notranslate"><span class="pre">fr_FR</span></code>, <code class="docutils literal notranslate"><span class="pre">it</span></code> for <code class="docutils literal notranslate"><span class="pre">it_IT</span></code>, <code class="docutils literal notranslate"><span class="pre">ja</span></code> for <code class="docutils literal notranslate"><span class="pre">ja_JP</span></code>, <code class="docutils literal notranslate"><span class="pre">ko</span></code> for <code class="docutils literal notranslate"><span class="pre">ko_KR</span></code>, <code class="docutils literal notranslate"><span class="pre">pt</span></code> for <code class="docutils literal notranslate"><span class="pre">pt_BR</span></code>, and <code class="docutils literal notranslate"><span class="pre">es</span></code> for <code class="docutils literal notranslate"><span class="pre">es_ES</span></code>.
+<strong>Warning 1</strong>: Do not specify the <code class="docutils literal notranslate"><span class="pre">lang</span></code> attribute usually used by pandoc, as this causes some trouble.
+<strong>Warning 2</strong>: If you only specify a single language, the book’s main file name cannot be <code class="docutils literal notranslate"><span class="pre">index.md</span></code>.
+<strong>Warning 3</strong>: If you want to build a book in the Chinese language, you must specify the language Chinese with one of the Chinese-related prefixes above.</p>
+<p>The language name will appear in things such as the automatically generate website, etc.
+For each language, one book building process will be performed.
+In the above example, we will build the book three times, for English, German, and Chinese.
+If the book’s basic file name was <code class="docutils literal notranslate"><span class="pre">book.md</span></code>, we will get <code class="docutils literal notranslate"><span class="pre">book_en.pdf</span></code>, <code class="docutils literal notranslate"><span class="pre">book_de.pdf</span></code>, and <code class="docutils literal notranslate"><span class="pre">book_zh.pdf</span></code>.
+If only one language was specified, we would just get <code class="docutils literal notranslate"><span class="pre">book.pdf</span></code>.</p>
+<p>The language <code class="docutils literal notranslate"><span class="pre">id</span></code> has one very important purpose:
+It allows for language-specific file resolution.
+For instance, let’s say you do <code class="docutils literal notranslate"><span class="pre">\rel.input{folder/README.md}</span></code>.
+In the <code class="docutils literal notranslate"><span class="pre">en</span></code>-build step, this will first look for a file <code class="docutils literal notranslate"><span class="pre">folder/README_en.md</span></code>.
+If it exists, it is included.
+Otherwise, the file <code class="docutils literal notranslate"><span class="pre">folder/README.md</span></code> will be included.</p>
+<p>The same will be done for <code class="docutils literal notranslate"><span class="pre">\rel.figure</span></code> commands.
+This way, you can, e.g., create language-neutral figures that are the same for all versions of the book as well as language-specific figures that contain texts.</p>
+<p>It makes sense to split your metadata into language-specific and language-agnostic data.
+For example, the style and title page background of your book may be language-agnostic.
+The title, definition types, figure titles, table titles, keywords, and even font may be language-specific.
+This can be accomplished by using <code class="docutils literal notranslate"><span class="pre">\rel.input</span></code> in the <code class="docutils literal notranslate"><span class="pre">metadata.yaml</span></code> file!
+For the very first language (in our example English) create a file <code class="docutils literal notranslate"><span class="pre">metalang.yaml</span></code> and put all the language-specific information for that first language in there.
+This will be the default setting for anything else not specified for the other language and also for the website title generation.
+Then, for each other language, create one language-specific file, say <code class="docutils literal notranslate"><span class="pre">metalang_de.yaml</span></code> and <code class="docutils literal notranslate"><span class="pre">metalang_zh.yaml</span></code> in our example.
+Finally, simply first specify the <code class="docutils literal notranslate"><span class="pre">langs</span></code> list in the <code class="docutils literal notranslate"><span class="pre">metadata.yaml</span></code>, and then <code class="docutils literal notranslate"><span class="pre">\rel.input{metalang.yaml}</span></code> and let the language-specific file resolution do the rest…</p>
+<p>Last but not least, the language id will be used to decide which pdf-engine is used for building the book.
+For instance, a language ID like <code class="docutils literal notranslate"><span class="pre">zh</span></code>, indicating Chinese, will lead to the use of <code class="docutils literal notranslate"><span class="pre">xelatex</span></code>, while otherwise <code class="docutils literal notranslate"><span class="pre">pdflatex</span></code> will be used.</p>
+</section>
+<section id="git-repositories">
+<h2>3.3.2. Git Repositories<a class="headerlink" href="#git-repositories" title="Permalink to this heading">¶</a></h2>
+<p>It is possible to include code from one or multiple git repositories using the <code class="docutils literal notranslate"><span class="pre">\git.code</span></code> command.
+For this purpose, you first need to specify the repositories in the metadata section as follows:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">repos</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mp</span>
+<span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/thomasWeise/bookbuilderpy.git</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bb</span>
+<span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/thomasWeise/bookbuilderpy.git</span>
+</pre></div>
+</div>
+<p>The above list specifies two git repository mnemonics, <code class="docutils literal notranslate"><span class="pre">mp</span></code> and <code class="docutils literal notranslate"><span class="pre">bp</span></code>.
+When the book is being built, both repositories are automatically checked out.
+The <code class="docutils literal notranslate"><span class="pre">\git.code{repo}{label}{caption}{path}{lines}{labels}{args}</span></code> command with <code class="docutils literal notranslate"><span class="pre">repo</span></code> set to <code class="docutils literal notranslate"><span class="pre">mp</span></code> will then refer to the first repository (<code class="docutils literal notranslate"><span class="pre">bookbuilderpy</span></code>) and the <code class="docutils literal notranslate"><span class="pre">path</span></code> argument then is a path relative to the repository root.
+<code class="docutils literal notranslate"><span class="pre">repo=bb</span></code> would instead refer to the <code class="docutils literal notranslate"><span class="pre">bookbuilderpy</span></code> repository.</p>
+</section>
+<section id="website-construction">
+<h2>3.3.3. Website Construction<a class="headerlink" href="#website-construction" title="Permalink to this heading">¶</a></h2>
+<p>It is possible to automatically generate a website during the build process.
+You can then upload the website and all of the generated files to your website, offering an easy way to download your book.
+The mechanism is very simple:
+We can have an “outer” website, i.e., an HTML file with styles and headers and stuff and an “inner” website which can be a portion of markdown code.
+The idea is that the “inner” website could be the <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file of the repository where your book is and the outer website allows you to specify a container and proper CSS styles for rendering it.
+Both can be specified in the metadata, e.g., as follows:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nn">---</span>
+<span class="c1"># ... other stuff</span>
+
+<span class="c1"># the website</span>
+<span class="nt">website_outer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">meta/website.html</span>
+<span class="nt">website_body</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">README.md</span>
+
+<span class="c1"># ... other stuff</span>
+<span class="nn">...</span>
+</pre></div>
+</div>
+<p>This mechanism works as follows:
+The inner website (in this case, the file <code class="docutils literal notranslate"> <span class="pre">website.html</span></code> in the folder <code class="docutils literal notranslate"><span class="pre">meta</span></code> is loaded as a string.
+Inside, all the <code class="docutils literal notranslate"><span class="pre">\meta{...}</span></code> commands accessing meta-data are evaluated (see <a class="reference external" href="#bookbuilderpy-specific-commands"><code class="docutils literal notranslate"><span class="pre">bookbuilderpy</span></code> specific commands</a>).
+Here, the first language’s metadata attribute values will be used if multiple languages were specified.
+The outer website <em>can</em> contain the text <code class="docutils literal notranslate"><span class="pre">{body}</span></code> exactly once and this text is then replaced by the rendered markdown of the inner website.
+Here, this would be the file <code class="docutils literal notranslate"><span class="pre">README.md</span></code> in the root folder.
+The inner website <em>can</em> then somewhere contain a div tag <code class="docutils literal notranslate"><span class="pre">&lt;div</span> <span class="pre">id=&quot;files&quot;&gt;</span> <span class="pre">....</span> <span class="pre">&lt;/div&gt;</span></code>.
+If present, this tag and everything inside will be replaced with an automatically generated list of all the generated files.
+If the <a class="reference external" href="#language-specification-and-resolution"><code class="docutils literal notranslate"><span class="pre">langs</span></code> attribute</a> is specified and contains more than one language, there will be one nested list per language.
+Otherwise, the list will be flat.
+The lists will have the following CSS-classes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">langs</span></code>: for the main list of multiple languages<sup>*</sup></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">oneLang</span></code>: for the language list item<sup>*</sup></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">oneLangName</span></code>: for the span with the language name<sup>*</sup></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">downloads</span></code>: for the download list per language</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">download</span></code>: for the download list entry</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">downloadFile</span></code>: for the span containing the file download</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">downloadFileName</span></code>: for the span with the file name</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">downloadFileSize</span></code>: for the span with the file size</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">downloadFileDesc</span></code>: for the description of the file format</p></li>
+</ul>
+<p><sup>*</sup> if the <a class="reference external" href="#language-specification-and-resolution"><code class="docutils literal notranslate"><span class="pre">langs</span></code> attribute</a> is specified and contains more than one language
+The result of this rendering process is then stored in a file <code class="docutils literal notranslate"><span class="pre">index.html</span></code>.
+For this reason you should never call your main book file <code class="docutils literal notranslate"><span class="pre">index.md</span></code>.</p>
+<p>The idea of this website building process is as follows:
+Via the “outer” website, you can specify the structure, header, footer (where you could, e.g., place the build time via a <code class="docutils literal notranslate"><span class="pre">\meta{date}</span></code> command), and CSS styles.
+If you develop your book on GitHub, then you would probably write a <code class="docutils literal notranslate"><span class="pre">README.md</span></code> file explaining the book’s content anyway.
+This file you can then automatically render and insert into the website as “inner” website part.
+Inside your <code class="docutils literal notranslate"><span class="pre">README.md</span></code> on GitHub, the tag <code class="docutils literal notranslate"><span class="pre">&lt;div</span> <span class="pre">id=&quot;files&quot;&gt;</span> <span class="pre">....</span> <span class="pre">&lt;/div&gt;</span></code> would be invisible, but during the website building, it allows you to have the list of book files included automatically.
+This automatic inclusions allows us to specify file sizes.
+For course, we could also simply not insert this tag and instead have hard-coded links in the <code class="docutils literal notranslate"><span class="pre">README.md</span></code>, which is fine, too.</p>
+</section>
+<section id="other-metadata">
+<h2>3.3.4. Other Metadata<a class="headerlink" href="#other-metadata" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">title</span></code>: the book’s title</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">keywords</span></code>: a list of keywords</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">author</span></code>: the book author or a list of authors</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">date</span></code>: the date when the book was written (you can set this to <code class="docutils literal notranslate"><span class="pre">\meta{data}</span></code> and the current date of the build process will be used).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bibliography</span></code>: the path to the <a class="reference external" href="https://www.bibtex.com/g/bibtex-format/">BibTeX</a> file, e.g., <code class="docutils literal notranslate"><span class="pre">bibliography.bib</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">csl</span></code>: the <a class="reference external" href="https://citationstyles.org">bibliography style</a>. Set this to <code class="docutils literal notranslate"><span class="pre">association-for-computing-machinery.csl</span></code> to use the default style offered by the package.
+You can find many different bibliography styles at <a class="reference external" href="https://www.zotero.org/styles">https://www.zotero.org/styles</a>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">link-citations</span></code>: set this to <code class="docutils literal notranslate"><span class="pre">true</span></code> to get clickable bibliography references.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">template.html</span></code>: the template for rendering to HTML. Set this to <code class="docutils literal notranslate"><span class="pre">GitHub.html5</span></code> to use the default style offered by the package.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">template.latex</span></code>: the template for rendering to PDF. Set this to <code class="docutils literal notranslate"><span class="pre">eisvogel.tex</span></code> to use the default style offered by the package.</p></li>
+<li><p>If you build a book in a language different from English, you will certainly want to change the default caption prefixes for figures and tables accordingly.
+The following language-specific component titles (below explained-by-example) are supported by pandoc and its filters:</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">figureTitle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Figure</span>
+<span class="nt">tableTitle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Table</span>
+<span class="nt">listingTitle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Listing</span>
+
+<span class="nt">figPrefix</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Figure&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Figures&quot;</span>
+<span class="nt">eqnPrefix</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Equation&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Equations&quot;</span>
+<span class="nt">tblPrefix</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Table&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Tables&quot;</span>
+<span class="nt">lstPrefix</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Listing&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Listings&quot;</span>
+<span class="nt">secPrefix</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Section&quot;</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;Sections&quot;</span>
+
+<span class="nt">reference-section-title</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">References</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Please notice that there is an <a class="reference external" href="https://github.com/lierdakil/pandoc-crossref/issues/329">issue</a> with chapter names in the pdf output.
+You can fix this by setting up the chapter and section names <em>also</em> in the LaTeX header includes (see below).</p></li>
+<li><p>Any other <code class="docutils literal notranslate"><span class="pre">xxxTitle</span></code> allows you to specify a <code class="docutils literal notranslate"><span class="pre">type</span></code>to be used for a <code class="docutils literal notranslate"><span class="pre">\definition{type}{label}{body}</span></code> command.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">header-includes</span></code>: allows you to insert stuff into the headers of the format.
+For PDF/LaTeX, it is useful to put something like the stuff below, as it will make the result nicer if you have many code listings:</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># line 1..3: hold floating objects in the same section and sub-section</span>
+<span class="c1"># line 4..6: prevent ugly broken footnotes</span>
+<span class="c1"># line 7..9: fix section and chapter names</span>
+<span class="nt">header-includes</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">```{=latex}</span>
+<span class="w">  </span><span class="no">\usepackage[section,above,below]{placeins}%               1</span>
+<span class="w">  </span><span class="no">\let\Oldsubsection\subsection%                            2</span>
+<span class="w">  </span><span class="no">\renewcommand{\subsection}{\FloatBarrier\Oldsubsection}%  2</span>
+<span class="w">  </span><span class="no">\addtolength{\topskip}{0pt plus 10pt}%                    4</span>
+<span class="w">  </span><span class="no">\interfootnotelinepenalty=10000%                          5</span>
+<span class="w">  </span><span class="no">\raggedbottom%                                            6</span>
+<span class="w">  </span><span class="no">\usepackage[nameinlink]{cleveref}%                        7</span>
+<span class="w">  </span><span class="no">\crefname{chapter}{Chapter}{Chapters}%                    8</span>
+<span class="w">  </span><span class="no">\crefname{section}{Section}{Sections}%                    9</span>
+<span class="w">  </span><span class="no">` ` `</span>
+</pre></div>
+</div>
+<p>(without the spaces between the triple-backticks!)
+In the two <code class="docutils literal notranslate"><span class="pre">\crefname</span></code> commands at the end, you can put the singular and plural forms of the names for chapters and sections in your language of choice.</p>
+<p>For Chinese versions of your book using our default template (<a class="reference external" href="#wandmalfarbepandoc-latex-template">Wandmalfarben/Eisvogel</a>), you may instead want to use the following <code class="docutils literal notranslate"><span class="pre">header-includes</span></code>.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># line 1..3: hold floating objects in the same section and sub-section</span>
+<span class="c1"># line 4..6: prevent ugly broken footnotes</span>
+<span class="c1"># line 7..9: fix section and chapter names</span>
+<span class="nt">header-includes</span><span class="p">:</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">```{=latex}</span>
+<span class="w">  </span><span class="no">\usepackage[section,above,below]{placeins}%                 1</span>
+<span class="w">  </span><span class="no">\let\Oldsubsection\subsection%                              2</span>
+<span class="w">  </span><span class="no">\renewcommand{\subsection}{\FloatBarrier\Oldsubsection}%    3</span>
+<span class="w">  </span><span class="no">\addtolength{\topskip}{0pt plus 10pt}%                      4</span>
+<span class="w">  </span><span class="no">\interfootnotelinepenalty=10000%                            5</span>
+<span class="w">  </span><span class="no">\raggedbottom%                                              6</span>
+<span class="w">  </span><span class="no">\AtBeginDocument{%                                        7</span>
+<span class="w">  </span><span class="no">\crefname{chapter}{章}{章}%                                  8</span>
+<span class="w">  </span><span class="no">\crefname{section}{节}{节}%                                 9</span>
+<span class="w">  </span><span class="no">}%                                                        12</span>
+<span class="w">  </span><span class="no">` ` `</span>
+</pre></div>
+</div>
+<p>(without the spaces between the triple-backticks!)</p>
+<ul class="simple">
+<li><p>Setup for pandoc’s crossref: You may wish to include the following text</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># pandoc-crossref setup</span>
+<span class="nt">cref</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">chapters</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">linkReferences</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">nameInLink</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">listings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="nt">codeBlockCaptions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</section>
+<section id="graphics">
+<h2>3.4. Graphics<a class="headerlink" href="#graphics" title="Permalink to this heading">¶</a></h2>
+<p>Generally, we suggest to use only vector graphics in your books, as opposed to raster graphics like <code class="docutils literal notranslate"><span class="pre">jpg</span></code> or <code class="docutils literal notranslate"><span class="pre">png</span></code>.
+Don’t use <code class="docutils literal notranslate"><span class="pre">jpg</span></code> or <code class="docutils literal notranslate"><span class="pre">png</span></code> for anything different from photos.
+Vector graphics can scale well and have a higher quality when being printed or when being zoomed in.
+Raster graphics often get blurry or even display artifacts.</p>
+<p>In my opinion, the best graphics format to use in conjunction with our tool is <code class="docutils literal notranslate"><span class="pre">svg</span></code> (and, in particular, its compressed variant <code class="docutils literal notranslate"><span class="pre">svgz</span></code>).
+You can create <code class="docutils literal notranslate"><span class="pre">svg</span></code> graphics using the open-source editor Inkscape or software such as Adobe Illustrator or Corel DRAW.</p>
+<p>We provide the small tool <a class="reference external" href="https://github.com/thomasWeise/ultraSvgz">ultraSvgz</a>, which runs under Linux and can create very small, minified and compressed <code class="docutils literal notranslate"><span class="pre">svgz</span></code> files from <code class="docutils literal notranslate"><span class="pre">svg</span></code>s.
+Our tool suite supports <code class="docutils literal notranslate"><span class="pre">svgz</span></code> fully and such files tend to actually be smaller than <code class="docutils literal notranslate"><span class="pre">pdf</span></code> or <code class="docutils literal notranslate"><span class="pre">eps</span></code> graphics.</p>
+</section>
+</section>
+<section id="github-pipeline">
+<h1>4. GitHub Pipeline<a class="headerlink" href="#github-pipeline" title="Permalink to this heading">¶</a></h1>
+<p>As discussed under point <a class="reference external" href="#installation-and-local-use">Installation and Local Use</a>, our tool suite is available as <a class="reference external" href="https://hub.docker.com/r/thomasweise/docker-bookbuilderpy/">docker container</a>, so you only need a <a class="reference external" href="https://docs.docker.com/engine/install/ubuntu/">docker installation</a> to run the complete software locally.
+However, the bigger goal is to allow you to collaboratively write books, interact with your readers, and automatically publish them online.
+With <a class="reference external" href="https://www.docker.com">docker</a> in combination with <a class="reference external" href="https://www.github.com/">GitHub</a> and <a class="reference external" href="https://github.com/features/actions">GitHub Actions</a>, this is now easily possible.</p>
+<p>You can find a <a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy-mwe">template book project</a> using the complete automated pipeline discussed here in the repository <a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy-mwe">thomasWeise/bookbuilderpy-mwe</a>.
+In other words, if you do not want to read the text and explanation below, you can as well just clone this template project and adapt everything to your liking.</p>
+<p>You can integrate the whole process with a version control software like <code class="docutils literal notranslate"><span class="pre">git</span></code> and a continuous integration framework.
+Then, you can automate the compilation of your book to run every time you change your book sources.
+Actually, there are several open source and free environments that you can use to that for you for free – in exchange for you making your book free for everyone to read.</p>
+<p>First, both for writing and hosting the book, we suggest using a <a class="reference external" href="https://www.github.com/">GitHub</a> repository, very much like the one for the book I just began working on <a class="reference external" href="https://github.com/thomasWeise/oa">here</a>.
+The book should be written in <a class="reference external" href="https://pandoc.org/MANUAL.html#pandocs-markdown">Pandoc’s markdown</a> syntax, which allows us to include most of the stuff we need, such as equations and citation references, with the additional comments listed above.
+For building the book, we will use <a class="reference external" href="https://github.com/features/actions">GitHub Actions</a>, which are triggered by repository commits.</p>
+<p>Every time you push a commit to your book repository, the GitHub Action will check out the repository.
+The docker container can automatically build the book and book website.
+The result can automatically be deployed to the <a class="reference external" href="https://help.github.com/articles/what-is-github-pages/">GitHub Pages</a> branch of your repository and which will then be the website of the repository.
+Once the repository, website, and Travis build procedure are all set up, we can concentrate on working on our book and whenever some section or text is finished, commit, and enjoy the automatically new versions.</p>
+<p>Having your book sources on GitHub brings several additional advantages, for instance:</p>
+<ul class="simple">
+<li><p>Since the book’s sources are available as GitHub repository, our readers can file issues to the repository, with change suggestions, discovered typos, or with questions to add clarification.</p></li>
+<li><p>They may even file pull requests with content to include.</p></li>
+<li><p>You could also write a book collaboratively – like a software project. This might also be interesting for students who write course notes together.</p></li>
+</ul>
+<section id="the-repository">
+<h2>4.1. The Repository<a class="headerlink" href="#the-repository" title="Permalink to this heading">¶</a></h2>
+<p>In order to use our workflow, you need to first have an account at <a class="reference external" href="https://www.github.com/">GitHub</a> and then create an open repository for your book.
+GitHub is built around the distributed version control system <a class="reference external" href="https://git-scm.com/">git</a>, for which a variety of <a class="reference external" href="https://git-scm.com/downloads/guis">graphical user interfaces</a> exist - see, e.g., of <a class="reference external" href="https://git-scm.com/downloads/guis">here</a>.
+If you have a Debian-based Linux system, you can install the basic <code class="docutils literal notranslate"><span class="pre">git</span></code> client with command line interface as follows: <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">git</span></code> and the gui <a class="reference external" href="https://git-cola.github.io/"><code class="docutils literal notranslate"><span class="pre">git-cola</span></code></a> which can be installed via <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">git-cola</span></code>.
+You can use either this client or such a GUI to work with your repository.</p>
+<p>You can now fill your repository with your book’s source files.
+The repository <a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy-mwe">thomasWeise/bookbuilderpy-mwe</a> gives you a bare example how that can look like.</p>
+</section>
+</section>
+<section id="the-github-action">
+<h1>4.2. The GitHub Action<a class="headerlink" href="#the-github-action" title="Permalink to this heading">¶</a></h1>
+<p>Create a folder <code class="docutils literal notranslate"><span class="pre">.github/workflows</span></code> and inside this folder a file <code class="docutils literal notranslate"><span class="pre">build.yaml</span></code>.
+The contents of the file should be:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">publish</span>
+
+<span class="nt">on</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">push</span><span class="p">:</span><span class="w">    </span>
+<span class="w">    </span><span class="nt">branches</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
+
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">build</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v3</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docker-practice/actions-setup-docker@master</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">build</span>
+<span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">mkdir -p /tmp/result</span>
+<span class="w">        </span><span class="no">docker run -v $(pwd):/input/:ro -v /tmp/result/:/output/ thomasweise/docker-bookbuilderpy book.md</span>
+<span class="w">        </span><span class="no">touch /tmp/result/.nojekyll</span>
+
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deploy</span>
+<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">JamesIves/github-pages-deploy-action@v4</span>
+<span class="w">      </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">branch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gh-pages</span>
+<span class="w">        </span><span class="nt">folder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/result</span>
+<span class="w">        </span><span class="nt">single-commit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>This will toggle the build whenever you commit to the branch <code class="docutils literal notranslate"><span class="pre">main</span></code>.
+It will then first check out the book sources.
+Then it will create the temporary folder <code class="docutils literal notranslate"><span class="pre">/tmp/result</span></code> and use the docker container to build the book to this folder.
+The <code class="docutils literal notranslate"><span class="pre">touch</span> <span class="pre">/tmp/result/.nojekyll</span></code> just adds a file to that folder telling GitHub pages that the files in there do not need to be processed any further and can be served as-is.
+After that, the files in this folder will be deployed to the branch <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code>, which will become the website for your book.</p>
+<p>Let’s say your username was <code class="docutils literal notranslate"><span class="pre">thomasWeise</span></code> and your book repository was <code class="docutils literal notranslate"><span class="pre">bookbuilderpy-mwe</span></code>.
+To make this website visible, go to your GitHub project’s <a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy-mwe">thomasWeise/bookbuilderpy-mwe</a>, click <code class="docutils literal notranslate"><span class="pre">Settings</span></code>, then go to <code class="docutils literal notranslate"><span class="pre">Pages</span></code>, then under <code class="docutils literal notranslate"><span class="pre">Source</span></code> choose <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> and click <code class="docutils literal notranslate"><span class="pre">Save</span></code>.
+A few minutes afterwards, your book’s website will appear as <a class="reference external" href="https://thomasweise.github.io/bookbuilderpy-mwe">https://thomasweise.github.io/bookbuilderpy-mwe</a>.
+(It may also be that you may need to make one more commit to the repository to trigger this.)
+Done.
+Whenever you commit to your book sources, the book will be compiled and the website is updated.
+Nothing else needed.</p>
+</section>
+<section id="related-projects-and-components">
+<h1>5. Related Projects and Components<a class="headerlink" href="#related-projects-and-components" title="Permalink to this heading">¶</a></h1>
+<section id="own-contributed-projects-and-components">
+<h2>5.1. Own Contributed Projects and Components<a class="headerlink" href="#own-contributed-projects-and-components" title="Permalink to this heading">¶</a></h2>
+<p>The following components have been contributed by us to provide this tool chain.
+They are all open source and available on GitHub.</p>
+<ul class="simple">
+<li><p>The <a class="reference external" href="https://docs.python.org/3">Python 3</a> package <a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy">bookbuilderpy</a> providing the commands wrapping around pandoc and extending Markdown to automatically build electronic books.</p></li>
+<li><p><a class="reference external" href="https://github.com/thomasWeise/bookbuilderpy-mwe">thomasWeise/bookbuilderpy-mwe</a>, a minimum working example for using the complete bookbuilderpy tool suite.</p></li>
+<li><p>A hierarchy of docker containers forms the infrastructure for the automated builds:</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/thomasWeise/docker-bookbuilderpy">docker-bookbuilderpy</a> is the docker container that can be used to compile an electronic book based on our tool chain. <a class="reference external" href="https://github.com/thomasWeise/docker-bookbuilderpy">Here</a> you can find it on GitHub and <a class="reference external" href="https://hub.docker.com/r/thomasweise/docker-bookbuilderpy/">here</a> on docker hub.</p></li>
+<li><p><a class="reference external" href="https://github.com/thomasWeise/docker-pandoc-calibre">docker-pandoc-calibre</a> is the container which is the basis for <a class="reference external" href="https://github.com/thomasWeise/docker-bookbuilderpy">docker-bookbuilderpy</a>. It holds a complete installation of pandoc, <a class="reference external" href="https://calibre-ebook.com">calibre</a>, which is used to convert EPUB3 to AZW3, and TeX Live and its sources are <a class="reference external" href="https://github.com/thomasWeise/docker-pandoc-calibre">here</a> while it is located <a class="reference external" href="https://hub.docker.com/r/thomasweise/docker-pandoc-calibre/">here</a>.</p></li>
+<li><p><a class="reference external" href="https://github.com/thomasWeise/docker-pandoc">docker-pandoc</a> is the container which is the basis for <a class="reference external" href="https://github.com/thomasWeise/docker-pandoc-calibre">docker-pandoc-calibre</a>. It holds a complete installation of pandoc and TeX Live and its sources are <a class="reference external" href="https://github.com/thomasWeise/docker-pandoc">here</a> while it is located <a class="reference external" href="https://hub.docker.com/r/thomasweise/docker-pandoc/">here</a>.</p></li>
+<li><p><a class="reference external" href="https://github.com/thomasWeise/docker-texlive-thin">docker-texlive-thin</a> is the container which is the basis for <a class="reference external" href="https://github.com/thomasWeise/docker-pandoc">docker-pandoc</a>. It holds a complete installation of TeX Live and its sources are <a class="reference external" href="https://github.com/thomasWeise/docker-texlive-thin">here</a> while it is located <a class="reference external" href="https://hub.docker.com/r/thomasweise/docker-texlive-thin/">here</a>.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="related-projects-and-components-used">
+<h2>5.2. Related Projects and Components Used<a class="headerlink" href="#related-projects-and-components-used" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://pandoc.org/">pandoc</a>, with which we convert markdown to HTML, pdf, and epub, along with several <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> filters, namely</p>
+<ul>
+<li><p><a class="reference external" href="https://github.com/jgm/pandoc-citeproc"><code class="docutils literal notranslate"><span class="pre">pandoc-citeproc</span></code></a>,</p></li>
+<li><p><a class="reference external" href="https://github.com/lierdakil/pandoc-crossref"><code class="docutils literal notranslate"><span class="pre">pandoc-crossref</span></code></a>,</p></li>
+<li><p><a class="reference external" href="https://github.com/liamoc/latex-formulae"><code class="docutils literal notranslate"><span class="pre">latex-formulae-pandoc</span></code></a>, and</p></li>
+<li><p><a class="reference external" href="https://github.com/spwhitton/pandoc-citeproc-preamble"><code class="docutils literal notranslate"><span class="pre">pandoc-citeproc-preamble</span></code></a>
+and the two <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> templates</p></li>
+<li><p><a class="reference external" href="https://github.com/Wandmalfarbe/pandoc-latex-template/">Wandmalfarbe/pandoc-latex-template</a>, an excellent <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> template for LaTeX by <a class="reference external" href="https://github.com/Wandmalfarbe">Pascal Wagler</a></p></li>
+<li><p>the <a class="reference external" href="https://github.com/tajmone/pandoc-goodies/tree/master/templates/html5/github">GitHub Pandoc HTML5 template</a> by <a class="reference external" href="https://github.com/tajmone">Tristano Ajmone</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference external" href="https://tug.org/texlive/">TeX Live</a>, a LaTeX installation used by pandoc for generating the pdf output</p></li>
+<li><p><a class="reference external" href="https://www.python.org/"><code class="docutils literal notranslate"><span class="pre">Python</span> <span class="pre">3</span></code></a>, the programming language in which this package is written</p></li>
+<li><p><a class="reference external" href="https://www.haskell.org/cabal/"><code class="docutils literal notranslate"><span class="pre">cabal</span></code></a>, the compilation and package management system via which pandoc is obtained,</p></li>
+<li><p><a class="reference external" href="https://calibre-ebook.com"><code class="docutils literal notranslate"><span class="pre">calibre</span></code></a>, which allows us to convert epub to awz3 files</p></li>
+<li><p><a class="reference external" href="https://ghostscript.com/"><code class="docutils literal notranslate"><span class="pre">ghostscript</span></code></a>, used to include all fonts into a pdf</p></li>
+<li><p><a class="reference external" href="https://git-scm.com"><code class="docutils literal notranslate"><span class="pre">git</span></code></a>, used for downloading external code repositories</p></li>
+<li><p><a class="reference external" href="https://www.imagemagick.org/"><code class="docutils literal notranslate"><span class="pre">imagemagick</span></code></a> used by <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> for image conversion</p></li>
+<li><p><a class="reference external" href="https://www.mathjax.org/">MathJax</a> is the basic tool used for converting <code class="docutils literal notranslate"><span class="pre">LaTeX</span></code> formulas in HTML to <a class="reference external" href="#graphics">SVG</a> graphics for display</p></li>
+<li><p><a class="reference external" href="https://selenium-python.readthedocs.io/">selenium</a>, <a class="reference external" href="https://www.mozilla.org/en-US/firefox/new/">Firefox</a>, and <a class="reference external" href="https://github.com/mozilla/geckodriver">Firefox geckodriver</a> are used to fully evaluate the MathJax javascript to render all the <code class="docutils literal notranslate"><span class="pre">LaTeX</span></code> formulas in the HTML to <a class="reference external" href="#graphics">SVG</a>,</p></li>
+<li><p>docker, used to create containers in which all required software is pre-installed,</p></li>
+</ul>
+</section>
+</section>
+<section id="license">
+<h1>6. License<a class="headerlink" href="#license" title="Permalink to this heading">¶</a></h1>
+<p>The copyright holder of this package is Prof. Dr. Thomas Weise (see Contact).
+The package is licensed under the GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007.
+This package also contains third-party components which are under the following licenses;</p>
+<section id="wandmalfarbe-pandoc-latex-template">
+<h2>6.1. Wandmalfarbe/pandoc-latex-template<a class="headerlink" href="#wandmalfarbe-pandoc-latex-template" title="Permalink to this heading">¶</a></h2>
+<p>We include the pandoc LaTeX template from <a class="reference external" href="https://github.com/Wandmalfarbe/pandoc-latex-template">Wandmalfarbe/pandoc-latex-template</a> by Pascal Wagler and John MacFarlane, which is under the <a class="reference external" href="https://github.com/Wandmalfarbe/pandoc-latex-template/blob/master/LICENSE">BSD 3 license</a>. For this, the following terms hold:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">%</span> <span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2018</span><span class="p">,</span> <span class="n">Pascal</span> <span class="n">Wagler</span><span class="p">;</span>  
+<span class="o">%</span> <span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2014</span><span class="o">--</span><span class="mi">2018</span><span class="p">,</span> <span class="n">John</span> <span class="n">MacFarlane</span>
+<span class="o">%</span> 
+<span class="o">%</span> <span class="n">All</span> <span class="n">rights</span> <span class="n">reserved</span><span class="o">.</span>
+<span class="o">%</span> 
+<span class="o">%</span> <span class="n">Redistribution</span> <span class="ow">and</span> <span class="n">use</span> <span class="ow">in</span> <span class="n">source</span> <span class="ow">and</span> <span class="n">binary</span> <span class="n">forms</span><span class="p">,</span> <span class="k">with</span> <span class="ow">or</span> <span class="n">without</span> 
+<span class="o">%</span> <span class="n">modification</span><span class="p">,</span> <span class="n">are</span> <span class="n">permitted</span> <span class="n">provided</span> <span class="n">that</span> <span class="n">the</span> <span class="n">following</span> <span class="n">conditions</span> 
+<span class="o">%</span> <span class="n">are</span> <span class="n">met</span><span class="p">:</span>
+<span class="o">%</span> 
+<span class="o">%</span> <span class="o">-</span> <span class="n">Redistributions</span> <span class="n">of</span> <span class="n">source</span> <span class="n">code</span> <span class="n">must</span> <span class="n">retain</span> <span class="n">the</span> <span class="n">above</span> <span class="n">copyright</span> 
+<span class="o">%</span> <span class="n">notice</span><span class="p">,</span> <span class="n">this</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">conditions</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">following</span> <span class="n">disclaimer</span><span class="o">.</span>
+<span class="o">%</span> 
+<span class="o">%</span> <span class="o">-</span> <span class="n">Redistributions</span> <span class="ow">in</span> <span class="n">binary</span> <span class="n">form</span> <span class="n">must</span> <span class="n">reproduce</span> <span class="n">the</span> <span class="n">above</span> <span class="n">copyright</span> 
+<span class="o">%</span> <span class="n">notice</span><span class="p">,</span> <span class="n">this</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">conditions</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">following</span> <span class="n">disclaimer</span> <span class="ow">in</span> <span class="n">the</span> 
+<span class="o">%</span> <span class="n">documentation</span> <span class="ow">and</span><span class="o">/</span><span class="ow">or</span> <span class="n">other</span> <span class="n">materials</span> <span class="n">provided</span> <span class="k">with</span> <span class="n">the</span> <span class="n">distribution</span><span class="o">.</span>
+<span class="o">%</span> 
+<span class="o">%</span> <span class="o">-</span> <span class="n">Neither</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">John</span> <span class="n">MacFarlane</span> <span class="n">nor</span> <span class="n">the</span> <span class="n">names</span> <span class="n">of</span> <span class="n">other</span> 
+<span class="o">%</span> <span class="n">contributors</span> <span class="n">may</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">endorse</span> <span class="ow">or</span> <span class="n">promote</span> <span class="n">products</span> <span class="n">derived</span> 
+<span class="o">%</span> <span class="kn">from</span> <span class="nn">this</span> <span class="n">software</span> <span class="n">without</span> <span class="n">specific</span> <span class="n">prior</span> <span class="n">written</span> <span class="n">permission</span><span class="o">.</span>
+<span class="o">%</span> 
+<span class="o">%</span> <span class="n">THIS</span> <span class="n">SOFTWARE</span> <span class="n">IS</span> <span class="n">PROVIDED</span> <span class="n">BY</span> <span class="n">THE</span> <span class="n">COPYRIGHT</span> <span class="n">HOLDERS</span> <span class="n">AND</span> <span class="n">CONTRIBUTORS</span> 
+<span class="o">%</span> <span class="s2">&quot;AS IS&quot;</span> <span class="n">AND</span> <span class="n">ANY</span> <span class="n">EXPRESS</span> <span class="n">OR</span> <span class="n">IMPLIED</span> <span class="n">WARRANTIES</span><span class="p">,</span> <span class="n">INCLUDING</span><span class="p">,</span> <span class="n">BUT</span> <span class="n">NOT</span> 
+<span class="o">%</span> <span class="n">LIMITED</span> <span class="n">TO</span><span class="p">,</span> <span class="n">THE</span> <span class="n">IMPLIED</span> <span class="n">WARRANTIES</span> <span class="n">OF</span> <span class="n">MERCHANTABILITY</span> <span class="n">AND</span> <span class="n">FITNESS</span> 
+<span class="o">%</span> <span class="n">FOR</span> <span class="n">A</span> <span class="n">PARTICULAR</span> <span class="n">PURPOSE</span> <span class="n">ARE</span> <span class="n">DISCLAIMED</span><span class="o">.</span> <span class="n">IN</span> <span class="n">NO</span> <span class="n">EVENT</span> <span class="n">SHALL</span> <span class="n">THE</span> 
+<span class="o">%</span> <span class="n">COPYRIGHT</span> <span class="n">OWNER</span> <span class="n">OR</span> <span class="n">CONTRIBUTORS</span> <span class="n">BE</span> <span class="n">LIABLE</span> <span class="n">FOR</span> <span class="n">ANY</span> <span class="n">DIRECT</span><span class="p">,</span> <span class="n">INDIRECT</span><span class="p">,</span> 
+<span class="o">%</span> <span class="n">INCIDENTAL</span><span class="p">,</span> <span class="n">SPECIAL</span><span class="p">,</span> <span class="n">EXEMPLARY</span><span class="p">,</span> <span class="n">OR</span> <span class="n">CONSEQUENTIAL</span> <span class="n">DAMAGES</span> <span class="p">(</span><span class="n">INCLUDING</span><span class="p">,</span>
+<span class="o">%</span> <span class="n">BUT</span> <span class="n">NOT</span> <span class="n">LIMITED</span> <span class="n">TO</span><span class="p">,</span> <span class="n">PROCUREMENT</span> <span class="n">OF</span> <span class="n">SUBSTITUTE</span> <span class="n">GOODS</span> <span class="n">OR</span> <span class="n">SERVICES</span><span class="p">;</span> 
+<span class="o">%</span> <span class="n">LOSS</span> <span class="n">OF</span> <span class="n">USE</span><span class="p">,</span> <span class="n">DATA</span><span class="p">,</span> <span class="n">OR</span> <span class="n">PROFITS</span><span class="p">;</span> <span class="n">OR</span> <span class="n">BUSINESS</span> <span class="n">INTERRUPTION</span><span class="p">)</span> <span class="n">HOWEVER</span> 
+<span class="o">%</span> <span class="n">CAUSED</span> <span class="n">AND</span> <span class="n">ON</span> <span class="n">ANY</span> <span class="n">THEORY</span> <span class="n">OF</span> <span class="n">LIABILITY</span><span class="p">,</span> <span class="n">WHETHER</span> <span class="n">IN</span> <span class="n">CONTRACT</span><span class="p">,</span> <span class="n">STRICT</span> 
+<span class="o">%</span> <span class="n">LIABILITY</span><span class="p">,</span> <span class="n">OR</span> <span class="n">TORT</span> <span class="p">(</span><span class="n">INCLUDING</span> <span class="n">NEGLIGENCE</span> <span class="n">OR</span> <span class="n">OTHERWISE</span><span class="p">)</span> <span class="n">ARISING</span> <span class="n">IN</span> 
+<span class="o">%</span> <span class="n">ANY</span> <span class="n">WAY</span> <span class="n">OUT</span> <span class="n">OF</span> <span class="n">THE</span> <span class="n">USE</span> <span class="n">OF</span> <span class="n">THIS</span> <span class="n">SOFTWARE</span><span class="p">,</span> <span class="n">EVEN</span> <span class="n">IF</span> <span class="n">ADVISED</span> <span class="n">OF</span> <span class="n">THE</span> 
+<span class="o">%</span> <span class="n">POSSIBILITY</span> <span class="n">OF</span> <span class="n">SUCH</span> <span class="n">DAMAGE</span><span class="o">.</span>
+<span class="o">%%</span>
+
+<span class="o">%%</span>
+<span class="o">%</span> <span class="n">For</span> <span class="n">usage</span> <span class="n">information</span> <span class="ow">and</span> <span class="n">examples</span> <span class="n">visit</span> <span class="n">the</span> <span class="n">GitHub</span> <span class="n">page</span> <span class="n">of</span> <span class="n">this</span> <span class="n">template</span><span class="p">:</span>
+<span class="o">%</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">Wandmalfarbe</span><span class="o">/</span><span class="n">pandoc</span><span class="o">-</span><span class="n">latex</span><span class="o">-</span><span class="n">template</span>
+<span class="o">%%</span>
+</pre></div>
+</div>
+</section>
+<section id="tajmone-pandoc-goodies-html-template">
+<h2>6.2 tajmone/pandoc-goodies HTML Template<a class="headerlink" href="#tajmone-pandoc-goodies-html-template" title="Permalink to this heading">¶</a></h2>
+<p>We include the pandoc HTML-5 template from <a class="reference external" href="https://github.com/tajmone/pandoc-goodies">tajmone/pandoc-goodies</a> by Tristano Ajmone, Sindre Sorhus, and GitHub Inc., which is under the <a class="reference external" href="https://raw.githubusercontent.com/tajmone/pandoc-goodies/master/templates/html5/github/LICENSE">MIT license</a>. For this, the following terms hold:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MIT</span> <span class="n">License</span>
+
+<span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="n">Tristano</span> <span class="n">Ajmone</span><span class="p">,</span> <span class="mi">2017</span> <span class="p">(</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">tajmone</span><span class="o">/</span><span class="n">pandoc</span><span class="o">-</span><span class="n">goodies</span><span class="p">)</span>
+<span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="n">Sindre</span> <span class="n">Sorhus</span> <span class="o">&lt;</span><span class="n">sindresorhus</span><span class="nd">@gmail</span><span class="o">.</span><span class="n">com</span><span class="o">&gt;</span> <span class="p">(</span><span class="n">sindresorhus</span><span class="o">.</span><span class="n">com</span><span class="p">)</span>
+<span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2017</span> <span class="n">GitHub</span> <span class="n">Inc</span><span class="o">.</span>
+
+<span class="s2">&quot;GitHub Pandoc HTML5 Template&quot;</span> <span class="ow">is</span> <span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="n">Tristano</span> <span class="n">Ajmone</span><span class="p">,</span> <span class="mi">2017</span><span class="p">,</span> <span class="n">released</span>
+<span class="n">under</span> <span class="n">the</span> <span class="n">MIT</span> <span class="n">License</span> <span class="p">(</span><span class="n">MIT</span><span class="p">);</span> <span class="n">it</span> <span class="n">contains</span> <span class="n">readaptations</span> <span class="n">of</span> <span class="n">substantial</span> <span class="n">portions</span>
+<span class="n">of</span> <span class="n">the</span> <span class="n">following</span> <span class="n">third</span> <span class="n">party</span> <span class="n">softwares</span><span class="p">:</span>
+
+<span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;GitHub Markdown CSS&quot;</span><span class="p">,</span> <span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="n">Sindre</span> <span class="n">Sorhus</span><span class="p">,</span> <span class="n">MIT</span> <span class="n">License</span> <span class="p">(</span><span class="n">MIT</span><span class="p">)</span><span class="o">.</span>
+<span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Primer CSS&quot;</span><span class="p">,</span> <span class="n">Copyright</span> <span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2016</span> <span class="n">GitHub</span> <span class="n">Inc</span><span class="o">.</span><span class="p">,</span> <span class="n">MIT</span> <span class="n">License</span> <span class="p">(</span><span class="n">MIT</span><span class="p">)</span><span class="o">.</span>
+
+<span class="n">Permission</span> <span class="ow">is</span> <span class="n">hereby</span> <span class="n">granted</span><span class="p">,</span> <span class="n">free</span> <span class="n">of</span> <span class="n">charge</span><span class="p">,</span> <span class="n">to</span> <span class="nb">any</span> <span class="n">person</span> <span class="n">obtaining</span> <span class="n">a</span> <span class="n">copy</span>
+<span class="n">of</span> <span class="n">this</span> <span class="n">software</span> <span class="ow">and</span> <span class="n">associated</span> <span class="n">documentation</span> <span class="n">files</span> <span class="p">(</span><span class="n">the</span> <span class="s2">&quot;Software&quot;</span><span class="p">),</span> <span class="n">to</span> <span class="n">deal</span>
+<span class="ow">in</span> <span class="n">the</span> <span class="n">Software</span> <span class="n">without</span> <span class="n">restriction</span><span class="p">,</span> <span class="n">including</span> <span class="n">without</span> <span class="n">limitation</span> <span class="n">the</span> <span class="n">rights</span>
+<span class="n">to</span> <span class="n">use</span><span class="p">,</span> <span class="n">copy</span><span class="p">,</span> <span class="n">modify</span><span class="p">,</span> <span class="n">merge</span><span class="p">,</span> <span class="n">publish</span><span class="p">,</span> <span class="n">distribute</span><span class="p">,</span> <span class="n">sublicense</span><span class="p">,</span> <span class="ow">and</span><span class="o">/</span><span class="ow">or</span> <span class="n">sell</span>
+<span class="n">copies</span> <span class="n">of</span> <span class="n">the</span> <span class="n">Software</span><span class="p">,</span> <span class="ow">and</span> <span class="n">to</span> <span class="n">permit</span> <span class="n">persons</span> <span class="n">to</span> <span class="n">whom</span> <span class="n">the</span> <span class="n">Software</span> <span class="ow">is</span>
+<span class="n">furnished</span> <span class="n">to</span> <span class="n">do</span> <span class="n">so</span><span class="p">,</span> <span class="n">subject</span> <span class="n">to</span> <span class="n">the</span> <span class="n">following</span> <span class="n">conditions</span><span class="p">:</span>
+
+<span class="n">The</span> <span class="n">above</span> <span class="n">copyright</span> <span class="n">notice</span> <span class="ow">and</span> <span class="n">this</span> <span class="n">permission</span> <span class="n">notice</span> <span class="n">shall</span> <span class="n">be</span> <span class="n">included</span> <span class="ow">in</span> <span class="nb">all</span>
+<span class="n">copies</span> <span class="ow">or</span> <span class="n">substantial</span> <span class="n">portions</span> <span class="n">of</span> <span class="n">the</span> <span class="n">Software</span><span class="o">.</span>
+
+<span class="n">THE</span> <span class="n">SOFTWARE</span> <span class="n">IS</span> <span class="n">PROVIDED</span> <span class="s2">&quot;AS IS&quot;</span><span class="p">,</span> <span class="n">WITHOUT</span> <span class="n">WARRANTY</span> <span class="n">OF</span> <span class="n">ANY</span> <span class="n">KIND</span><span class="p">,</span> <span class="n">EXPRESS</span> <span class="n">OR</span>
+<span class="n">IMPLIED</span><span class="p">,</span> <span class="n">INCLUDING</span> <span class="n">BUT</span> <span class="n">NOT</span> <span class="n">LIMITED</span> <span class="n">TO</span> <span class="n">THE</span> <span class="n">WARRANTIES</span> <span class="n">OF</span> <span class="n">MERCHANTABILITY</span><span class="p">,</span>
+<span class="n">FITNESS</span> <span class="n">FOR</span> <span class="n">A</span> <span class="n">PARTICULAR</span> <span class="n">PURPOSE</span> <span class="n">AND</span> <span class="n">NONINFRINGEMENT</span><span class="o">.</span> <span class="n">IN</span> <span class="n">NO</span> <span class="n">EVENT</span> <span class="n">SHALL</span> <span class="n">THE</span>
+<span class="n">AUTHORS</span> <span class="n">OR</span> <span class="n">COPYRIGHT</span> <span class="n">HOLDERS</span> <span class="n">BE</span> <span class="n">LIABLE</span> <span class="n">FOR</span> <span class="n">ANY</span> <span class="n">CLAIM</span><span class="p">,</span> <span class="n">DAMAGES</span> <span class="n">OR</span> <span class="n">OTHER</span>
+<span class="n">LIABILITY</span><span class="p">,</span> <span class="n">WHETHER</span> <span class="n">IN</span> <span class="n">AN</span> <span class="n">ACTION</span> <span class="n">OF</span> <span class="n">CONTRACT</span><span class="p">,</span> <span class="n">TORT</span> <span class="n">OR</span> <span class="n">OTHERWISE</span><span class="p">,</span> <span class="n">ARISING</span> <span class="n">FROM</span><span class="p">,</span>
+<span class="n">OUT</span> <span class="n">OF</span> <span class="n">OR</span> <span class="n">IN</span> <span class="n">CONNECTION</span> <span class="n">WITH</span> <span class="n">THE</span> <span class="n">SOFTWARE</span> <span class="n">OR</span> <span class="n">THE</span> <span class="n">USE</span> <span class="n">OR</span> <span class="n">OTHER</span> <span class="n">DEALINGS</span> <span class="n">IN</span> <span class="n">THE</span>
+<span class="n">SOFTWARE</span><span class="o">.</span>
+</pre></div>
+</div>
+</section>
+<section id="mathjax">
+<h2>6.3. MathJax<a class="headerlink" href="#mathjax" title="Permalink to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.mathjax.org/">MathJax</a> is under the <a class="reference external" href="https://github.com/mathjax/MathJax/blob/master/LICENSE">Apache License, Version 2.0.</a>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Apache License
+                       Version 2.0, January 2004
+                    https://www.apache.org/licenses/
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+1. Definitions.
+
+  &quot;License&quot; shall mean the terms and conditions for use, reproduction,
+  and distribution as defined by Sections 1 through 9 of this document.
+
+  &quot;Licensor&quot; shall mean the copyright owner or entity authorized by
+  the copyright owner that is granting the License.
+
+  &quot;Legal Entity&quot; shall mean the union of the acting entity and all
+  other entities that control, are controlled by, or are under common
+  control with that entity. For the purposes of this definition,
+  &quot;control&quot; means (i) the power, direct or indirect, to cause the
+  direction or management of such entity, whether by contract or
+  otherwise, or (ii) ownership of fifty percent (50%) or more of the
+  outstanding shares, or (iii) beneficial ownership of such entity.
+
+  &quot;You&quot; (or &quot;Your&quot;) shall mean an individual or Legal Entity
+  exercising permissions granted by this License.
+
+  &quot;Source&quot; form shall mean the preferred form for making modifications,
+  including but not limited to software source code, documentation
+  source, and configuration files.
+
+  &quot;Object&quot; form shall mean any form resulting from mechanical
+  transformation or translation of a Source form, including but
+  not limited to compiled object code, generated documentation,
+  and conversions to other media types.
+
+  &quot;Work&quot; shall mean the work of authorship, whether in Source or
+  Object form, made available under the License, as indicated by a
+  copyright notice that is included in or attached to the work
+  (an example is provided in the Appendix below).
+
+  &quot;Derivative Works&quot; shall mean any work, whether in Source or Object
+  form, that is based on (or derived from) the Work and for which the
+  editorial revisions, annotations, elaborations, or other modifications
+  represent, as a whole, an original work of authorship. For the purposes
+  of this License, Derivative Works shall not include works that remain
+  separable from, or merely link (or bind by name) to the interfaces of,
+  the Work and Derivative Works thereof.
+
+  &quot;Contribution&quot; shall mean any work of authorship, including
+  the original version of the Work and any modifications or additions
+  to that Work or Derivative Works thereof, that is intentionally
+  submitted to Licensor for inclusion in the Work by the copyright owner
+  or by an individual or Legal Entity authorized to submit on behalf of
+  the copyright owner. For the purposes of this definition, &quot;submitted&quot;
+  means any form of electronic, verbal, or written communication sent
+  to the Licensor or its representatives, including but not limited to
+  communication on electronic mailing lists, source code control systems,
+  and issue tracking systems that are managed by, or on behalf of, the
+  Licensor for the purpose of discussing and improving the Work, but
+  excluding communication that is conspicuously marked or otherwise
+  designated in writing by the copyright owner as &quot;Not a Contribution.&quot;
+
+  &quot;Contributor&quot; shall mean Licensor and any individual or Legal Entity
+  on behalf of whom a Contribution has been received by Licensor and
+  subsequently incorporated within the Work.
+
+2. Grant of Copyright License. Subject to the terms and conditions of
+  this License, each Contributor hereby grants to You a perpetual,
+  worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+  copyright license to reproduce, prepare Derivative Works of,
+  publicly display, publicly perform, sublicense, and distribute the
+  Work and such Derivative Works in Source or Object form.
+
+3. Grant of Patent License. Subject to the terms and conditions of
+  this License, each Contributor hereby grants to You a perpetual,
+  worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+  (except as stated in this section) patent license to make, have made,
+  use, offer to sell, sell, import, and otherwise transfer the Work,
+  where such license applies only to those patent claims licensable
+  by such Contributor that are necessarily infringed by their
+  Contribution(s) alone or by combination of their Contribution(s)
+  with the Work to which such Contribution(s) was submitted. If You
+  institute patent litigation against any entity (including a
+  cross-claim or counterclaim in a lawsuit) alleging that the Work
+  or a Contribution incorporated within the Work constitutes direct
+  or contributory patent infringement, then any patent licenses
+  granted to You under this License for that Work shall terminate
+  as of the date such litigation is filed.
+
+4. Redistribution. You may reproduce and distribute copies of the
+  Work or Derivative Works thereof in any medium, with or without
+  modifications, and in Source or Object form, provided that You
+  meet the following conditions:
+
+  (a) You must give any other recipients of the Work or
+      Derivative Works a copy of this License; and
+
+  (b) You must cause any modified files to carry prominent notices
+      stating that You changed the files; and
+
+  (c) You must retain, in the Source form of any Derivative Works
+      that You distribute, all copyright, patent, trademark, and
+      attribution notices from the Source form of the Work,
+      excluding those notices that do not pertain to any part of
+      the Derivative Works; and
+
+  (d) If the Work includes a &quot;NOTICE&quot; text file as part of its
+      distribution, then any Derivative Works that You distribute must
+      include a readable copy of the attribution notices contained
+      within such NOTICE file, excluding those notices that do not
+      pertain to any part of the Derivative Works, in at least one
+      of the following places: within a NOTICE text file distributed
+      as part of the Derivative Works; within the Source form or
+      documentation, if provided along with the Derivative Works; or,
+      within a display generated by the Derivative Works, if and
+      wherever such third-party notices normally appear. The contents
+      of the NOTICE file are for informational purposes only and
+      do not modify the License. You may add Your own attribution
+      notices within Derivative Works that You distribute, alongside
+      or as an addendum to the NOTICE text from the Work, provided
+      that such additional attribution notices cannot be construed
+      as modifying the License.
+
+  You may add Your own copyright statement to Your modifications and
+  may provide additional or different license terms and conditions
+  for use, reproduction, or distribution of Your modifications, or
+  for any such Derivative Works as a whole, provided Your use,
+  reproduction, and distribution of the Work otherwise complies with
+  the conditions stated in this License.
+
+5. Submission of Contributions. Unless You explicitly state otherwise,
+  any Contribution intentionally submitted for inclusion in the Work
+  by You to the Licensor shall be under the terms and conditions of
+  this License, without any additional terms or conditions.
+  Notwithstanding the above, nothing herein shall supersede or modify
+  the terms of any separate license agreement you may have executed
+  with Licensor regarding such Contributions.
+
+6. Trademarks. This License does not grant permission to use the trade
+  names, trademarks, service marks, or product names of the Licensor,
+  except as required for reasonable and customary use in describing the
+  origin of the Work and reproducing the content of the NOTICE file.
+
+7. Disclaimer of Warranty. Unless required by applicable law or
+  agreed to in writing, Licensor provides the Work (and each
+  Contributor provides its Contributions) on an &quot;AS IS&quot; BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+  implied, including, without limitation, any warranties or conditions
+  of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+  PARTICULAR PURPOSE. You are solely responsible for determining the
+  appropriateness of using or redistributing the Work and assume any
+  risks associated with Your exercise of permissions under this License.
+
+8. Limitation of Liability. In no event and under no legal theory,
+  whether in tort (including negligence), contract, or otherwise,
+  unless required by applicable law (such as deliberate and grossly
+  negligent acts) or agreed to in writing, shall any Contributor be
+  liable to You for damages, including any direct, indirect, special,
+  incidental, or consequential damages of any character arising as a
+  result of this License or out of the use or inability to use the
+  Work (including but not limited to damages for loss of goodwill,
+  work stoppage, computer failure or malfunction, or any and all
+  other commercial damages or losses), even if such Contributor
+  has been advised of the possibility of such damages.
+
+9. Accepting Warranty or Additional Liability. While redistributing
+  the Work or Derivative Works thereof, You may choose to offer,
+  and charge a fee for, acceptance of support, warranty, indemnity,
+  or other liability obligations and/or rights consistent with this
+  License. However, in accepting such obligations, You may act only
+  on Your own behalf and on Your sole responsibility, not on behalf
+  of any other Contributor, and only if You agree to indemnify,
+  defend, and hold each Contributor harmless for any liability
+  incurred by, or claims asserted against, such Contributor by reason
+  of your accepting any such warranty or additional liability.
+
+END OF TERMS AND CONDITIONS
+
+APPENDIX: How to apply the Apache License to your work.
+
+  To apply the Apache License to your work, attach the following
+  boilerplate notice, with the fields enclosed by brackets &quot;[]&quot;
+  replaced with your own identifying information. (Don&#39;t include
+  the brackets!)  The text should be enclosed in the appropriate
+  comment syntax for the file format. We also recommend that a
+  file or class name and description of purpose be included on the
+  same &quot;printed page&quot; as the copyright notice for easier
+  identification within third-party archives.
+
+Copyright [yyyy] [name of copyright owner]
+
+Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+</pre></div>
+</div>
+</section>
+</section>
+<section id="contact">
+<h1>7. Contact<a class="headerlink" href="#contact" title="Permalink to this heading">¶</a></h1>
+<p>If you have any questions or suggestions, please contact</p>
+<p>Prof. Dr. <a class="reference external" href="http://iao.hfuu.edu.cn/5">Thomas Weise</a> (汤卫思教授) of the
+Institute of Applied Optimization (应用优化研究所, <a class="reference external" href="http://iao.hfuu.edu.cn">IAO</a>) of the
+School of Artificial Intelligence and Big Data (<a class="reference external" href="http://www.hfuu.edu.cn/aibd/">人工智能与大数据学院</a>) at
+<a class="reference external" href="http://www.hfuu.edu.cn/english/">Hefei University</a> (<a class="reference external" href="http://www.hfuu.edu.cn/">合肥学院</a>) in
+Hefei, Anhui, China (中国安徽省合肥市) via
+email to <a class="reference external" href="mailto:tweise&#37;&#52;&#48;hfuu&#46;edu&#46;cn">tweise<span>&#64;</span>hfuu<span>&#46;</span>edu<span>&#46;</span>cn</a> with CC to <a class="reference external" href="mailto:tweise&#37;&#52;&#48;ustc&#46;edu&#46;cn">tweise<span>&#64;</span>ustc<span>&#46;</span>edu<span>&#46;</span>cn</a>.</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">1. Introduction</a></li>
+<li><a class="reference internal" href="#installation-and-local-use">2. Installation and Local Use</a><ul>
+<li><a class="reference internal" href="#local-installation-and-use">2.1. Local Installation and Use</a><ul>
+<li><a class="reference internal" href="#installation-of-the-package">2.1.1. Installation of the Package</a></li>
+<li><a class="reference internal" href="#installation-of-the-tool-chain">2.1.2. Installation of the Tool Chain</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-the-docker-image">2.2. Using the Docker Image</a></li>
+<li><a class="reference internal" href="#examples">2.3. Examples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#provided-functionality">3. Provided Functionality</a></li>
+<li><a class="reference internal" href="#basic-commands-provided-by-pandoc-and-off-the-shelf-filters">3.1. Basic commands provided by <code class="docutils literal notranslate"><span class="pre">pandoc</span></code> and off-the-shelf filters</a></li>
+<li><a class="reference internal" href="#bookbuilderpy-specific-commands">3.2. <code class="docutils literal notranslate"><span class="pre">bookbuilderpy</span></code>-specific commands</a></li>
+<li><a class="reference internal" href="#metadata">3.3. Metadata</a><ul>
+<li><a class="reference internal" href="#language-specification-and-resolution">3.3.1. Language Specification and Resolution</a></li>
+<li><a class="reference internal" href="#git-repositories">3.3.2. Git Repositories</a></li>
+<li><a class="reference internal" href="#website-construction">3.3.3. Website Construction</a></li>
+<li><a class="reference internal" href="#other-metadata">3.3.4. Other Metadata</a></li>
+<li><a class="reference internal" href="#graphics">3.4. Graphics</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#github-pipeline">4. GitHub Pipeline</a><ul>
+<li><a class="reference internal" href="#the-repository">4.1. The Repository</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-github-action">4.2. The GitHub Action</a></li>
+<li><a class="reference internal" href="#related-projects-and-components">5. Related Projects and Components</a><ul>
+<li><a class="reference internal" href="#own-contributed-projects-and-components">5.1. Own Contributed Projects and Components</a></li>
+<li><a class="reference internal" href="#related-projects-and-components-used">5.2. Related Projects and Components Used</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license">6. License</a><ul>
+<li><a class="reference internal" href="#wandmalfarbe-pandoc-latex-template">6.1. Wandmalfarbe/pandoc-latex-template</a></li>
+<li><a class="reference internal" href="#tajmone-pandoc-goodies-html-template">6.2 tajmone/pandoc-goodies HTML Template</a></li>
+<li><a class="reference internal" href="#mathjax">6.3. MathJax</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#contact">7. Contact</a></li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/README.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">1. Introduction</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

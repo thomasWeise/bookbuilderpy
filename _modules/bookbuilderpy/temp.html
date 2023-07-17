@@ -1,0 +1,226 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.temp &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/temp.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.temp</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.temp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A set of utilities interactions with the file system.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">AbstractContextManager</span>
+<span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">rmtree</span>
+<span class="kn">from</span> <span class="nn">tempfile</span> <span class="kn">import</span> <span class="n">mkdtemp</span><span class="p">,</span> <span class="n">mkstemp</span>
+
+<span class="kn">from</span> <span class="nn">bookbuilderpy.path</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.strings</span> <span class="kn">import</span> <span class="n">enforce_non_empty_str_without_ws</span>
+
+
+<div class="viewcode-block" id="TempDir"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.temp.TempDir">[docs]</a><span class="k">class</span> <span class="nc">TempDir</span><span class="p">(</span><span class="n">Path</span><span class="p">,</span> <span class="n">AbstractContextManager</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A scoped temporary directory to be used in a &#39;with&#39; block.</span>
+
+<span class="sd">    The directory and everything in it will be deleted upon exiting the</span>
+<span class="sd">    &#39;with&#39; block.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: is the directory open?</span>
+    <span class="n">__is_open</span><span class="p">:</span> <span class="nb">bool</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct the object.</span>
+
+<span class="sd">        :param value: the string value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">enforce_dir</span><span class="p">()</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">__is_open</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+<div class="viewcode-block" id="TempDir.create"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.temp.TempDir.create">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TempDir&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the temporary directory.</span>
+
+<span class="sd">        :param directory: an optional root directory</span>
+<span class="sd">        :raises TypeError: if `directory` is not `None` but also no `str`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">root_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="n">root_dir</span><span class="o">.</span><span class="n">enforce_dir</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">root_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">TempDir</span><span class="p">(</span><span class="n">mkdtemp</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">root_dir</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TempDir&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Nothing, just exists for `with`.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Temporary directory &#39;</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">&#39; already closed.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete the temporary directory and everything in it.</span>
+
+<span class="sd">        :param exception_type: ignored</span>
+<span class="sd">        :param exception_value: ignored</span>
+<span class="sd">        :param traceback: ignored</span>
+<span class="sd">        :returns: `True` to suppress an exception, `False` to rethrow it</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">opn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">opn</span><span class="p">:</span>
+            <span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">onerror</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">exception_type</span> <span class="ow">is</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="TempFile"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.temp.TempFile">[docs]</a><span class="k">class</span> <span class="nc">TempFile</span><span class="p">(</span><span class="n">Path</span><span class="p">,</span> <span class="n">AbstractContextManager</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A scoped temporary file to be used in a &#39;with&#39; block.</span>
+
+<span class="sd">    This file will be deleted upon exiting the &#39;with&#39; block.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: is the directory open?</span>
+    <span class="n">__is_open</span><span class="p">:</span> <span class="nb">bool</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct the object.</span>
+
+<span class="sd">        :param value: the string value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">enforce_file</span><span class="p">()</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">__is_open</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+<div class="viewcode-block" id="TempFile.create"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.temp.TempFile.create">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TempFile&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a temporary file.</span>
+
+<span class="sd">        :param directory: a root directory or `TempDir` instance</span>
+<span class="sd">        :param prefix: an optional prefix</span>
+<span class="sd">        :param suffix: an optional suffix, e.g., `.txt`</span>
+<span class="sd">        :raises TypeError: if any of the parameters does not fulfill the type</span>
+<span class="sd">            contract</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">suffix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">suffix</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">base_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="n">base_dir</span><span class="o">.</span><span class="n">enforce_dir</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base_dir</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="o">=</span> <span class="n">mkstemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="n">suffix</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="n">base_dir</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">TempFile</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TempFile&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Nothing, just exists for `with`.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Temporary file &#39;</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">&#39; already deleted.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exception_type</span><span class="p">,</span> <span class="n">exception_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete the temporary file.</span>
+
+<span class="sd">        :param exception_type: ignored</span>
+<span class="sd">        :param exception_value: ignored</span>
+<span class="sd">        :param traceback: ignored</span>
+<span class="sd">        :returns: `True` to suppress an exception, `False` to rethrow it</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">opn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__is_open</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">opn</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">exception_type</span> <span class="ow">is</span> <span class="kc">None</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.temp</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,292 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.preprocessor_commands &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/preprocessor_commands.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.preprocessor_commands</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.preprocessor_commands</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Regular-expression based command generation and invocation.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span>
+
+<span class="kn">import</span> <span class="nn">regex</span> <span class="k">as</span> <span class="nn">reg</span>  <span class="c1"># type: ignore</span>
+
+<span class="kn">from</span> <span class="nn">bookbuilderpy.types</span> <span class="kn">import</span> <span class="n">type_error</span>
+
+
+<span class="k">def</span> <span class="nf">__create_command_re</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">strip_white_space</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">reg</span><span class="o">.</span><span class="n">Regex</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a Regular Expression for a LaTeX-Style Command.</span>
+
+<span class="sd">    A LaTeX-style command can be defined as an (recursive) regular expression.</span>
+<span class="sd">    The start of the command is indicated by `\name`. It then has `n`</span>
+<span class="sd">    arguments with `n&gt;=0`. Each argument is wrapped into a `{` and a `}`.</span>
+<span class="sd">    Example: `\sub{1}{2}`.</span>
+
+<span class="sd">    Here we create a regular expression `cmd` that can match such a command.</span>
+<span class="sd">    It can be applied to a string `s` using</span>
+<span class="sd">    `sub(cmd, lambda g: g[1]+&quot;-&quot;+g[2], s)`, which would then return `{1}-{2}`</span>
+<span class="sd">    for `s=&quot;\sub{1}{2}&quot;`.</span>
+
+<span class="sd">    Note that the expression will pass the curly braces of the arguments to</span>
+<span class="sd">    the command which later need to be stripped away if necessary.</span>
+
+<span class="sd">    :param name: the name of the command</span>
+<span class="sd">    :param n: the number of parameters</span>
+<span class="sd">    :param strip_white_space: should the white space around</span>
+<span class="sd">        the command be stripped</span>
+<span class="sd">    :return: a regular expression representing the command</span>
+
+<span class="sd">    &gt;&gt;&gt; cmd = __create_command_re(&quot;y&quot;, 2, False)</span>
+<span class="sd">    &gt;&gt;&gt; s = &#39;blabla\\y{1}{2}xaxa \\y{3}{4} zhdfg&#39;</span>
+<span class="sd">    &gt;&gt;&gt; reg.sub(cmd, lambda g: g[1], s)</span>
+<span class="sd">    &#39;blabla{1}xaxa {3} zhdfg&#39;</span>
+<span class="sd">    &gt;&gt;&gt; reg.sub(cmd, lambda g: g[2], s)</span>
+<span class="sd">    &#39;blabla{2}xaxa {4} zhdfg&#39;</span>
+<span class="sd">    &gt;&gt;&gt; s = &#39;blabla\\y{\\y{1}{2}}{3} \\y{3}{4}.&#39;</span>
+<span class="sd">    &gt;&gt;&gt; reg.sub(cmd, lambda g: g[1], s)</span>
+<span class="sd">    &#39;blabla{\\y{1}{2}} {3}.&#39;</span>
+<span class="sd">    &gt;&gt;&gt; reg.sub(cmd, lambda g: g[2], reg.sub(cmd, lambda g: g[1], s))</span>
+<span class="sd">    &#39;blabla{{2}} {3}.&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd = __create_command_re(&quot;y&quot;, 0, True)</span>
+<span class="sd">    &gt;&gt;&gt; reg.sub(cmd, &quot;Z&quot;, &quot;hello\n\\y  df&quot;)</span>
+<span class="sd">    &#39;helloZdf&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd = __create_command_re(&quot;z&quot;, 3, True)</span>
+<span class="sd">    &gt;&gt;&gt; reg.sub(cmd, lambda g: g[1]+g[3], &quot;hello\n\\z{A x}{b k}{z}  df&quot;)</span>
+<span class="sd">    &#39;hello{A x}{z}df&#39;</span>
+<span class="sd">    &gt;&gt;&gt; reg.sub(cmd, lambda g: g[1]+g[3], &quot;hello\n\\z{{A x}}{b k}{z}  df&quot;)</span>
+<span class="sd">    &#39;hello{{A x}}{z}df&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd = __create_command_re(&quot;sub&quot;, 2, True)</span>
+<span class="sd">    &gt;&gt;&gt; reg.sub(cmd, lambda g: g[1]+&quot;-&quot;+g[2], &quot;a \\sub{1}{2} b&quot;)</span>
+<span class="sd">    &#39;a{1}-{2}b&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;name cannot be &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;u&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid command name: &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n cannot be &#39;</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strip_white_space</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">strip_white_space</span><span class="p">,</span> <span class="s2">&quot;strip_white_space&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1"># First, we build the regular expression, which makes sure that braces</span>
+    <span class="c1"># numbers match.</span>
+
+    <span class="c1"># Create the command the name.</span>
+    <span class="n">regexpr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Add the parameter groups.</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">regexpr</span> <span class="o">+=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">r</span><span class="s2">&quot;(\{(?&gt;[^\{\}]|(?&quot;</span><span class="p">,</span>
+                      <span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="sa">r</span><span class="s2">&quot;))*+\})&quot;</span><span class="p">])</span>
+             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)])</span>
+
+    <span class="c1"># Add potential whitespace strippers.</span>
+    <span class="k">if</span> <span class="n">strip_white_space</span><span class="p">:</span>
+        <span class="n">regexpr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">s*&quot;</span> <span class="o">+</span> <span class="n">regexpr</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">s*&quot;</span>
+
+    <span class="k">return</span> <span class="n">reg</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+        <span class="n">regexpr</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">reg</span><span class="o">.</span><span class="n">V1</span> <span class="o">|</span> <span class="n">reg</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>  <span class="c1"># pylint: disable=E1101</span>
+
+
+<span class="k">def</span> <span class="nf">__strip_group</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Strip a possible surrounding `{}` pair and any inner white space.</span>
+
+<span class="sd">    This is needed because the regular expressions returned by</span>
+<span class="sd">    :meth:`__create_command_re` cannot strip the surrounding `{}` from the</span>
+<span class="sd">    arguments. After the leading `{` and the trailing `}` are removed, the</span>
+<span class="sd">    remaining string will be stripped of leading and trailing white space.</span>
+
+<span class="sd">    :param s: the input string</span>
+<span class="sd">    :return: the sanitized string</span>
+
+<span class="sd">    &gt;&gt;&gt; __strip_group(&quot;{ f}&quot;)</span>
+<span class="sd">    &#39;f&#39;</span>
+<span class="sd">    &gt;&gt;&gt; __strip_group(&quot;{x }&quot;)</span>
+<span class="sd">    &#39;x&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;{&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;}&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid argument &#39;</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="create_preprocessor"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.preprocessor_commands.create_preprocessor">[docs]</a><span class="k">def</span> <span class="nf">create_preprocessor</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                        <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+                        <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">strip_white_space</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="n">wrap_in_newlines</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a preprocessor command.</span>
+
+<span class="sd">    A LaTeX-style command can be defined as an (recursive) regular expression.</span>
+<span class="sd">    The start of the command is indicated by `\name`. It then has `n`</span>
+<span class="sd">    arguments with `n&gt;=0`. Each argument is wrapped into a `{` and a `}`.</span>
+<span class="sd">    Example: `\sub{1}{2}`.</span>
+
+<span class="sd">    This function returns a function `f` which can be applied an arbitrary</span>
+<span class="sd">    string `s`. The function `f` will iteratively process all invocations</span>
+<span class="sd">    of `name` that appear in `s`, pass the extracted parameter values to</span>
+<span class="sd">    `func`, and replace the whole matched string with the return value of</span>
+<span class="sd">    `func`.</span>
+
+<span class="sd">    The command can appear nested in its arguments. In this case, the</span>
+<span class="sd">    preprocessor `f` will resolve the inner-most occurences first.</span>
+
+<span class="sd">    :param name: the command name</span>
+<span class="sd">    :param func: the function to call</span>
+<span class="sd">    :param n: the number of arguments to pass to func</span>
+<span class="sd">    :param strip_white_space: should surrounding white space be stripped?</span>
+<span class="sd">    :param wrap_in_newlines: the number of newlines into which the output</span>
+<span class="sd">        should be wrapped</span>
+<span class="sd">    :return: a function that can be invoked on a string and which replaces</span>
+<span class="sd">        all the occurences of the command with the results of corresponding</span>
+<span class="sd">        `func` invocations</span>
+
+<span class="sd">    &gt;&gt;&gt; f = lambda a, b: a + &quot;-&quot; + b</span>
+<span class="sd">    &gt;&gt;&gt; cmd = create_preprocessor(&quot;sub&quot;, f, 2)</span>
+<span class="sd">    &gt;&gt;&gt; cmd(&quot;x \\sub{7}{3} y \\sub{\\sub{8}{5}}{\\sub{4}{3}}&quot;)</span>
+<span class="sd">    &#39;x 7-3 y 8-5-4-3&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd = create_preprocessor(&quot;mm&quot;, lambda: &quot;Z&quot;, 0, True)</span>
+<span class="sd">    &gt;&gt;&gt; cmd(&quot;a\\mm\\mm\\mmb&quot;)</span>
+<span class="sd">    &#39;aZZZb&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd = create_preprocessor(&quot;swp&quot;, lambda a, b: &quot;(&quot;+b+&quot;,&quot;+a+&quot;)&quot;, 2)</span>
+<span class="sd">    &gt;&gt;&gt; cmd(&quot;\\swp{1}{2}&quot;)</span>
+<span class="sd">    &#39;(2,1)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd(&quot;\\swp{\\swp{1}{2}}{3}&quot;)</span>
+<span class="sd">    &#39;(3,(2,1))&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd(&quot;\\swp{\\swp{\\swp{1}{2}}{3}}{\\swp{4}{5}}&quot;)</span>
+<span class="sd">    &#39;((5,4),(3,(2,1)))&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd = create_preprocessor(&quot;y&quot;, lambda x: str(int(x)*2), 1)</span>
+<span class="sd">    &gt;&gt;&gt; cmd(&quot;12\\y{3}4&quot;)</span>
+<span class="sd">    &#39;1264&#39;</span>
+<span class="sd">    &gt;&gt;&gt; cmd = create_preprocessor(&quot;y&quot;, lambda x: f&quot;a{x}b&quot;, 1,</span>
+<span class="sd">    ...     wrap_in_newlines=2)</span>
+<span class="sd">    &gt;&gt;&gt; cmd(&quot;12\\y{3}4&quot;)</span>
+<span class="sd">    &#39;12\n\na3b\n\n4&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;func&quot;</span><span class="p">,</span> <span class="n">call</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Create the inner function that sanitizes the arguments and passes them on</span>
+    <span class="c1"># to func.</span>
+    <span class="k">def</span> <span class="nf">__func</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">inner_n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">inner_func</span><span class="o">=</span><span class="n">func</span><span class="p">,</span>
+               <span class="n">nls</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="n">wrap_in_newlines</span> <span class="k">if</span>
+               <span class="p">(</span><span class="n">wrap_in_newlines</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">inner_n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">inner_func</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">groups</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span> <span class="o">!=</span> <span class="n">inner_n</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="n">inner_n</span><span class="si">}</span><span class="s2"> groups, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">inner_func</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">__strip_group</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="s2">&quot;return value&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nls</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ret</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">nls</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nls</span><span class="si">}{</span><span class="n">ret</span><span class="si">}{</span><span class="n">nls</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="c1"># Create the actual command function that can be invoked and that</span>
+    <span class="c1"># recursively resolves all instances of the command name.</span>
+    <span class="k">def</span> <span class="nf">__cmd</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+              <span class="n">regex</span><span class="o">=</span><span class="n">__create_command_re</span><span class="p">(</span>
+                  <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">strip_white_space</span><span class="o">=</span><span class="n">strip_white_space</span><span class="p">),</span>
+              <span class="n">inner_func</span><span class="o">=</span><span class="n">__func</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">old</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">inner_func</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="n">old</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">s</span>
+            <span class="n">old</span> <span class="o">=</span> <span class="n">s</span>
+
+    <span class="k">return</span> <span class="n">__cmd</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.preprocessor_commands</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

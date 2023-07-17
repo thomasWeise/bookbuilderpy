@@ -1,0 +1,378 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.strings &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/strings.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.strings</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.strings</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Some utility methods for string processing.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Final</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">Pattern</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+
+<span class="kn">from</span> <span class="nn">bookbuilderpy.types</span> <span class="kn">import</span> <span class="n">type_error</span>
+
+
+<div class="viewcode-block" id="str_to_lines"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.str_to_lines">[docs]</a><span class="k">def</span> <span class="nf">str_to_lines</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a string to an iterable of lines.</span>
+
+<span class="sd">    :param text: the original text string</span>
+<span class="sd">    :return: the lines</span>
+
+<span class="sd">    &gt;&gt;&gt; str_to_lines(&quot;\n123\n  456\n789 \n 10\n\n&quot;)</span>
+<span class="sd">    [&#39;&#39;, &#39;123&#39;, &#39;  456&#39;, &#39;789 &#39;, &#39; 10&#39;, &#39;&#39;, &#39;&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lines_to_str"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.lines_to_str">[docs]</a><span class="k">def</span> <span class="nf">lines_to_str</span><span class="p">(</span><span class="n">lines</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                 <span class="n">trailing_newline</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert an iterable of strings to a single string.</span>
+
+<span class="sd">    :param lines: the lines</span>
+<span class="sd">    :param trailing_newline: should the re be a newline at the end?</span>
+<span class="sd">    :return: the single string</span>
+
+<span class="sd">    &gt;&gt;&gt; lines_to_str([&quot;a&quot;, &quot;b&quot;, &quot;&quot;, &quot;c&quot;, &quot;&quot;], trailing_newline=True)</span>
+<span class="sd">    &#39;a\nb\n\nc\n&#39;</span>
+<span class="sd">    &gt;&gt;&gt; lines_to_str([&quot;a&quot;, &quot;b&quot;, &quot;&quot;, &quot;c&quot;], trailing_newline=True)</span>
+<span class="sd">    &#39;a\nb\n\nc\n&#39;</span>
+<span class="sd">    &gt;&gt;&gt; lines_to_str([&quot;a&quot;, &quot;b&quot;, &quot;&quot;, &quot;c&quot;], trailing_newline=False)</span>
+<span class="sd">    &#39;a\nb\n\nc&#39;</span>
+<span class="sd">    &gt;&gt;&gt; lines_to_str([&quot;a&quot;, &quot;b&quot;, &quot;&quot;, &quot;c&quot;, &quot;&quot;], trailing_newline=False)</span>
+<span class="sd">    &#39;a\nb\n\nc&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="s2">&quot;lines&quot;</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">trailing_newline</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">res</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="enforce_non_empty_str"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.enforce_non_empty_str">[docs]</a><span class="k">def</span> <span class="nf">enforce_non_empty_str</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enforce that a text is a non-empty string.</span>
+
+<span class="sd">    :param text: the text</span>
+<span class="sd">    :returns: the text</span>
+<span class="sd">    :raises TypeError: if `text` is not a `str`</span>
+<span class="sd">    :raises ValueError: if `text` is empty</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Non-empty str expected, but got &#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span></div>
+
+
+<div class="viewcode-block" id="enforce_non_empty_str_without_ws"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.enforce_non_empty_str_without_ws">[docs]</a><span class="k">def</span> <span class="nf">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enforce that a text is a non-empty string without white space.</span>
+
+<span class="sd">    :param text: the text</span>
+<span class="sd">    :returns: the text</span>
+<span class="sd">    :raises TypeError: if `text` is not a `str`</span>
+<span class="sd">    :raises ValueError: if `text` is empty or contains any white space</span>
+<span class="sd">        characters</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">text</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">whitespace</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No white space allowed in string, but got &#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span></div>
+
+
+<div class="viewcode-block" id="datetime_to_date_str"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.datetime_to_date_str">[docs]</a><span class="k">def</span> <span class="nf">datetime_to_date_str</span><span class="p">(</span><span class="n">date</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a datetime object to a date string.</span>
+
+<span class="sd">    :param date: the date</span>
+<span class="sd">    :return: the date string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y</span><span class="se">\u2011</span><span class="s2">%m</span><span class="se">\u2011</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="datetime_to_datetime_str"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.datetime_to_datetime_str">[docs]</a><span class="k">def</span> <span class="nf">datetime_to_datetime_str</span><span class="p">(</span><span class="n">date</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a datetime object to a date-time string.</span>
+
+<span class="sd">    :param date: the date</span>
+<span class="sd">    :return: the date-time string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">type_error</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y</span><span class="se">\u2011</span><span class="s2">%m</span><span class="se">\u2011</span><span class="si">%d</span><span class="se">\u00a0</span><span class="s2">%H:%M</span><span class="se">\u00a0</span><span class="s2">%Z&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="enforce_url"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.enforce_url">[docs]</a><span class="k">def</span> <span class="nf">enforce_url</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enforce that a string is a valid url.</span>
+
+<span class="sd">    :param url: the url</span>
+<span class="sd">    :return: the url</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;..&quot;</span> <span class="ow">in</span> <span class="n">url</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid url &#39;</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&#39;, contains &#39;..&#39;.&quot;</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">scheme</span> <span class="o">!=</span> <span class="s2">&quot;ssh&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="s2">&quot;https&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid scheme &#39;</span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">scheme</span><span class="si">}</span><span class="s2">&#39; in url &#39;</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;@&quot;</span> <span class="ow">in</span> <span class="n">url</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Non-ssh URL must not contain &#39;@&#39;, but &#39;</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&#39; does&quot;</span><span class="p">)</span>
+    <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">netloc</span><span class="p">)</span>
+    <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">geturl</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_prefix_str"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.get_prefix_str">[docs]</a><span class="k">def</span> <span class="nf">get_prefix_str</span><span class="p">(</span><span class="n">str_list</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the common prefix string.</span>
+
+<span class="sd">    :param str_list: the list of strings</span>
+<span class="sd">    :return: the common prefix</span>
+
+<span class="sd">    &gt;&gt;&gt; get_prefix_str([&quot;abc&quot;, &quot;acd&quot;])</span>
+<span class="sd">    &#39;a&#39;</span>
+<span class="sd">    &gt;&gt;&gt; get_prefix_str([&quot;xyz&quot;, &quot;gsdf&quot;])</span>
+<span class="sd">    &#39;&#39;</span>
+<span class="sd">    &gt;&gt;&gt; get_prefix_str([])</span>
+<span class="sd">    &#39;&#39;</span>
+<span class="sd">    &gt;&gt;&gt; get_prefix_str([&quot;abx&quot;])</span>
+<span class="sd">    &#39;abx&#39;</span>
+<span class="sd">    &gt;&gt;&gt; get_prefix_str((&quot;\\relative.path&quot;, &quot;\\relative.figure&quot;,</span>
+<span class="sd">    ...     &quot;\\relative.code&quot;))</span>
+<span class="sd">    &#39;\\relative.&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">str_list</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">prefix_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">len_smallest_str</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">str_mem</span><span class="p">)</span> <span class="k">for</span> <span class="n">str_mem</span> <span class="ow">in</span> <span class="n">str_list</span><span class="p">])</span>
+    <span class="n">str_list_0</span> <span class="o">=</span> <span class="n">str_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_smallest_str</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">str_list_0</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">([</span><span class="mi">0</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">str_list</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="n">str_list</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="n">i</span><span class="p">]])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">prefix_str</span> <span class="o">+=</span> <span class="n">f</span>
+    <span class="k">return</span> <span class="n">prefix_str</span></div>
+
+
+<span class="c1">#: The language to locale dictionary for base locales.</span>
+<span class="n">__LANG_DICT</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;en&quot;</span><span class="p">:</span> <span class="s2">&quot;en_US&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;zh&quot;</span><span class="p">:</span> <span class="s2">&quot;zh_CN&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cn&quot;</span><span class="p">:</span> <span class="s2">&quot;zh_CN&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tw&quot;</span><span class="p">:</span> <span class="s2">&quot;zh_TW&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;de&quot;</span><span class="p">:</span> <span class="s2">&quot;de_DE&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fr&quot;</span><span class="p">:</span> <span class="s2">&quot;fr_FR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;it&quot;</span><span class="p">:</span> <span class="s2">&quot;it_IT&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ja&quot;</span><span class="p">:</span> <span class="s2">&quot;ja_JP&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ko&quot;</span><span class="p">:</span> <span class="s2">&quot;ko_KR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pt&quot;</span><span class="p">:</span> <span class="s2">&quot;pt_BR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;es&quot;</span><span class="p">:</span> <span class="s2">&quot;es_ES&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="lang_to_locale"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.lang_to_locale">[docs]</a><span class="k">def</span> <span class="nf">lang_to_locale</span><span class="p">(</span><span class="n">lang</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a language ID to a locale.</span>
+
+<span class="sd">    :param lang: the language id</span>
+<span class="sd">    :return: the locale</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lang</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">lang</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">lang</span> <span class="ow">in</span> <span class="n">__LANG_DICT</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">__LANG_DICT</span><span class="p">[</span><span class="n">lang</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;-&quot;</span> <span class="ow">in</span> <span class="n">lang</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lang</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">lang</span></div>
+
+
+<div class="viewcode-block" id="file_size"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.file_size">[docs]</a><span class="k">def</span> <span class="nf">file_size</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a file size to a string.</span>
+
+<span class="sd">    :param size: the size</span>
+<span class="sd">    :return: the string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;0 B&quot;</span>
+        <span class="n">base_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;KiB&quot;</span><span class="p">,</span> <span class="s2">&quot;MiB&quot;</span><span class="p">,</span> <span class="s2">&quot;GiB&quot;</span><span class="p">,</span> <span class="s2">&quot;TiB&quot;</span><span class="p">,</span> <span class="s2">&quot;PiB&quot;</span><span class="p">,</span>
+                       <span class="s2">&quot;EiB&quot;</span><span class="p">,</span> <span class="s2">&quot;ZiB&quot;</span><span class="p">,</span> <span class="s2">&quot;YiB&quot;</span><span class="p">]:</span>
+            <span class="n">ret_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">size</span> <span class="o">+</span> <span class="n">base_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">base_size</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ret_size</span> <span class="o">&gt;=</span> <span class="mi">1024</span><span class="p">:</span>
+                <span class="n">base_size</span> <span class="o">*=</span> <span class="mi">1024</span>
+                <span class="k">continue</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ret_size</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid size: </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1">#: The dictionary with &quot;and&quot; concatenations</span>
+<span class="n">__AND_DICT</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;de&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot; und &quot;</span><span class="p">,</span> <span class="s2">&quot; und &quot;</span><span class="p">),</span>
+    <span class="s2">&quot;en&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot; and &quot;</span><span class="p">,</span> <span class="s2">&quot;, and &quot;</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="to_string"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.to_string">[docs]</a><span class="k">def</span> <span class="nf">to_string</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span>
+              <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">use_seq_and</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert any object to a string, try to use a proper locale.</span>
+
+<span class="sd">    :param obj: the input object</span>
+<span class="sd">    :param locale: the locale</span>
+<span class="sd">    :param use_seq_and: should we use &quot;and&quot; in sequences?</span>
+<span class="sd">    :return: the string representation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;None&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="n">merge</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">locale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">locale</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;zh&quot;</span><span class="p">)):</span>
+            <span class="n">merge</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span>
+
+        <span class="n">seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">to_string</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">locale</span><span class="p">,</span> <span class="n">use_seq_and</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+        <span class="n">seql</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">seql</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">seq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">use_seq_and</span> <span class="ow">and</span> <span class="p">(</span><span class="n">locale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">ands</span> <span class="o">=</span> <span class="n">__AND_DICT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">locale</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ands</span><span class="p">:</span>
+                <span class="n">ands</span> <span class="o">=</span> <span class="n">__AND_DICT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">locale</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ands</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">seql</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">ands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">merge</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">seq</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">return</span> <span class="n">ands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">res</span><span class="p">,</span> <span class="n">seq</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+
+        <span class="k">return</span> <span class="n">merge</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="regex_sub"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.strings.regex_sub">[docs]</a><span class="k">def</span> <span class="nf">regex_sub</span><span class="p">(</span><span class="n">search</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Pattern</span><span class="p">,</span>
+              <span class="n">replace</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+              <span class="n">inside</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Replace all occurrences of &#39;search&#39; in &#39;inside&#39; with &#39;replace&#39;.</span>
+
+<span class="sd">    :param search: the regular expression to search</span>
+<span class="sd">    :param replace: the regular expression to replace it with</span>
+<span class="sd">    :param inside: the string in which to search/replace</span>
+<span class="sd">    :return: the new string after the recursive replacement</span>
+
+<span class="sd">    &gt;&gt;&gt; regex_sub(&#39;[ \t]+\n&#39;, &#39;\n&#39;, &#39; bla \nxyz\tabc\t\n&#39;)</span>
+<span class="sd">    &#39; bla\nxyz\tabc\n&#39;</span>
+<span class="sd">    &gt;&gt;&gt; regex_sub(&#39;[0-9]A&#39;, &#39;X&#39;, &#39;23A7AA&#39;)</span>
+<span class="sd">    &#39;2XXA&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">search</span><span class="p">,</span> <span class="n">replace</span><span class="p">,</span> <span class="n">inside</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">text</span> <span class="ow">is</span> <span class="n">inside</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">inside</span>
+        <span class="n">inside</span> <span class="o">=</span> <span class="n">text</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.strings</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,192 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.types &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/types.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.types</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.types</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Some basic type handling routines.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">Iterable</span>
+
+
+<div class="viewcode-block" id="type_name"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.types.type_name">[docs]</a><span class="k">def</span> <span class="nf">type_name</span><span class="p">(</span><span class="n">tpe</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a type to a string.</span>
+
+<span class="sd">    :param tpe: the type</span>
+<span class="sd">    :returns: the string</span>
+
+<span class="sd">    &gt;&gt;&gt; type_name(type(None))</span>
+<span class="sd">    &#39;None&#39;</span>
+<span class="sd">    &gt;&gt;&gt; type_name(int)</span>
+<span class="sd">    &#39;int&#39;</span>
+<span class="sd">    &gt;&gt;&gt; from bookbuilderpy.path import Path</span>
+<span class="sd">    &gt;&gt;&gt; type_name(Path)</span>
+<span class="sd">    &#39;bookbuilderpy.path.Path&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">c1</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tpe</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">c1</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;&lt;class &#39;&quot;</span><span class="p">):</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">c1</span> <span class="o">==</span> <span class="s2">&quot;NoneType&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;None&quot;</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tpe</span><span class="p">,</span> <span class="s2">&quot;__qualname__&quot;</span><span class="p">):</span>
+        <span class="n">c2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">tpe</span><span class="o">.</span><span class="vm">__qualname__</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tpe</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">):</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="n">tpe</span><span class="o">.</span><span class="vm">__module__</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">module</span> <span class="o">!=</span> <span class="s2">&quot;builtins&quot;</span><span class="p">):</span>
+                <span class="n">c2</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">c2</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">c1</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">c2</span>
+    <span class="k">return</span> <span class="n">c1</span></div>
+
+
+<div class="viewcode-block" id="type_name_of"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.types.type_name_of">[docs]</a><span class="k">def</span> <span class="nf">type_name_of</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the fully-qualified class name of an object.</span>
+
+<span class="sd">    :param obj: the object</span>
+<span class="sd">    :returns: the fully-qualified class name of the object</span>
+
+<span class="sd">    &gt;&gt;&gt; from bookbuilderpy.path import Path</span>
+<span class="sd">    &gt;&gt;&gt; type_name_of(Path.path(&quot;/tmp&quot;))</span>
+<span class="sd">    &#39;bookbuilderpy.path.Path&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;None&quot;</span>
+    <span class="n">c1</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_name</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;__class__&quot;</span><span class="p">):</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">type</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__class__</span>
+        <span class="n">c2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">type_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;__qualname__&quot;</span><span class="p">):</span>
+            <span class="n">c3</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__qualname__</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">):</span>
+                <span class="n">module</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__module__</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">module</span> <span class="o">!=</span> <span class="s2">&quot;builtins&quot;</span><span class="p">):</span>
+                    <span class="n">c3</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">module</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">c3</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c3</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2</span><span class="p">):</span>
+                <span class="n">c2</span> <span class="o">=</span> <span class="n">c3</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">c1</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">c2</span>
+    <span class="k">return</span> <span class="n">c1</span></div>
+
+
+<div class="viewcode-block" id="type_error"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.types.type_error">[docs]</a><span class="k">def</span> <span class="nf">type_error</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+               <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+               <span class="n">expected</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">type</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">call</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="ne">ValueError</span> <span class="o">|</span> <span class="ne">TypeError</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create an error to raise if a type did not fit.</span>
+
+<span class="sd">    :param obj: the object that is of the wrong type</span>
+<span class="sd">    :param name: the name of the object</span>
+<span class="sd">    :param expected: the expected types (or `None`)</span>
+<span class="sd">    :param call: the object should have been callable?</span>
+<span class="sd">    :returns: a :class:`TypeError` with a descriptive information</span>
+
+<span class="sd">    &gt;&gt;&gt; type_error(1.3, &quot;var&quot;, int)</span>
+<span class="sd">    TypeError(&quot;var should be an instance of int but is float, namely &#39;1.3&#39;.&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; type_error(&quot;x&quot;, &quot;z&quot;, (int, float)).args[0]</span>
+<span class="sd">    &quot;z should be an instance of any in {float, int} but is str, namely &#39;x&#39;.&quot;</span>
+<span class="sd">    &gt;&gt;&gt; type_error(&quot;f&quot;, &quot;q&quot;, call=True).args[0]</span>
+<span class="sd">    &quot;q should be a callable but is str, namely &#39;f&#39;.&quot;</span>
+<span class="sd">    &gt;&gt;&gt; type_error(&quot;1&quot;, &quot;2&quot;, bool, call=True).args[0]</span>
+<span class="sd">    &quot;2 should be an instance of bool or a callable but is str, namely &#39;1&#39;.&quot;</span>
+<span class="sd">    &gt;&gt;&gt; type_error(None, &quot;x&quot;, str)</span>
+<span class="sd">    TypeError(&#39;x should be an instance of str but is None.&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exp</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">([</span><span class="n">type_name</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">]))</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;an instance of any in </span><span class="se">{{</span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span>
+    <span class="k">elif</span> <span class="n">expected</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;an instance of </span><span class="si">{</span><span class="n">type_name</span><span class="p">(</span><span class="n">expected</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">call</span><span class="p">:</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> or a callable&quot;</span> <span class="k">if</span> <span class="n">exp</span> <span class="k">else</span> <span class="s2">&quot;a callable&quot;</span>
+
+    <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> should be </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> but is None.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> should be </span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s2"> but is &quot;</span>
+                     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">type_name_of</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="si">}</span><span class="s2">, namely &#39;</span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.types</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>

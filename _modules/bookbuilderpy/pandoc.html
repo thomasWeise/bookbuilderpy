@@ -1,0 +1,556 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bookbuilderpy.pandoc &#8212; bookbuilderpy 1.9.28 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="canonical" href="https://thomasweise.github.io/bookbuilderpy/_modules/bookbuilderpy/pandoc.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="/bookbuilderpy/_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.pandoc</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for bookbuilderpy.pandoc</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A routine for invoking pandoc.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Final</span>
+
+<span class="kn">import</span> <span class="nn">bookbuilderpy.constants</span> <span class="k">as</span> <span class="nn">bc</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.build_result</span> <span class="kn">import</span> <span class="n">File</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.html</span> <span class="kn">import</span> <span class="n">html_postprocess</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.logger</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.path</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.pdf</span> <span class="kn">import</span> <span class="n">pdf_postprocess</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.resources</span> <span class="kn">import</span> <span class="n">ResourceServer</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.shell</span> <span class="kn">import</span> <span class="n">shell</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.strings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">enforce_non_empty_str</span><span class="p">,</span>
+    <span class="n">enforce_non_empty_str_without_ws</span><span class="p">,</span>
+    <span class="n">regex_sub</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.temp</span> <span class="kn">import</span> <span class="n">TempFile</span>
+<span class="kn">from</span> <span class="nn">bookbuilderpy.versions</span> <span class="kn">import</span> <span class="n">TOOL_PANDOC</span><span class="p">,</span> <span class="n">has_tool</span>
+
+<span class="c1">#: The meanings of the pandoc exit codes.</span>
+<span class="n">__EXIT_CODES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;PandocFailOnWarningError&quot;</span><span class="p">,</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;PandocAppError&quot;</span><span class="p">,</span>
+    <span class="mi">5</span><span class="p">:</span> <span class="s2">&quot;PandocTemplateError&quot;</span><span class="p">,</span>
+    <span class="mi">6</span><span class="p">:</span> <span class="s2">&quot;PandocOptionError&quot;</span><span class="p">,</span>
+    <span class="mi">21</span><span class="p">:</span> <span class="s2">&quot;PandocUnknownReaderError&quot;</span><span class="p">,</span>
+    <span class="mi">22</span><span class="p">:</span> <span class="s2">&quot;PandocUnknownWriterError&quot;</span><span class="p">,</span>
+    <span class="mi">23</span><span class="p">:</span> <span class="s2">&quot;PandocUnsupportedExtensionError&quot;</span><span class="p">,</span>
+    <span class="mi">24</span><span class="p">:</span> <span class="s2">&quot;PandocCiteprocError&quot;</span><span class="p">,</span>
+    <span class="mi">31</span><span class="p">:</span> <span class="s2">&quot;PandocEpubSubdirectoryError&quot;</span><span class="p">,</span>
+    <span class="mi">43</span><span class="p">:</span> <span class="s2">&quot;PandocPDFError&quot;</span><span class="p">,</span>
+    <span class="mi">44</span><span class="p">:</span> <span class="s2">&quot;PandocXMLError&quot;</span><span class="p">,</span>
+    <span class="mi">47</span><span class="p">:</span> <span class="s2">&quot;PandocPDFProgramNotFoundError&quot;</span><span class="p">,</span>
+    <span class="mi">61</span><span class="p">:</span> <span class="s2">&quot;PandocHttpError&quot;</span><span class="p">,</span>
+    <span class="mi">62</span><span class="p">:</span> <span class="s2">&quot;PandocShouldNeverHappenError&quot;</span><span class="p">,</span>
+    <span class="mi">63</span><span class="p">:</span> <span class="s2">&quot;PandocSomeError&quot;</span><span class="p">,</span>
+    <span class="mi">64</span><span class="p">:</span> <span class="s2">&quot;PandocParseError&quot;</span><span class="p">,</span>
+    <span class="mi">65</span><span class="p">:</span> <span class="s2">&quot;PandocParsecError&quot;</span><span class="p">,</span>
+    <span class="mi">66</span><span class="p">:</span> <span class="s2">&quot;PandocMakePDFError&quot;</span><span class="p">,</span>
+    <span class="mi">67</span><span class="p">:</span> <span class="s2">&quot;PandocSyntaxMapError&quot;</span><span class="p">,</span>
+    <span class="mi">83</span><span class="p">:</span> <span class="s2">&quot;PandocFilterError&quot;</span><span class="p">,</span>
+    <span class="mi">91</span><span class="p">:</span> <span class="s2">&quot;PandocMacroLoop&quot;</span><span class="p">,</span>
+    <span class="mi">92</span><span class="p">:</span> <span class="s2">&quot;PandocUTF8DecodingError&quot;</span><span class="p">,</span>
+    <span class="mi">93</span><span class="p">:</span> <span class="s2">&quot;PandocIpynbDecodingError&quot;</span><span class="p">,</span>
+    <span class="mi">94</span><span class="p">:</span> <span class="s2">&quot;PandocUnsupportedCharsetError&quot;</span><span class="p">,</span>
+    <span class="mi">97</span><span class="p">:</span> <span class="s2">&quot;PandocCouldNotFindDataFileError&quot;</span><span class="p">,</span>
+    <span class="mi">99</span><span class="p">:</span> <span class="s2">&quot;PandocResourceNotFound&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">__pandoc_check_stderr</span><span class="p">(</span><span class="n">stderr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="ne">BaseException</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check the standard error output of pandoc.</span>
+
+<span class="sd">    :param stderr: the standard error string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">stderr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="s2">&quot;Undefined cross-reference&quot;</span> <span class="ow">in</span> <span class="n">stderr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Undefined cross-reference!&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;[WARNING] Citeproc&quot;</span> <span class="ow">in</span> <span class="n">stderr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Undefined citation!&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="pandoc"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.pandoc.pandoc">[docs]</a><span class="k">def</span> <span class="nf">pandoc</span><span class="p">(</span><span class="n">source_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+           <span class="n">dest_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+           <span class="n">format_in</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_FORMAT_MARKDOWN</span><span class="p">,</span>
+           <span class="n">format_out</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_FORMAT_LATEX</span><span class="p">,</span>
+           <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">standalone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="n">tabstops</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+           <span class="n">toc_print</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="n">toc_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+           <span class="n">crossref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="n">bibliography</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">csl</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">number_sections</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="n">args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">resolve_resources</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+           <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">File</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Invoke pandoc.</span>
+
+<span class="sd">    :param source_file: the source file</span>
+<span class="sd">    :param dest_file: the destination file</span>
+<span class="sd">    :param format_in: the input format</span>
+<span class="sd">    :param format_out: the output format</span>
+<span class="sd">    :param standalone: should we produce a stand-alone document?</span>
+<span class="sd">    :param tabstops: the number of spaces with which we replace</span>
+<span class="sd">        a tab character, or None to not replace</span>
+<span class="sd">    :param toc_print: should we print the table of contents</span>
+<span class="sd">    :param toc_depth: the depth of the table of contents</span>
+<span class="sd">    :param crossref: should we use crossref</span>
+<span class="sd">    :param bibliography: should we use a bibliography</span>
+<span class="sd">    :param template: which template should we use, if any?</span>
+<span class="sd">    :param csl: which csl file should we use, if any?</span>
+<span class="sd">    :param number_sections: should sections be numbered?</span>
+<span class="sd">    :param locale: the language to be used for compiling</span>
+<span class="sd">    :param args: any additional arguments</span>
+<span class="sd">    :param resolve_resources: a function to resolve resources</span>
+<span class="sd">    :param overwrite: should the output file be overwritten if it exists?</span>
+<span class="sd">    :return: the Path to the generated output file and it size</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">has_tool</span><span class="p">(</span><span class="n">TOOL_PANDOC</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pandoc is not installed.&quot;</span><span class="p">)</span>
+
+    <span class="n">output_file</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">dest_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">overwrite</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output file &#39;</span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">&#39; already exists.&quot;</span><span class="p">)</span>
+    <span class="n">input_file</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="n">source_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">input_file</span> <span class="o">==</span> <span class="n">output_file</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Input &#39;</span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2">&#39; must differ from output &#39;</span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">output_file</span><span class="p">))</span>
+    <span class="n">output_dir</span><span class="o">.</span><span class="n">ensure_dir_exists</span><span class="p">()</span>
+    <span class="n">input_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">directory</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">input_file</span><span class="p">))</span>
+
+    <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;applying pandoc to generate output file &#39;</span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+           <span class="sa">f</span><span class="s2">&quot;from &#39;</span><span class="si">{</span><span class="n">input_file</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="n">format_in</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">format_in</span><span class="p">)</span>
+    <span class="n">format_out</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">format_out</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">format_in</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;markdown&quot;</span><span class="p">):</span>
+        <span class="n">format_in</span> <span class="o">=</span> <span class="s2">&quot;+&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">format_in</span><span class="p">,</span>
+                              <span class="s2">&quot;definition_lists&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;smart&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;fenced_code_blocks&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;fenced_code_attributes&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;line_blocks&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;inline_code_attributes&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;latex_macros&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;implicit_figures&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;pipe_tables&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;raw_attribute&quot;</span><span class="p">])</span>
+    <span class="n">cmd</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">TOOL_PANDOC</span><span class="p">,</span>
+                             <span class="sa">f</span><span class="s2">&quot;--from=</span><span class="si">{</span><span class="n">format_in</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                             <span class="sa">f</span><span class="s2">&quot;--write=</span><span class="si">{</span><span class="n">format_out</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                             <span class="sa">f</span><span class="s2">&quot;--output=</span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                             <span class="s2">&quot;--fail-if-warnings&quot;</span><span class="p">,</span>
+                             <span class="s2">&quot;--strip-comments&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">tabstops</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">tabstops</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;tabstops cannot be </span><span class="si">{</span><span class="n">tabstops</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--tab-stop=</span><span class="si">{</span><span class="n">tabstops</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">standalone</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--standalone&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">number_sections</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--number-sections&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">toc_print</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--table-of-contents&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">toc_depth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">toc_depth</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;toc_depth cannot be </span><span class="si">{</span><span class="n">toc_depth</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--toc-depth=</span><span class="si">{</span><span class="n">toc_depth</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">template_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">template</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+        <span class="n">template_file</span> <span class="o">=</span> <span class="n">resolve_resources</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">template_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">template_file</span><span class="o">.</span><span class="n">enforce_file</span><span class="p">()</span>
+            <span class="n">template</span> <span class="o">=</span> <span class="n">template_file</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--template=</span><span class="si">{</span><span class="n">template</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">crossref</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--filter=pandoc-crossref&quot;</span><span class="p">)</span>
+
+    <span class="n">csl_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">bibliography</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--citeproc&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">csl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">csl</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">csl</span><span class="p">)</span>
+            <span class="n">csl_file</span> <span class="o">=</span> <span class="n">resolve_resources</span><span class="p">(</span><span class="n">csl</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">csl_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">csl_file</span><span class="o">.</span><span class="n">enforce_file</span><span class="p">()</span>
+                <span class="n">csl</span> <span class="o">=</span> <span class="n">csl_file</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--csl=</span><span class="si">{</span><span class="n">csl</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">enforce_non_empty_str</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">locale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">locale</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">locale</span><span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-V lang=</span><span class="si">{</span><span class="n">locale</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">shell</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">exit_code_to_str</span><span class="o">=</span><span class="n">__EXIT_CODES</span><span class="p">,</span>
+              <span class="n">check_stderr</span><span class="o">=</span><span class="n">__pandoc_check_stderr</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">template_file</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">template_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">csl_file</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">csl_file</span><span class="p">)</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;finished applying pandoc, got output file &quot;</span>
+           <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&#39; of size </span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> bytes.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="latex"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.pandoc.latex">[docs]</a><span class="k">def</span> <span class="nf">latex</span><span class="p">(</span><span class="n">source_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+          <span class="n">dest_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+          <span class="n">format_in</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_FORMAT_MARKDOWN</span><span class="p">,</span>
+          <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+          <span class="n">standalone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+          <span class="n">tabstops</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+          <span class="n">toc_print</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+          <span class="n">toc_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+          <span class="n">crossref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+          <span class="n">bibliography</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+          <span class="n">number_sections</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+          <span class="n">top_level_division</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;chapter&quot;</span><span class="p">,</span>
+          <span class="n">use_listings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+          <span class="n">get_meta</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+          <span class="n">resolve_resources</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">File</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Invoke pandoc to build LaTeX and then PDF output.</span>
+
+<span class="sd">    :param source_file: the source file</span>
+<span class="sd">    :param dest_file: the destination file</span>
+<span class="sd">    :param format_in: the input format</span>
+<span class="sd">    :param locale: the language to be used for compiling</span>
+<span class="sd">    :param standalone: should we produce a stand-alone document?</span>
+<span class="sd">    :param tabstops: the number of spaces with which we replace</span>
+<span class="sd">        a tab character, or None to not replace</span>
+<span class="sd">    :param toc_print: should we print the table of contents</span>
+<span class="sd">    :param toc_depth: the depth of the table of contents</span>
+<span class="sd">    :param crossref: should we use crossref</span>
+<span class="sd">    :param bibliography: should we use a bibliography</span>
+<span class="sd">    :param number_sections: should sections be numbered?</span>
+<span class="sd">    :param top_level_division: the top-level division</span>
+<span class="sd">    :param use_listings: should the listings package be used?</span>
+<span class="sd">    :param get_meta: a function to access meta-data</span>
+<span class="sd">    :param resolve_resources: a function to resolve resources</span>
+<span class="sd">    :return: the Path to the generated output file and it size</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">locale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">locale</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">locale</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">locale</span> <span class="o">==</span> <span class="s2">&quot;zh&quot;</span> <span class="ow">or</span> <span class="n">locale</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">&quot;zh-&quot;</span><span class="p">,</span> <span class="s2">&quot;zh_&quot;</span><span class="p">)):</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--pdf-engine=xelatex&quot;</span><span class="p">)</span>
+    <span class="n">top_level_division</span> <span class="o">=</span> <span class="n">enforce_non_empty_str_without_ws</span><span class="p">(</span><span class="n">top_level_division</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--top-level-division=</span><span class="si">{</span><span class="n">top_level_division</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">use_listings</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--listings&quot;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">TempFile</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.pdf&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tf</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">pandoc</span><span class="p">(</span><span class="n">source_file</span><span class="o">=</span><span class="n">source_file</span><span class="p">,</span>
+                     <span class="n">dest_file</span><span class="o">=</span><span class="n">tf</span><span class="p">,</span>
+                     <span class="n">format_in</span><span class="o">=</span><span class="n">format_in</span><span class="p">,</span>
+                     <span class="n">format_out</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_FORMAT_LATEX</span><span class="p">,</span>
+                     <span class="n">standalone</span><span class="o">=</span><span class="n">standalone</span><span class="p">,</span>
+                     <span class="n">tabstops</span><span class="o">=</span><span class="n">tabstops</span><span class="p">,</span>
+                     <span class="n">toc_print</span><span class="o">=</span><span class="n">toc_print</span><span class="p">,</span>
+                     <span class="n">toc_depth</span><span class="o">=</span><span class="n">toc_depth</span><span class="p">,</span>
+                     <span class="n">crossref</span><span class="o">=</span><span class="n">crossref</span><span class="p">,</span>
+                     <span class="n">bibliography</span><span class="o">=</span><span class="n">bibliography</span><span class="p">,</span>
+                     <span class="n">template</span><span class="o">=</span><span class="n">get_meta</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_TEMPLATE_LATEX</span><span class="p">),</span>
+                     <span class="n">csl</span><span class="o">=</span><span class="n">get_meta</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_CSL</span><span class="p">),</span>
+                     <span class="n">number_sections</span><span class="o">=</span><span class="n">number_sections</span><span class="p">,</span>
+                     <span class="n">locale</span><span class="o">=</span><span class="n">locale</span><span class="p">,</span>
+                     <span class="n">resolve_resources</span><span class="o">=</span><span class="n">resolve_resources</span><span class="p">,</span>
+                     <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span>
+                     <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">pdf_postprocess</span><span class="p">(</span><span class="n">in_file</span><span class="o">=</span><span class="n">res</span><span class="p">,</span>
+                              <span class="n">out_file</span><span class="o">=</span><span class="n">dest_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">File</span><span class="p">(</span><span class="n">res</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="html"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.pandoc.html">[docs]</a><span class="k">def</span> <span class="nf">html</span><span class="p">(</span><span class="n">source_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+         <span class="n">dest_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+         <span class="n">format_in</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_FORMAT_MARKDOWN</span><span class="p">,</span>
+         <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+         <span class="n">standalone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">tabstops</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+         <span class="n">toc_print</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">toc_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+         <span class="n">crossref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">bibliography</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">number_sections</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">get_meta</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+         <span class="n">resolve_resources</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">File</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Invoke pandoc to build HTML output.</span>
+
+<span class="sd">    :param source_file: the source file</span>
+<span class="sd">    :param dest_file: the destination file</span>
+<span class="sd">    :param format_in: the input format</span>
+<span class="sd">    :param locale: the language to be used for compiling</span>
+<span class="sd">    :param standalone: should we produce a stand-alone document?</span>
+<span class="sd">    :param tabstops: the number of spaces with which we replace</span>
+<span class="sd">        a tab character, or None to not replace</span>
+<span class="sd">    :param toc_print: should we print the table of contents</span>
+<span class="sd">    :param toc_depth: the depth of the table of contents</span>
+<span class="sd">    :param crossref: should we use crossref</span>
+<span class="sd">    :param bibliography: should we use a bibliography</span>
+<span class="sd">    :param number_sections: should sections be numbered?</span>
+<span class="sd">    :param get_meta: a function to access meta-data</span>
+<span class="sd">    :param resolve_resources: a function to resolve resources</span>
+<span class="sd">    :return: the Path to the generated output file and it size</span>
+<span class="sd">    :rtype: File</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">endresult</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># nosem  # type: ignore  # nolint</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">TempFile</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.html&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp</span><span class="p">:</span>
+            <span class="c1"># noinspection PyUnusedLocal</span>
+            <span class="n">inner_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># nosem  # type: ignore</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">ResourceServer</span><span class="p">()</span> <span class="k">as</span> <span class="n">serv</span><span class="p">:</span>
+                    <span class="n">inner_file</span> <span class="o">=</span> <span class="n">pandoc</span><span class="p">(</span>
+                        <span class="n">source_file</span><span class="o">=</span><span class="n">source_file</span><span class="p">,</span>
+                        <span class="n">dest_file</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span>
+                        <span class="n">format_in</span><span class="o">=</span><span class="n">format_in</span><span class="p">,</span>
+                        <span class="n">format_out</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_FORMAT_HTML5</span><span class="p">,</span>
+                        <span class="n">locale</span><span class="o">=</span><span class="n">locale</span><span class="p">,</span>
+                        <span class="n">standalone</span><span class="o">=</span><span class="n">standalone</span><span class="p">,</span>
+                        <span class="n">tabstops</span><span class="o">=</span><span class="n">tabstops</span><span class="p">,</span>
+                        <span class="n">toc_print</span><span class="o">=</span><span class="n">toc_print</span><span class="p">,</span>
+                        <span class="n">toc_depth</span><span class="o">=</span><span class="n">toc_depth</span><span class="p">,</span>
+                        <span class="n">crossref</span><span class="o">=</span><span class="n">crossref</span><span class="p">,</span>
+                        <span class="n">bibliography</span><span class="o">=</span><span class="n">bibliography</span><span class="p">,</span>
+                        <span class="n">template</span><span class="o">=</span><span class="n">get_meta</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_TEMPLATE_HTML5</span><span class="p">),</span>
+                        <span class="n">csl</span><span class="o">=</span><span class="n">get_meta</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_CSL</span><span class="p">),</span>
+                        <span class="n">number_sections</span><span class="o">=</span><span class="n">number_sections</span><span class="p">,</span>
+                        <span class="n">resolve_resources</span><span class="o">=</span><span class="n">resolve_resources</span><span class="p">,</span>
+                        <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;--mathjax=</span><span class="si">{</span><span class="n">serv</span><span class="o">.</span><span class="n">get_mathjax_url</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;--ascii&quot;</span><span class="p">,</span> <span class="s2">&quot;--html-q-tags&quot;</span><span class="p">,</span>
+                              <span class="c1"># eventually replace --self-contained with</span>
+                              <span class="c1"># &quot;--embed-resources&quot;</span>
+                              <span class="s2">&quot;--self-contained&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">path</span>
+                    <span class="k">if</span> <span class="n">inner_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">inner_file</span><span class="o">.</span><span class="n">enforce_file</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">ve</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ve</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                    <span class="k">raise</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span> <span class="kn">from</span> <span class="nn">ve</span>
+
+            <span class="k">if</span> <span class="n">inner_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Huh? pandoc did not return a file?&quot;</span><span class="p">)</span>  <span class="c1"># noqa</span>
+
+            <span class="k">if</span> <span class="n">bibliography</span><span class="p">:</span>
+                <span class="c1"># For some reason, the id and the text of each bibliography</span>
+                <span class="c1"># item are each put into separate divs of classes for which</span>
+                <span class="c1"># no styles are given. Therefore, we convert these divs to</span>
+                <span class="c1"># spans and add some vertical spacing.</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">enforce_non_empty_str</span><span class="p">(</span>
+                    <span class="n">inner_file</span><span class="o">.</span><span class="n">read_all_str</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;&lt;div id=&quot;refs&quot;&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">end</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">text_1</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:</span><span class="n">end</span><span class="p">]</span>
+                    <span class="n">text_2</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">end</span><span class="p">:]</span>
+                    <span class="k">del</span> <span class="n">text</span>
+
+                    <span class="n">text_2</span> <span class="o">=</span> <span class="n">regex_sub</span><span class="p">(</span>
+                        <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">s*&lt;div</span><span class="se">\\</span><span class="s1">s+class=&quot;</span><span class="se">\\</span><span class="s1">s*csl-left-margin</span><span class="se">\\</span><span class="s1">s*&quot;</span><span class="se">\\</span><span class="s1">s*&gt;&#39;</span>
+                        <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">s*(.*?)</span><span class="se">\\</span><span class="s1">s*&lt;/div&gt;</span><span class="se">\\</span><span class="s1">s*&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;&lt;span class=&quot;csl-left-margin&quot;&gt;</span><span class="se">\\</span><span class="s1">1&lt;/span&gt;&amp;nbsp;&#39;</span><span class="p">,</span>
+                        <span class="n">text_2</span><span class="p">)</span>
+
+                    <span class="n">text_2</span> <span class="o">=</span> <span class="n">regex_sub</span><span class="p">(</span>
+                        <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">s*&lt;div</span><span class="se">\\</span><span class="s1">s+class=&quot;</span><span class="se">\\</span><span class="s1">s*csl-right-inline</span><span class="se">\\</span><span class="s1">s*&quot;</span><span class="se">\\</span><span class="s1">s*&gt;&#39;</span>
+                        <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">s*(.*?)</span><span class="se">\\</span><span class="s1">s*&lt;/div&gt;</span><span class="se">\\</span><span class="s1">s*&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;&lt;span class=&quot;csl-right-inline&quot;&gt;</span><span class="se">\\</span><span class="s1">1&lt;/span&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">text_2</span><span class="p">)</span>
+
+                    <span class="n">text_2</span> <span class="o">=</span> <span class="n">text_2</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                        <span class="s1">&#39; class=&quot;csl-entry&quot; role=&quot;doc-biblioentry&quot;&gt;&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39; class=&quot;csl-entry&quot; role=&quot;doc-biblioentry&quot; &#39;</span>
+                        <span class="s1">&#39;style=&quot;margin-top:0.33em&quot;&gt;&#39;</span><span class="p">)</span>
+
+                    <span class="n">inner_file</span><span class="o">.</span><span class="n">write_all</span><span class="p">([</span><span class="n">text_1</span><span class="p">,</span> <span class="n">text_2</span><span class="p">])</span>
+            <span class="n">endresult</span> <span class="o">=</span> <span class="n">html_postprocess</span><span class="p">(</span><span class="n">in_file</span><span class="o">=</span><span class="n">inner_file</span><span class="p">,</span>
+                                         <span class="n">out_file</span><span class="o">=</span><span class="n">dest_file</span><span class="p">,</span>
+                                         <span class="n">flatten_data_uris</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                         <span class="n">fully_evaluate_html</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                         <span class="n">purge_scripts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                         <span class="n">minify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                         <span class="n">purge_mathjax</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                         <span class="n">canonicalize_ids</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                         <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">be</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">be</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">raise</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span> <span class="kn">from</span> <span class="nn">be</span>
+
+    <span class="k">if</span> <span class="n">endresult</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;end result is still None?&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">File</span><span class="p">(</span><span class="n">endresult</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="epub"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.pandoc.epub">[docs]</a><span class="k">def</span> <span class="nf">epub</span><span class="p">(</span><span class="n">source_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+         <span class="n">dest_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+         <span class="n">format_in</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_FORMAT_MARKDOWN</span><span class="p">,</span>
+         <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+         <span class="n">standalone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">tabstops</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+         <span class="n">toc_print</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">toc_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+         <span class="n">crossref</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">bibliography</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">number_sections</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+         <span class="n">get_meta</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+         <span class="n">resolve_resources</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">File</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Invoke pandoc to build epub output.</span>
+
+<span class="sd">    :param source_file: the source file</span>
+<span class="sd">    :param dest_file: the destination file</span>
+<span class="sd">    :param format_in: the input format</span>
+<span class="sd">    :param locale: the language to be used for compiling</span>
+<span class="sd">    :param standalone: should we produce a stand-alone document?</span>
+<span class="sd">    :param tabstops: the number of spaces with which we replace</span>
+<span class="sd">        a tab character, or None to not replace</span>
+<span class="sd">    :param toc_print: should we print the table of contents</span>
+<span class="sd">    :param toc_depth: the depth of the table of contents</span>
+<span class="sd">    :param crossref: should we use crossref</span>
+<span class="sd">    :param bibliography: should we use a bibliography</span>
+<span class="sd">    :param number_sections: should sections be numbered?</span>
+<span class="sd">    :param get_meta: a function to access meta-data</span>
+<span class="sd">    :param resolve_resources: a function to resolve resources</span>
+<span class="sd">    :return: the Path to the generated output file and it size</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pandoc</span><span class="p">(</span><span class="n">source_file</span><span class="o">=</span><span class="n">source_file</span><span class="p">,</span>
+                  <span class="n">dest_file</span><span class="o">=</span><span class="n">dest_file</span><span class="p">,</span>
+                  <span class="n">format_in</span><span class="o">=</span><span class="n">format_in</span><span class="p">,</span>
+                  <span class="n">format_out</span><span class="o">=</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_FORMAT_EPUB</span><span class="p">,</span>
+                  <span class="n">locale</span><span class="o">=</span><span class="n">locale</span><span class="p">,</span>
+                  <span class="n">standalone</span><span class="o">=</span><span class="n">standalone</span><span class="p">,</span>
+                  <span class="n">tabstops</span><span class="o">=</span><span class="n">tabstops</span><span class="p">,</span>
+                  <span class="n">toc_print</span><span class="o">=</span><span class="n">toc_print</span><span class="p">,</span>
+                  <span class="n">toc_depth</span><span class="o">=</span><span class="n">toc_depth</span><span class="p">,</span>
+                  <span class="n">crossref</span><span class="o">=</span><span class="n">crossref</span><span class="p">,</span>
+                  <span class="n">bibliography</span><span class="o">=</span><span class="n">bibliography</span><span class="p">,</span>
+                  <span class="n">template</span><span class="o">=</span><span class="n">get_meta</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_TEMPLATE_EPUB</span><span class="p">),</span>
+                  <span class="n">csl</span><span class="o">=</span><span class="n">get_meta</span><span class="p">(</span><span class="n">bc</span><span class="o">.</span><span class="n">PANDOC_CSL</span><span class="p">),</span>
+                  <span class="n">number_sections</span><span class="o">=</span><span class="n">number_sections</span><span class="p">,</span>
+                  <span class="n">resolve_resources</span><span class="o">=</span><span class="n">resolve_resources</span><span class="p">,</span>
+                  <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;--mathml&quot;</span><span class="p">,</span> <span class="s2">&quot;--ascii&quot;</span><span class="p">,</span> <span class="s2">&quot;--html-q-tags&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;--self-contained&quot;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="azw3"><a class="viewcode-back" href="../../bookbuilderpy.html#bookbuilderpy.pandoc.azw3">[docs]</a><span class="k">def</span> <span class="nf">azw3</span><span class="p">(</span><span class="n">epub_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">File</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert an epub book into an azw3 one.</span>
+
+<span class="sd">    :param epub_file: the epub file</span>
+<span class="sd">    :return: the azw3 file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_file</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="n">epub_file</span><span class="p">)</span>
+    <span class="n">input_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">directory</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">input_file</span><span class="p">))</span>
+    <span class="n">filename</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">split_prefix_suffix</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">input_file</span><span class="p">))</span>
+    <span class="n">dest_file</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">resolve_inside</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">.azw3&quot;</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ebook-convert&quot;</span><span class="p">,</span> <span class="n">input_file</span><span class="p">,</span> <span class="n">dest_file</span><span class="p">,</span> <span class="s2">&quot;--embed-all-fonts&quot;</span><span class="p">]</span>
+    <span class="n">shell</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">input_dir</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">File</span><span class="p">(</span><span class="n">dest_file</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">bookbuilderpy 1.9.28 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">bookbuilderpy.pandoc</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2021-2023, Thomas Weise.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    </div>
+  </body>
+</html>
